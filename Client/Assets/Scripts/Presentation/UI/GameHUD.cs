@@ -23,6 +23,7 @@ namespace War.Presentation.UI
         [Header("Modais da Interface")]
         [SerializeField] private ObjectiveModalUI? objectiveModal;
         [SerializeField] private CombatPanelUI? combatPanel;
+        [SerializeField] private DeployArmiesDialogUI? deployDialog;
 
         [Header("Topo - Jogador Ativo")]
         [SerializeField] private Image? playerColorBadge;
@@ -55,6 +56,8 @@ namespace War.Presentation.UI
 
         private Coroutine? _statusFadeRoutine;
 
+        public DeployArmiesDialogUI? DeployDialog => deployDialog;
+
         private void Awake()
         {
             if (presenter == null)
@@ -70,6 +73,11 @@ namespace War.Presentation.UI
             if (combatPanel == null)
             {
                 combatPanel = FindFirstObjectByType<CombatPanelUI>();
+            }
+
+            if (deployDialog == null)
+            {
+                deployDialog = FindFirstObjectByType<DeployArmiesDialogUI>();
             }
 
             if (advancePhaseButton != null)
@@ -189,12 +197,13 @@ namespace War.Presentation.UI
             {
                 case TurnPhase.Reinforcement:
                     phaseTitle = "FASE DE REFORÇO";
-                    phaseDesc = "Clique em seus territórios para alocar tropas de reforço.";
+                    phaseDesc = "Clique em um território seu para escolher quantas tropas alocar.";
                     buttonLabel = "Avançar para Ataque";
                     if (armiesBadgeRoot != null) armiesBadgeRoot.SetActive(true);
                     break;
 
                 case TurnPhase.Attack:
+                    deployDialog?.Close();
                     phaseTitle = "FASE DE ATAQUE";
                     phaseDesc = "Selecione um território seu (com 2+ tropas) e um território inimigo vizinho.";
                     buttonLabel = "Avançar para Fortificação";
@@ -202,6 +211,7 @@ namespace War.Presentation.UI
                     break;
 
                 case TurnPhase.Fortification:
+                    deployDialog?.Close();
                     phaseTitle = "FASE DE FORTIFICAÇÃO";
                     phaseDesc = "Remaneje tropas entre territórios conectados seus ou encerre a rodada.";
                     buttonLabel = "Encerrar Turno";
@@ -209,6 +219,7 @@ namespace War.Presentation.UI
                     break;
 
                 case TurnPhase.GameOver:
+                    deployDialog?.Close();
                     phaseTitle = "FIM DE JOGO";
                     phaseDesc = "Partida encerrada!";
                     buttonLabel = "Fim de Jogo";

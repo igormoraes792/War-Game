@@ -535,11 +535,28 @@ namespace War.Presentation.Editor
             var objectiveModalObj = SetupObjectiveModalUI(canvasObj.transform);
             var objectiveModalUI = objectiveModalObj.GetComponent<ObjectiveModalUI>();
 
+            // 4. Criação do Mini HUD Modal de Alocação de Tropas (DeployArmiesDialogUI)
+            var deployDialogObj = SetupDeployArmiesDialogUI(canvasObj.transform);
+            var deployDialogUI = deployDialogObj.GetComponent<DeployArmiesDialogUI>();
+
+            // Conecta deployDialog no GamePresenter se presente
+            if (presenter != null)
+            {
+                var presSo = new SerializedObject(presenter);
+                var deployProp = presSo.FindProperty("deployDialog");
+                if (deployProp != null)
+                {
+                    deployProp.objectReferenceValue = deployDialogUI;
+                    presSo.ApplyModifiedProperties();
+                }
+            }
+
             // Serializa e conecta tudo no GameHUD
             var hudSo = new SerializedObject(gameHud);
             hudSo.FindProperty("presenter").objectReferenceValue = presenter;
             hudSo.FindProperty("objectiveModal").objectReferenceValue = objectiveModalUI;
             hudSo.FindProperty("combatPanel").objectReferenceValue = combatPanelUI;
+            hudSo.FindProperty("deployDialog").objectReferenceValue = deployDialogUI;
             hudSo.FindProperty("playerColorBadge").objectReferenceValue = playerColorBadge;
             hudSo.FindProperty("playerNameText").objectReferenceValue = playerNameText;
             hudSo.FindProperty("phaseNameText").objectReferenceValue = phaseTitleText;
@@ -923,6 +940,229 @@ namespace War.Presentation.Editor
             oSo.ApplyModifiedProperties();
 
             // Começa fechado
+            modalRoot.SetActive(false);
+
+            return modalRoot;
+        }
+
+        private static GameObject SetupDeployArmiesDialogUI(Transform canvasTransform)
+        {
+            var modalRoot = CreateUiElement("Modal_DeployArmiesDialog", canvasTransform);
+            StretchFull(modalRoot.GetComponent<RectTransform>());
+
+            var backdropImg = modalRoot.AddComponent<Image>();
+            backdropImg.color = new Color(0f, 0f, 0f, 0.65f);
+
+            var deployUI = modalRoot.AddComponent<DeployArmiesDialogUI>();
+
+            // Card Central
+            var cardObj = CreateUiElement("DeployCard", modalRoot.transform);
+            var cardRt = cardObj.GetComponent<RectTransform>();
+            cardRt.anchorMin = new Vector2(0.5f, 0.5f);
+            cardRt.anchorMax = new Vector2(0.5f, 0.5f);
+            cardRt.pivot = new Vector2(0.5f, 0.5f);
+            cardRt.anchoredPosition = Vector2.zero;
+            cardRt.sizeDelta = new Vector2(520f, 410f);
+            var cardImg = cardObj.AddComponent<Image>();
+            cardImg.color = new Color(0.12f, 0.15f, 0.20f, 0.98f);
+
+            // Botão Fechar (X no canto superior direito)
+            var closeBtnObj = CreateUiElement("Btn_CloseX", cardObj.transform);
+            var closeRt = closeBtnObj.GetComponent<RectTransform>();
+            closeRt.anchorMin = new Vector2(1f, 1f);
+            closeRt.anchorMax = new Vector2(1f, 1f);
+            closeRt.pivot = new Vector2(1f, 1f);
+            closeRt.anchoredPosition = new Vector2(-15f, -15f);
+            closeRt.sizeDelta = new Vector2(36f, 36f);
+            var closeBtnImg = closeBtnObj.AddComponent<Image>();
+            closeBtnImg.color = new Color(0.24f, 0.28f, 0.35f, 1f);
+            var closeBtn = closeBtnObj.AddComponent<Button>();
+
+            var closeTxtObj = CreateUiElement("Text_X", closeBtnObj.transform);
+            StretchFull(closeTxtObj.GetComponent<RectTransform>());
+            CreateTMP(closeTxtObj, "✕", 18f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Título
+            var titleObj = CreateUiElement("Text_Title", cardObj.transform);
+            var tRt = titleObj.GetComponent<RectTransform>();
+            tRt.anchorMin = new Vector2(0f, 1f);
+            tRt.anchorMax = new Vector2(1f, 1f);
+            tRt.pivot = new Vector2(0.5f, 1f);
+            tRt.anchoredPosition = new Vector2(0f, -22f);
+            tRt.sizeDelta = new Vector2(-100f, 38f);
+            var titleText = CreateTMP(titleObj, "Posicionar Tropas", 20f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Painel de Informações do Território
+            var infoPanel = CreateUiElement("TerritoryInfoPanel", cardObj.transform);
+            var infoRt = infoPanel.GetComponent<RectTransform>();
+            infoRt.anchorMin = new Vector2(0.5f, 1f);
+            infoRt.anchorMax = new Vector2(0.5f, 1f);
+            infoRt.pivot = new Vector2(0.5f, 1f);
+            infoRt.anchoredPosition = new Vector2(0f, -72f);
+            infoRt.sizeDelta = new Vector2(460f, 46f);
+            var infoBg = infoPanel.AddComponent<Image>();
+            infoBg.color = new Color(0.08f, 0.10f, 0.14f, 0.90f);
+
+            // Badge de Cor do Território
+            var badgeObj = CreateUiElement("TerritoryColorBadge", infoPanel.transform);
+            var bRt = badgeObj.GetComponent<RectTransform>();
+            bRt.anchorMin = new Vector2(0f, 0.5f);
+            bRt.anchorMax = new Vector2(0f, 0.5f);
+            bRt.pivot = new Vector2(0f, 0.5f);
+            bRt.anchoredPosition = new Vector2(14f, 0f);
+            bRt.sizeDelta = new Vector2(18f, 18f);
+            var colorBadge = badgeObj.AddComponent<Image>();
+            colorBadge.color = new Color(0.88f, 0.22f, 0.22f, 1f);
+
+            // Texto de Detalhes do Território
+            var detailsObj = CreateUiElement("Text_Details", infoPanel.transform);
+            var dRt = detailsObj.GetComponent<RectTransform>();
+            dRt.anchorMin = new Vector2(0f, 0f);
+            dRt.anchorMax = new Vector2(1f, 1f);
+            dRt.offsetMin = new Vector2(42f, 0f);
+            dRt.offsetMax = new Vector2(-14f, 0f);
+            var territoryInfoText = CreateTMP(detailsObj, "Continente • Tropas atuais: 1", 14f, new Color(0.78f, 0.84f, 0.92f, 1f), TextAlignmentOptions.Left);
+
+            // Indicador de Saldo de Tropas Disponíveis
+            var availObj = CreateUiElement("Text_AvailableArmies", cardObj.transform);
+            var aRt = availObj.GetComponent<RectTransform>();
+            aRt.anchorMin = new Vector2(0.5f, 1f);
+            aRt.anchorMax = new Vector2(0.5f, 1f);
+            aRt.pivot = new Vector2(0.5f, 1f);
+            aRt.anchoredPosition = new Vector2(0f, -132f);
+            aRt.sizeDelta = new Vector2(460f, 32f);
+            var availableArmiesText = CreateTMP(availObj, "Tropas de reforço disponíveis: 5", 15f, new Color(1f, 0.84f, 0.32f, 1f), TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Linha de Controle de Quantidade ([-] [1] [+] [Máx])
+            var counterRow = CreateUiElement("CounterRow", cardObj.transform);
+            var crRt = counterRow.GetComponent<RectTransform>();
+            crRt.anchorMin = new Vector2(0.5f, 1f);
+            crRt.anchorMax = new Vector2(0.5f, 1f);
+            crRt.pivot = new Vector2(0.5f, 1f);
+            crRt.anchoredPosition = new Vector2(0f, -195f);
+            crRt.sizeDelta = new Vector2(460f, 64f);
+
+            // Botão Diminuir [-]
+            var decBtnObj = CreateUiElement("Btn_Decrease", counterRow.transform);
+            var decRt = decBtnObj.GetComponent<RectTransform>();
+            decRt.anchorMin = new Vector2(0.5f, 0.5f);
+            decRt.anchorMax = new Vector2(0.5f, 0.5f);
+            decRt.pivot = new Vector2(0.5f, 0.5f);
+            decRt.anchoredPosition = new Vector2(-110f, 0f);
+            decRt.sizeDelta = new Vector2(56f, 56f);
+            var decImg = decBtnObj.AddComponent<Image>();
+            decImg.color = new Color(0.24f, 0.29f, 0.38f, 1f);
+            var decreaseBtn = decBtnObj.AddComponent<Button>();
+
+            var decTxtObj = CreateUiElement("Text_Label", decBtnObj.transform);
+            StretchFull(decTxtObj.GetComponent<RectTransform>());
+            CreateTMP(decTxtObj, "-", 28f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Display do Contador [ 1 ]
+            var countBoxObj = CreateUiElement("CountBox", counterRow.transform);
+            var cbRt = countBoxObj.GetComponent<RectTransform>();
+            cbRt.anchorMin = new Vector2(0.5f, 0.5f);
+            cbRt.anchorMax = new Vector2(0.5f, 0.5f);
+            cbRt.pivot = new Vector2(0.5f, 0.5f);
+            cbRt.anchoredPosition = new Vector2(0f, 0f);
+            cbRt.sizeDelta = new Vector2(100f, 56f);
+            var countBg = countBoxObj.AddComponent<Image>();
+            countBg.color = new Color(0.06f, 0.08f, 0.12f, 1f);
+
+            var countTxtObj = CreateUiElement("Text_Count", countBoxObj.transform);
+            StretchFull(countTxtObj.GetComponent<RectTransform>());
+            var countText = CreateTMP(countTxtObj, "1", 28f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Botão Aumentar [+]
+            var incBtnObj = CreateUiElement("Btn_Increase", counterRow.transform);
+            var incRt = incBtnObj.GetComponent<RectTransform>();
+            incRt.anchorMin = new Vector2(0.5f, 0.5f);
+            incRt.anchorMax = new Vector2(0.5f, 0.5f);
+            incRt.pivot = new Vector2(0.5f, 0.5f);
+            incRt.anchoredPosition = new Vector2(110f, 0f);
+            incRt.sizeDelta = new Vector2(56f, 56f);
+            var incImg = incBtnObj.AddComponent<Image>();
+            incImg.color = new Color(0.24f, 0.29f, 0.38f, 1f);
+            var increaseBtn = incBtnObj.AddComponent<Button>();
+
+            var incTxtObj = CreateUiElement("Text_Label", incBtnObj.transform);
+            StretchFull(incTxtObj.GetComponent<RectTransform>());
+            CreateTMP(incTxtObj, "+", 28f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Botão [Máx]
+            var maxBtnObj = CreateUiElement("Btn_Max", counterRow.transform);
+            var maxRt = maxBtnObj.GetComponent<RectTransform>();
+            maxRt.anchorMin = new Vector2(0.5f, 0.5f);
+            maxRt.anchorMax = new Vector2(0.5f, 0.5f);
+            maxRt.pivot = new Vector2(0.5f, 0.5f);
+            maxRt.anchoredPosition = new Vector2(195f, 0f);
+            maxRt.sizeDelta = new Vector2(64f, 44f);
+            var maxImg = maxBtnObj.AddComponent<Image>();
+            maxImg.color = new Color(0.18f, 0.44f, 0.68f, 1f);
+            var maxBtn = maxBtnObj.AddComponent<Button>();
+
+            var maxTxtObj = CreateUiElement("Text_Label", maxBtnObj.transform);
+            StretchFull(maxTxtObj.GetComponent<RectTransform>());
+            CreateTMP(maxTxtObj, "Máx", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Linha Inferior de Botões (Cancelar e Confirmar)
+            var actionRow = CreateUiElement("ActionRow", cardObj.transform);
+            var arRt = actionRow.GetComponent<RectTransform>();
+            arRt.anchorMin = new Vector2(0f, 0f);
+            arRt.anchorMax = new Vector2(1f, 0f);
+            arRt.pivot = new Vector2(0.5f, 0f);
+            arRt.anchoredPosition = new Vector2(0f, 24f);
+            arRt.sizeDelta = new Vector2(-60f, 48f);
+
+            // Botão Cancelar
+            var cancelBtnObj = CreateUiElement("Btn_Cancel", actionRow.transform);
+            var canRt = cancelBtnObj.GetComponent<RectTransform>();
+            canRt.anchorMin = new Vector2(0.5f, 0.5f);
+            canRt.anchorMax = new Vector2(0.5f, 0.5f);
+            canRt.pivot = new Vector2(0.5f, 0.5f);
+            canRt.anchoredPosition = new Vector2(-110f, 0f);
+            canRt.sizeDelta = new Vector2(180f, 48f);
+            var canImg = cancelBtnObj.AddComponent<Image>();
+            canImg.color = new Color(0.28f, 0.32f, 0.39f, 1f);
+            var cancelBtn = cancelBtnObj.AddComponent<Button>();
+
+            var canTxtObj = CreateUiElement("Text_Label", cancelBtnObj.transform);
+            StretchFull(canTxtObj.GetComponent<RectTransform>());
+            CreateTMP(canTxtObj, "Cancelar", 15f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Botão Confirmar
+            var confirmBtnObj = CreateUiElement("Btn_Confirm", actionRow.transform);
+            var cnfRt = confirmBtnObj.GetComponent<RectTransform>();
+            cnfRt.anchorMin = new Vector2(0.5f, 0.5f);
+            cnfRt.anchorMax = new Vector2(0.5f, 0.5f);
+            cnfRt.pivot = new Vector2(0.5f, 0.5f);
+            cnfRt.anchoredPosition = new Vector2(110f, 0f);
+            cnfRt.sizeDelta = new Vector2(210f, 48f);
+            var cnfImg = confirmBtnObj.AddComponent<Image>();
+            cnfImg.color = new Color(0.16f, 0.68f, 0.38f, 1f);
+            var confirmBtn = confirmBtnObj.AddComponent<Button>();
+
+            var cnfTxtObj = CreateUiElement("Text_Label", confirmBtnObj.transform);
+            StretchFull(cnfTxtObj.GetComponent<RectTransform>());
+            CreateTMP(cnfTxtObj, "Confirmar", 16f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Serializa no DeployArmiesDialogUI
+            var dSo = new SerializedObject(deployUI);
+            dSo.FindProperty("modalRoot").objectReferenceValue = modalRoot;
+            dSo.FindProperty("titleText").objectReferenceValue = titleText;
+            dSo.FindProperty("territoryInfoText").objectReferenceValue = territoryInfoText;
+            dSo.FindProperty("availableArmiesText").objectReferenceValue = availableArmiesText;
+            dSo.FindProperty("countText").objectReferenceValue = countText;
+            dSo.FindProperty("territoryColorBadge").objectReferenceValue = colorBadge;
+            dSo.FindProperty("decreaseButton").objectReferenceValue = decreaseBtn;
+            dSo.FindProperty("increaseButton").objectReferenceValue = increaseBtn;
+            dSo.FindProperty("maxButton").objectReferenceValue = maxBtn;
+            dSo.FindProperty("confirmButton").objectReferenceValue = confirmBtn;
+            dSo.FindProperty("cancelButton").objectReferenceValue = cancelBtn;
+            dSo.FindProperty("closeButton").objectReferenceValue = closeBtn;
+            dSo.ApplyModifiedProperties();
+
+            // Começa desativado/fechado
             modalRoot.SetActive(false);
 
             return modalRoot;

@@ -8,6 +8,7 @@ using War.Core.Data;
 using War.Core.Game;
 using War.Core.Models;
 using War.Presentation.Board;
+using War.Presentation.UI;
 
 namespace War.Presentation.Game
 {
@@ -21,6 +22,10 @@ namespace War.Presentation.Game
         [Header("Referências Visuais")]
         [Tooltip("Referência ao gerenciador visual do tabuleiro.")]
         [SerializeField] private BoardView? boardView;
+
+        [Header("Interface e Modais")]
+        [Tooltip("Diálogo modal para escolha da quantidade de tropas a posicionar.")]
+        [SerializeField] private DeployArmiesDialogUI? deployDialog;
 
         [Header("Configuração da Partida Local")]
         [SerializeField] private bool autoStartDemoMatch = true;
@@ -48,6 +53,11 @@ namespace War.Presentation.Game
         public Player? ActivePlayer => _turnManager?.State.CurrentPlayer;
         public TurnPhase CurrentPhase => _turnManager?.State.CurrentPhase ?? TurnPhase.NotStarted;
         public BoardView? Board => boardView;
+        public DeployArmiesDialogUI? DeployDialog
+        {
+            get => deployDialog;
+            set => deployDialog = value;
+        }
         #endregion
 
         private void Awake()
@@ -55,6 +65,11 @@ namespace War.Presentation.Game
             if (boardView == null)
             {
                 boardView = FindFirstObjectByType<BoardView>();
+            }
+
+            if (deployDialog == null)
+            {
+                deployDialog = FindFirstObjectByType<DeployArmiesDialogUI>();
             }
         }
 
@@ -211,24 +226,67 @@ namespace War.Presentation.Game
                 return;
             }
 
+            // Seleciona visualmente o território no tabuleiro
+            boardView?.SelectTerritory(clickedTerritory.Id);
+
+            // Abre o diálogo modal de alocação de tropas
+            if (deployDialog != null)
+            {
+                deployDialog.Open(
+                    clickedTerritory,
+                    activePlayer.ArmiesToDeploy,
+                    onConfirm: count =>
+                    {
+                        DeployArmiesToTerritory(clickedTerritory.Id, count);
+                    },
+                    onCancel: () =>
+                    {
+                        boardView?.ClearSelection();
+                        NotifyStatusMessage("Alocação cancelada.");
+                    });
+            }
+            else
+            {
+                // Fallback caso o diálogo não esteja instanciado: posiciona 1 tropa diretamente
+                DeployArmiesToTerritory(clickedTerritory.Id, 1);
+            }
+        }
+
+        /// <summary>
+        /// Posiciona uma quantidade específica de tropas de reforço no território indicado.
+        /// </summary>
+        /// <param name="territoryId">ID do território alvo.</param>
+        /// <param name="count">Quantidade de tropas a posicionar.</param>
+        /// <returns>Verdadeiro se a alocação foi bem-sucedida.</returns>
+        public bool DeployArmiesToTerritory(string territoryId, int count)
+        {
+            if (_turnManager == null || _turnManager.State.IsGameOver) return false;
+
+            var activePlayer = ActivePlayer;
+            if (activePlayer == null || count <= 0) return false;
+
             try
             {
-                _turnManager!.DeployArmies(clickedTerritory.Id, 1);
-                boardView?.SelectTerritory(clickedTerritory.Id);
+                _turnManager.DeployArmies(territoryId, count);
+                boardView?.SelectTerritory(territoryId);
                 RefreshVisuals();
                 OnPlayerArmiesChanged?.Invoke(activePlayer);
 
-                NotifyStatusMessage($"+1 tropa posicionada em {clickedTerritory.Name}. Restam {activePlayer.ArmiesToDeploy} tropas.");
+                var terrName = _turnManager.State.Territories.TryGetValue(territoryId, out var t) ? t.Name : territoryId;
+                NotifyStatusMessage($"+{count} tropa(s) posicionada(s) em {terrName}. Restam {activePlayer.ArmiesToDeploy} tropas.");
 
                 if (activePlayer.ArmiesToDeploy == 0)
                 {
                     NotifyStatusMessage("Todas as tropas foram posicionadas! Você já pode avançar para a fase de Ataque.");
                 }
+
+                return true;
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[GamePresenter] Erro ao alocar tropa: {ex.Message}");
+                Debug.LogWarning($"[GamePresenter] Erro ao alocar tropas: {ex.Message}");
                 NotifyStatusMessage(ex.Message);
+                return false;
             }
         }
 
@@ -421,6 +479,7 @@ namespace War.Presentation.Game
 
             var phase = _turnManager.State.CurrentPhase;
             _selectedSourceTerritoryId = null;
+            deployDialog?.Close();
             boardView?.ClearSelection();
             boardView?.ClearAllHighlights();
 
@@ -459,6 +518,7 @@ namespace War.Presentation.Game
             if (_turnManager == null || _turnManager.State.IsGameOver) return;
 
             _selectedSourceTerritoryId = null;
+            deployDialog?.Close();
             boardView?.ClearSelection();
             boardView?.ClearAllHighlights();
 
@@ -486,6 +546,7 @@ namespace War.Presentation.Game
 
         private void HandleGameOver(Player? winner)
         {
+            deployDialog?.Close();
             RefreshVisuals();
             OnGameOver?.Invoke(winner!);
             NotifyStatusMessage($"FIM DE JOGO! O vencedor é {winner?.Name} ({winner?.Color})! Parabéns!");
