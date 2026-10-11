@@ -1,0 +1,35 @@
+# .gitignore padrão para projetos Unity com C#
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Aa]ssets/AssetStoreTools*
+
+# Visual Studio / Rider / VSCode
+.vs/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.opendb
+*.VC.db
+.vscode/
+
+# Unity crash reports
+sysinfo.txt
+*.stackdump
+
+# OS generated
+.DS_Store
+Thumbs.db
