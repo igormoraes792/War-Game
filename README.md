@@ -1,33 +1,48 @@
-# War Strategy Game (Digital Board Game)
+# 🎖️ War Strategy Game (3D Digital Board Game)
 
-Projeto de jogo de estratégia em turnos inspirado no clássico WAR / Risk, desenvolvido em **Unity** com arquitetura desacoplada (Core Engine em C# POCO + Camada de Apresentação + Suporte a Multiplayer Online).
+Projeto de jogo de estratégia em turnos inspirado no clássico WAR brasileiro / Risk, desenvolvido em **Unity 6 URP** com arquitetura desacoplada (Core Engine em C# POCO + Camada de Apresentação 3D + Inteligência Artificial + Suporte a Multiplayer Online).
 
 ---
 
-## 🏛️ Arquitetura dos Agentes Especialistas
+## 👥 Organização do Esquadrão de Agentes
 
-O desenvolvimento deste projeto é distribuído em agentes autônomos especializados:
+Cada parte do projeto possui um agente especialista dedicado, com escopo estrito e responsabilidades claras:
 
-1. **`core-rules-agent` (Arquiteto de Regras & Lógica Pura)**:
-   - Grafo de adjacências dos 42 territórios e 6 continentes.
-   - Máquina de estados de turnos (FSM): Distribuição de Tropas ➔ Ataque ➔ Remanejamento ➔ Compra de Cartas.
-   - Combate probabilístico com dados (3x3 com vantagem do defensor).
-   - Objetivos secretos e validação de vitória.
-   - Código 100% C# POCO (Plain Old C# Objects) sem dependência de Unity, permitindo execução idêntica no servidor.
+| Agente | Nome Amigável | Especialidade & Responsabilidade Principal |
+| :--- | :--- | :--- |
+| **`agente-01-regras-core`** | **[Agente 01] Regras & Core Engine** | Grafo dos 42 territórios clássicos, 6 continentes, máquina de estados de turno (FSM), cartas, objetivos secretos e combate 3x3 de dados. 100% C# POCO sem dependência de Unity. |
+| **`agente-02-unity-visual`** | **[Agente 02] Unity 3D & Apresentação** | Camada visual no Unity 6 URP: Mesa 3D, mapa de territórios interativo, miniaturas, dados físicos, câmera orbital, shaders e HUD. |
+| **`agente-03-ia-bots`** | **[Agente 03] Inteligência Artificial** | Bots para partidas individuais: heurísticas de reforço em fronteiras, análise de risco para ataque e persecução de objetivos secretos (Fácil, Médio, Difícil). |
+| **`agente-04-multiplayer-rede`**| **[Agente 04] Multiplayer & Rede** | Infraestrutura multiplayer online: servidor autoritativo, protocolo de sincronização em turnos, lobby, salas e reconexão. |
+| **`qa-inspector-agent`** | **[Agente 05] Inspetor Geral de Qualidade** | **Guardião do Projeto:** audita o repositório após grandes alterações, executa suítes de testes automatizados, valida compilação, integridade arquitetural e coerência entre os módulos. |
 
-2. **`unity-visual-agent` (Apresentação Visual & UI/UX)**:
-   - Renderização gráfica do mapa e territórios (seleção, hover, feedback visual).
-   - Animações 3D de rolagem de dados e movimentação de tropas.
-   - Interface de usuário (HUD de fases, painel de ataque, inventário de cartas).
-   - Otimização para compilação WebGL / PC / Mobile.
+---
 
-3. **`ai-bot-agent` (Inteligência Artificial para Partidas Solo)**:
-   - Tomada de decisão em turnos (heurísticas de reforço de fronteira, cálculo de risco em ataques).
-   - Níveis de dificuldade (Fácil, Médio, Difícil).
-   - Consome estritamente a API de comandos do Core Engine.
+## 🏗️ Estrutura de Pastas do Projeto
 
-4. **`network-agent` (Infraestrutura Multiplayer Online)**:
-   - Servidor autoritativo reutilizando o Core Engine.
-   - Protocolo de sincronização de ações de jogo (WebSockets / Photon / Netcode).
-   - Lobby, salas de partida, reconexão e chat.
-
+```
+War/
+├── Core/                   # Regras puras em C# (.NET Standard 2.1)
+│   ├── Cards/              # 44 cartas clássicas e escala progressiva de troca
+│   ├── Combat/             # Rolagem e resolução de combate 3x3
+│   ├── Data/               # Grafo dos 42 territórios e conexões marítimas
+│   ├── Game/               # FSM de turnos, GameState e TurnManager
+│   ├── Models/             # Territórios e Continentes
+│   └── Objectives/         # 14 objetivos secretos clássicos e validador de vitória
+│
+├── Tests/                  # Suíte de testes automatizados das regras
+│
+└── Client/                 # Projeto Unity 6 (Universal Render Pipeline - URP)
+    ├── Assets/
+    │   ├── Scripts/
+    │   │   ├── Core/       # Cópia síncrona do Core Engine para a Unity
+    │   │   └── Presentation/
+    │   │       ├── Board/  # BoardView, TerritoryView (seleção, cores, tropas)
+    │   │       ├── Camera/ # TacticalCameraController (órbita, zoom, pan)
+    │   │       ├── Game/   # GamePresenter (ponte Core -> Visual)
+    │   │       └── Editor/ # BoardSetupTool (menu automatizado de criação 3D)
+    │   ├── Materials/      # Materiais PBR (madeira, plástico, dados)
+    │   ├── Prefabs/        # Peças de exércitos e dados
+    │   └── Scenes/         # Cenas do jogo
+    └── Packages/           # Dependências do Unity 6 (URP, TextMeshPro, etc.)
+```
