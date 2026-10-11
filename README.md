@@ -30,3 +30,4 @@ O desenvolvimento deste projeto é distribuído em agentes autônomos especializ
    - Servidor autoritativo reutilizando o Core Engine.
    - Protocolo de sincronização de ações de jogo (WebSockets / Photon / Netcode).
    - Lobby, salas de partida, reconexão e chat.
+

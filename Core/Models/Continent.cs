@@ -55,7 +55,7 @@ namespace War.Core.Models
         /// <summary>
         /// Retorna todos os 6 continentes clássicos.
         /// </summary>
-        public static IReadOnlyCollection<Continent> GetAll() => AllContinents.Values;
+        public static IReadOnlyCollection<Continent> GetAll() => new ReadOnlyCollection<Continent>(new List<Continent>(AllContinents.Values));
 
         /// <summary>
         /// Obtém o continente correspondente ao tipo.
