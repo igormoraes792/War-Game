@@ -93,7 +93,7 @@ namespace War.Presentation.Editor
             var renderer = table.GetComponent<MeshRenderer>();
             if (renderer != null)
             {
-                var woodShader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                var woodShader = GetSafeLitShader();
                 var mat = new Material(woodShader)
                 {
                     name = "Mesa_Madeira_Mat",
@@ -111,7 +111,7 @@ namespace War.Presentation.Editor
             var positions = GetTerritoryWorldCoordinates();
             var defs = ClassicMapData.GetAllDefinitions();
 
-            var defaultShader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            var defaultShader = GetSafeLitShader();
             var defaultTerritoryMat = new Material(defaultShader)
             {
                 name = "Territorio_Base_Mat",
@@ -304,6 +304,35 @@ namespace War.Presentation.Editor
                 [TerritoryIds.NovaGuine] = new Vector2(23f, -6.5f),
                 [TerritoryIds.Australia] = new Vector2(20.5f, -10.5f)
             };
+        }
+
+        /// <summary>
+        /// Detecta o shader Lit apropriado com base no Pipeline ativo ou usa o shader padrão nativo
+        /// para garantir que nenhum material fique rosa/magenta na cena.
+        /// </summary>
+        public static Shader GetSafeLitShader()
+        {
+            var isUsingUrp = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null;
+
+            if (isUsingUrp)
+            {
+                var urpLit = Shader.Find("Universal Render Pipeline/Lit");
+                if (urpLit != null) return urpLit;
+
+                var urpSimpleLit = Shader.Find("Universal Render Pipeline/Simple Lit");
+                if (urpSimpleLit != null) return urpSimpleLit;
+
+                var urpUnlit = Shader.Find("Universal Render Pipeline/Unlit");
+                if (urpUnlit != null) return urpUnlit;
+            }
+
+            var standard = Shader.Find("Standard");
+            if (standard != null) return standard;
+
+            var diffuse = Shader.Find("Diffuse") ?? Shader.Find("Legacy Shaders/Diffuse");
+            if (diffuse != null) return diffuse;
+
+            return Shader.Find("Unlit/Color");
         }
     }
 }

@@ -86,10 +86,17 @@ namespace War.Presentation.Board
                 armyCountText = GetComponentInChildren<TMP_Text>();
             }
 
-            // Garante uma cópia do material para coloração independente
+            // Garante cópia de material com shader válido
             if (territoryRenderer != null)
             {
-                _runtimeMaterial = territoryRenderer.material;
+                var mat = territoryRenderer.material;
+                if (mat.shader == null || mat.shader.name == "Hidden/InternalErrorShader")
+                {
+                    mat.shader = Shader.Find("Universal Render Pipeline/Lit") 
+                                 ?? Shader.Find("Standard") 
+                                 ?? Shader.Find("Diffuse");
+                }
+                _runtimeMaterial = mat;
             }
 
             _ownerColor = defaultNeutralColor;
