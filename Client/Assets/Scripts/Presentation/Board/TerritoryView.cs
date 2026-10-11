@@ -25,11 +25,15 @@ namespace War.Presentation.Board
         [SerializeField] private Transform? armySpawnPoint;
 
         [Header("Interface e Textos 3D")]
-        [Tooltip("Texto para exibir a quantidade de exércitos no território.")]
+        [Tooltip("Texto TextMeshPro para exibir a quantidade de exércitos no território.")]
         [SerializeField] private TMP_Text? armyCountText;
 
         [Tooltip("Texto opcional para exibir o nome do território.")]
         [SerializeField] private TMP_Text? territoryNameText;
+
+        [Tooltip("Fallback nativo TextMesh 3D garantido.")]
+        [SerializeField] private TextMesh? armyCountLegacyText;
+        [SerializeField] private TextMesh? territoryNameLegacyText;
 
         [Header("Configuração de Cores")]
         [SerializeField] private Color defaultNeutralColor = new Color(0.7f, 0.7f, 0.7f, 1f);
@@ -127,9 +131,14 @@ namespace War.Presentation.Board
         public void SetArmyCount(int count)
         {
             _currentArmyCount = Mathf.Max(0, count);
+            var str = _currentArmyCount.ToString();
             if (armyCountText != null)
             {
-                armyCountText.text = _currentArmyCount.ToString();
+                armyCountText.text = str;
+            }
+            if (armyCountLegacyText != null)
+            {
+                armyCountLegacyText.text = str;
             }
         }
 
@@ -141,6 +150,10 @@ namespace War.Presentation.Board
             if (territoryNameText != null)
             {
                 territoryNameText.text = displayName;
+            }
+            if (territoryNameLegacyText != null)
+            {
+                territoryNameLegacyText.text = displayName;
             }
         }
 

@@ -142,47 +142,45 @@ namespace War.Presentation.Editor
                 spawnPoint.transform.SetParent(terrObj.transform, false);
                 spawnPoint.transform.localPosition = new Vector3(0f, 0.6f, 0f);
 
-                // Cria o contador de tropas (Texto 3D com TextMeshPro)
+                // Cria o contador de tropas (Texto 3D nativo garantido)
                 var textObj = new GameObject("Text_ArmyCount");
                 textObj.transform.SetParent(terrObj.transform, false);
-                textObj.transform.localPosition = new Vector3(0f, 0.8f, 0f);
-                textObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // Virado para cima para visão superior da câmera
+                textObj.transform.localPosition = new Vector3(0f, 0.7f, 0f);
+                textObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // Virado para cima
+                textObj.transform.localScale = Vector3.one * 0.18f;
 
-                var tmp = textObj.AddComponent<TextMeshPro>();
-                tmp.text = "1";
-                tmp.fontSize = 7f;
-                tmp.alignment = TextAlignmentOptions.Center;
-                tmp.color = Color.white;
-                var rectTransform = textObj.GetComponent<RectTransform>();
-                if (rectTransform != null)
-                {
-                    rectTransform.sizeDelta = new Vector2(4f, 4f);
-                }
+                var textMesh = textObj.AddComponent<TextMesh>();
+                textMesh.text = "1";
+                textMesh.fontSize = 72;
+                textMesh.characterSize = 0.25f;
+                textMesh.anchor = TextAnchor.MiddleCenter;
+                textMesh.alignment = TextAlignment.Center;
+                textMesh.color = Color.white;
+                textMesh.fontStyle = FontStyle.Bold;
 
                 // Cria o rótulo do nome do território
                 var nameObj = new GameObject("Text_Name");
                 nameObj.transform.SetParent(terrObj.transform, false);
-                nameObj.transform.localPosition = new Vector3(0f, 0.75f, -1.1f);
+                nameObj.transform.localPosition = new Vector3(0f, 0.65f, -1.25f);
                 nameObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                nameObj.transform.localScale = Vector3.one * 0.12f;
 
-                var tmpName = nameObj.AddComponent<TextMeshPro>();
-                tmpName.text = def.Name;
-                tmpName.fontSize = 3.5f;
-                tmpName.alignment = TextAlignmentOptions.Center;
-                tmpName.color = new Color(0.9f, 0.9f, 0.9f, 0.95f);
-                var rectName = nameObj.GetComponent<RectTransform>();
-                if (rectName != null)
-                {
-                    rectName.sizeDelta = new Vector2(6f, 2f);
-                }
+                var nameTextMesh = nameObj.AddComponent<TextMesh>();
+                nameTextMesh.text = def.Name;
+                nameTextMesh.fontSize = 42;
+                nameTextMesh.characterSize = 0.2f;
+                nameTextMesh.anchor = TextAnchor.MiddleCenter;
+                nameTextMesh.alignment = TextAlignment.Center;
+                nameTextMesh.color = new Color(0.95f, 0.95f, 0.95f, 0.95f);
+                nameTextMesh.fontStyle = FontStyle.Bold;
 
-                // Serializa os campos privados no TerritoryView
+                // Serializa os campos no TerritoryView
                 var viewSo = new SerializedObject(terrView);
                 viewSo.FindProperty("territoryId").stringValue = def.Id;
                 viewSo.FindProperty("territoryRenderer").objectReferenceValue = meshRenderer;
                 viewSo.FindProperty("armySpawnPoint").objectReferenceValue = spawnPoint.transform;
-                viewSo.FindProperty("armyCountText").objectReferenceValue = tmp;
-                viewSo.FindProperty("territoryNameText").objectReferenceValue = tmpName;
+                viewSo.FindProperty("armyCountLegacyText").objectReferenceValue = textMesh;
+                viewSo.FindProperty("territoryNameLegacyText").objectReferenceValue = nameTextMesh;
                 viewSo.ApplyModifiedProperties();
 
                 views.Add(terrView);
