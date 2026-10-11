@@ -36,6 +36,8 @@ namespace War.Presentation.Game
         public event Action<TurnPhase, Player>? OnPhaseChanged;
         public event Action<string>? OnGameStatusMessage;
         public event Action<CombatResult>? OnCombatResolved;
+        public event Action<CombatResult, Territory, Territory>? OnCombatDetailsResolved;
+        public event Action<Player>? OnPlayerArmiesChanged;
         public event Action<string, string>? OnTerritoryConquered;
         public event Action<Player>? OnGameOver;
         #endregion
@@ -214,6 +216,7 @@ namespace War.Presentation.Game
                 _turnManager!.DeployArmies(clickedTerritory.Id, 1);
                 boardView?.SelectTerritory(clickedTerritory.Id);
                 RefreshVisuals();
+                OnPlayerArmiesChanged?.Invoke(activePlayer);
 
                 NotifyStatusMessage($"+1 tropa posicionada em {clickedTerritory.Name}. Restam {activePlayer.ArmiesToDeploy} tropas.");
 
@@ -317,6 +320,7 @@ namespace War.Presentation.Game
             {
                 var result = _turnManager.Attack(attackerId, defenderId);
                 OnCombatResolved?.Invoke(result);
+                OnCombatDetailsResolved?.Invoke(result, attacker, defender);
 
                 var attackerDiceStr = string.Join(", ", result.SortedAttackerDice);
                 var defenderDiceStr = string.Join(", ", result.SortedDefenderDice);

@@ -3,17 +3,21 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 using War.Core.Data;
 using War.Presentation.Board;
 using War.Presentation.CameraControl;
 using War.Presentation.Game;
+using War.Presentation.UI;
 
 namespace War.Presentation.Editor
 {
     /// <summary>
     /// Ferramenta de Editor para gerar toda a hierarquia 3D inicial da mesa tática de WAR.
-    /// Cria a Mesa, os 42 territórios clássicos posicionados no mapa, Câmera Tática, Iluminação e GameController.
+    /// Cria a Mesa, os 42 territórios clássicos posicionados no mapa, Câmera Tática, Iluminação, GameController
+    /// e o War_Canvas contendo GameHUD, CombatPanelUI e ObjectiveModalUI.
     /// </summary>
     public static class BoardSetupTool
     {
@@ -71,6 +75,9 @@ namespace War.Presentation.Editor
             // Atualiza o BoardView com todos os territórios criados
             boardView.ScanAndIndexTerritories();
 
+            // 6. Criação do War_Canvas (GameHUD, CombatPanelUI, ObjectiveModalUI)
+            SetupGameCanvas(presenter);
+
             // Seleciona o root na Hierarchy e foca a SceneView
             Selection.activeGameObject = rootObj;
             if (SceneView.lastActiveSceneView != null)
@@ -79,7 +86,17 @@ namespace War.Presentation.Editor
             }
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-            Debug.Log("[War Setup] Tabuleiro 3D básico gerado com sucesso com os 42 territórios e Câmera Tática!");
+            Debug.Log("[War Setup] Tabuleiro 3D básico gerado com sucesso com os 42 territórios, Câmera Tática e War_Canvas!");
+        }
+
+        [MenuItem("War Game/Gerar Canvas de HUD e Batalha na Cena")]
+        public static void GenerateCanvasOnly()
+        {
+            var presenter = Object.FindFirstObjectByType<GamePresenter>();
+            var canvasObj = SetupGameCanvas(presenter);
+            Selection.activeGameObject = canvasObj;
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            Debug.Log("[War Setup] War_Canvas gerado com sucesso com GameHUD, CombatPanelUI e ObjectiveModalUI!");
         }
 
         private static GameObject CreateWoodTable(Transform parent)
@@ -332,6 +349,626 @@ namespace War.Presentation.Editor
 
             return Shader.Find("Unlit/Color");
         }
+
+        #region Criação da Hierarquia War_Canvas (uGUI)
+        /// <summary>
+        /// Gera o Canvas de sobreposição de tela com toda a hierarquia de HUD, Combate e Objetivos.
+        /// </summary>
+        public static GameObject SetupGameCanvas(GamePresenter? presenter)
+        {
+            const string canvasName = "War_Canvas";
+            var existing = GameObject.Find(canvasName);
+            if (existing != null)
+            {
+                Undo.DestroyObjectImmediate(existing);
+            }
+
+            var canvasObj = new GameObject(canvasName);
+            Undo.RegisterCreatedObjectUndo(canvasObj, "Gerar War_Canvas");
+
+            var canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 10;
+
+            var scaler = canvasObj.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            canvasObj.AddComponent<GraphicRaycaster>();
+
+            // Assegura EventSystem na cena
+            EnsureEventSystem();
+
+            // 1. Criação do HUD_Root e GameHUD
+            var hudRoot = CreateUiElement("HUD_Root", canvasObj.transform);
+            StretchFull(hudRoot.GetComponent<RectTransform>());
+            var gameHud = hudRoot.AddComponent<GameHUD>();
+
+            // 1.1 TopBar
+            var topPanel = CreateUiElement("HUD_TopPanel", hudRoot.transform);
+            var topRt = topPanel.GetComponent<RectTransform>();
+            topRt.anchorMin = new Vector2(0f, 1f);
+            topRt.anchorMax = new Vector2(1f, 1f);
+            topRt.pivot = new Vector2(0.5f, 1f);
+            topRt.anchoredPosition = Vector2.zero;
+            topRt.sizeDelta = new Vector2(0f, 85f);
+            var topImg = topPanel.AddComponent<Image>();
+            topImg.color = new Color(0.09f, 0.11f, 0.15f, 0.95f);
+
+            // Jogador Ativo (Badge)
+            var playerBadge = CreateUiElement("PlayerBadge", topPanel.transform);
+            var pbRt = playerBadge.GetComponent<RectTransform>();
+            pbRt.anchorMin = new Vector2(0f, 0.5f);
+            pbRt.anchorMax = new Vector2(0f, 0.5f);
+            pbRt.pivot = new Vector2(0f, 0.5f);
+            pbRt.anchoredPosition = new Vector2(25f, 0f);
+            pbRt.sizeDelta = new Vector2(240f, 55f);
+            var pbImg = playerBadge.AddComponent<Image>();
+            pbImg.color = new Color(0.15f, 0.18f, 0.24f, 0.9f);
+
+            var colorDot = CreateUiElement("PlayerColorDot", playerBadge.transform);
+            var dotRt = colorDot.GetComponent<RectTransform>();
+            dotRt.anchorMin = new Vector2(0f, 0.5f);
+            dotRt.anchorMax = new Vector2(0f, 0.5f);
+            dotRt.pivot = new Vector2(0.5f, 0.5f);
+            dotRt.anchoredPosition = new Vector2(25f, 0f);
+            dotRt.sizeDelta = new Vector2(22f, 22f);
+            var playerColorBadge = colorDot.AddComponent<Image>();
+            playerColorBadge.color = new Color(0.88f, 0.22f, 0.22f, 1f);
+
+            var playerNameObj = CreateUiElement("Text_PlayerName", playerBadge.transform);
+            var pnRt = playerNameObj.GetComponent<RectTransform>();
+            pnRt.anchorMin = new Vector2(0f, 0f);
+            pnRt.anchorMax = new Vector2(1f, 1f);
+            pnRt.offsetMin = new Vector2(45f, 0f);
+            pnRt.offsetMax = new Vector2(-10f, 0f);
+            var playerNameText = CreateTMP(playerNameObj, "Exército Vermelho", 17f, Color.white, TextAlignmentOptions.Left, FontStyles.Bold);
+
+            // Fase Atual (Container central)
+            var phaseContainer = CreateUiElement("PhaseContainer", topPanel.transform);
+            var pcRt = phaseContainer.GetComponent<RectTransform>();
+            pcRt.anchorMin = new Vector2(0.5f, 0.5f);
+            pcRt.anchorMax = new Vector2(0.5f, 0.5f);
+            pcRt.pivot = new Vector2(0.5f, 0.5f);
+            pcRt.anchoredPosition = Vector2.zero;
+            pcRt.sizeDelta = new Vector2(500f, 65f);
+            var pcImg = phaseContainer.AddComponent<Image>();
+            pcImg.color = new Color(0.13f, 0.16f, 0.22f, 0.85f);
+
+            var phaseTitleObj = CreateUiElement("Text_PhaseTitle", phaseContainer.transform);
+            var ptRt = phaseTitleObj.GetComponent<RectTransform>();
+            ptRt.anchorMin = new Vector2(0f, 0.5f);
+            ptRt.anchorMax = new Vector2(1f, 1f);
+            ptRt.offsetMin = new Vector2(10f, 0f);
+            ptRt.offsetMax = new Vector2(-10f, -4f);
+            var phaseTitleText = CreateTMP(phaseTitleObj, "FASE DE REFORÇO", 18f, new Color(1f, 0.82f, 0.25f, 1f), TextAlignmentOptions.Center, FontStyles.Bold);
+
+            var phaseDescObj = CreateUiElement("Text_PhaseInstruction", phaseContainer.transform);
+            var pdRt = phaseDescObj.GetComponent<RectTransform>();
+            pdRt.anchorMin = new Vector2(0f, 0f);
+            pdRt.anchorMax = new Vector2(1f, 0.5f);
+            pdRt.offsetMin = new Vector2(10f, 4f);
+            pdRt.offsetMax = new Vector2(-10f, 0f);
+            var phaseInstructionText = CreateTMP(phaseDescObj, "Clique nos seus territórios para posicionar tropas de reforço.", 13f, new Color(0.85f, 0.88f, 0.92f, 1f), TextAlignmentOptions.Center);
+
+            // Reforços a posicionar
+            var armiesBadge = CreateUiElement("ArmiesBadge", topPanel.transform);
+            var abRt = armiesBadge.GetComponent<RectTransform>();
+            abRt.anchorMin = new Vector2(1f, 0.5f);
+            abRt.anchorMax = new Vector2(1f, 0.5f);
+            abRt.pivot = new Vector2(1f, 0.5f);
+            abRt.anchoredPosition = new Vector2(-385f, 0f);
+            abRt.sizeDelta = new Vector2(230f, 48f);
+            var abImg = armiesBadge.AddComponent<Image>();
+            abImg.color = new Color(0.12f, 0.23f, 0.45f, 0.95f);
+
+            var armiesTextObj = CreateUiElement("Text_ArmiesToDeploy", armiesBadge.transform);
+            var atRt = armiesTextObj.GetComponent<RectTransform>();
+            StretchFull(atRt);
+            var armiesToDeployText = CreateTMP(armiesTextObj, "Tropas para posicionar: 5", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Botões de Ação
+            var buttonsGroup = CreateUiElement("ButtonsGroup", topPanel.transform);
+            var bgRt = buttonsGroup.GetComponent<RectTransform>();
+            bgRt.anchorMin = new Vector2(1f, 0.5f);
+            bgRt.anchorMax = new Vector2(1f, 0.5f);
+            bgRt.pivot = new Vector2(1f, 0.5f);
+            bgRt.anchoredPosition = new Vector2(-20f, 0f);
+            bgRt.sizeDelta = new Vector2(350f, 52f);
+
+            var advBtnObj = CreateUiElement("Btn_AdvancePhase", buttonsGroup.transform);
+            var advRt = advBtnObj.GetComponent<RectTransform>();
+            advRt.anchorMin = new Vector2(0f, 0.5f);
+            advRt.anchorMax = new Vector2(0f, 0.5f);
+            advRt.pivot = new Vector2(0f, 0.5f);
+            advRt.anchoredPosition = Vector2.zero;
+            advRt.sizeDelta = new Vector2(190f, 48f);
+            var advBtnImg = advBtnObj.AddComponent<Image>();
+            advBtnImg.color = new Color(0.04f, 0.6f, 0.4f, 1f);
+            var advBtn = advBtnObj.AddComponent<Button>();
+
+            var advBtnTextObj = CreateUiElement("Text_Label", advBtnObj.transform);
+            StretchFull(advBtnTextObj.GetComponent<RectTransform>());
+            var advancePhaseButtonText = CreateTMP(advBtnTextObj, "Avançar para Ataque", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            var missionBtnObj = CreateUiElement("Btn_MyMission", buttonsGroup.transform);
+            var misRt = missionBtnObj.GetComponent<RectTransform>();
+            misRt.anchorMin = new Vector2(1f, 0.5f);
+            misRt.anchorMax = new Vector2(1f, 0.5f);
+            misRt.pivot = new Vector2(1f, 0.5f);
+            misRt.anchoredPosition = Vector2.zero;
+            misRt.sizeDelta = new Vector2(145f, 48f);
+            var misBtnImg = missionBtnObj.AddComponent<Image>();
+            misBtnImg.color = new Color(0.85f, 0.47f, 0.05f, 1f);
+            var myMissionButton = missionBtnObj.AddComponent<Button>();
+
+            var misBtnTextObj = CreateUiElement("Text_Label", missionBtnObj.transform);
+            StretchFull(misBtnTextObj.GetComponent<RectTransform>());
+            CreateTMP(misBtnTextObj, "Minha Missão", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // 1.2 BottomBar (Status)
+            var bottomPanel = CreateUiElement("HUD_BottomPanel", hudRoot.transform);
+            var botRt = bottomPanel.GetComponent<RectTransform>();
+            botRt.anchorMin = new Vector2(0f, 0f);
+            botRt.anchorMax = new Vector2(1f, 0f);
+            botRt.pivot = new Vector2(0.5f, 0f);
+            botRt.anchoredPosition = Vector2.zero;
+            botRt.sizeDelta = new Vector2(0f, 48f);
+            var botImg = bottomPanel.AddComponent<Image>();
+            botImg.color = new Color(0.06f, 0.09f, 0.16f, 0.95f);
+
+            var statusTextObj = CreateUiElement("Text_StatusMessage", bottomPanel.transform);
+            var stRt = statusTextObj.GetComponent<RectTransform>();
+            stRt.anchorMin = new Vector2(0f, 0f);
+            stRt.anchorMax = new Vector2(1f, 1f);
+            stRt.offsetMin = new Vector2(30f, 0f);
+            stRt.offsetMax = new Vector2(-30f, 0f);
+            var statusMessageText = CreateTMP(statusTextObj, "Bem-vindo ao WAR! Posicione seus reforços para iniciar a marcha global.", 15f, new Color(0.95f, 0.97f, 1f, 1f), TextAlignmentOptions.Center);
+
+            // 2. Criação do Modal de Combate (CombatPanelUI)
+            var combatPanelObj = SetupCombatPanelUI(canvasObj.transform, presenter);
+            var combatPanelUI = combatPanelObj.GetComponent<CombatPanelUI>();
+
+            // 3. Criação do Modal de Objetivo Secreto (ObjectiveModalUI)
+            var objectiveModalObj = SetupObjectiveModalUI(canvasObj.transform);
+            var objectiveModalUI = objectiveModalObj.GetComponent<ObjectiveModalUI>();
+
+            // Serializa e conecta tudo no GameHUD
+            var hudSo = new SerializedObject(gameHud);
+            hudSo.FindProperty("presenter").objectReferenceValue = presenter;
+            hudSo.FindProperty("objectiveModal").objectReferenceValue = objectiveModalUI;
+            hudSo.FindProperty("combatPanel").objectReferenceValue = combatPanelUI;
+            hudSo.FindProperty("playerColorBadge").objectReferenceValue = playerColorBadge;
+            hudSo.FindProperty("playerNameText").objectReferenceValue = playerNameText;
+            hudSo.FindProperty("phaseNameText").objectReferenceValue = phaseTitleText;
+            hudSo.FindProperty("phaseInstructionText").objectReferenceValue = phaseInstructionText;
+            hudSo.FindProperty("armiesBadgeRoot").objectReferenceValue = armiesBadge;
+            hudSo.FindProperty("armiesToDeployText").objectReferenceValue = armiesToDeployText;
+            hudSo.FindProperty("advancePhaseButton").objectReferenceValue = advBtn;
+            hudSo.FindProperty("advancePhaseButtonText").objectReferenceValue = advancePhaseButtonText;
+            hudSo.FindProperty("myMissionButton").objectReferenceValue = myMissionButton;
+            hudSo.FindProperty("statusBarRoot").objectReferenceValue = bottomPanel;
+            hudSo.FindProperty("statusMessageText").objectReferenceValue = statusMessageText;
+            hudSo.ApplyModifiedProperties();
+
+            return canvasObj;
+        }
+
+        private static GameObject SetupCombatPanelUI(Transform canvasTransform, GamePresenter? presenter)
+        {
+            var modalRoot = CreateUiElement("Modal_CombatPanel", canvasTransform);
+            StretchFull(modalRoot.GetComponent<RectTransform>());
+
+            var backdropImg = modalRoot.AddComponent<Image>();
+            backdropImg.color = new Color(0f, 0f, 0f, 0.72f);
+
+            var combatUI = modalRoot.AddComponent<CombatPanelUI>();
+
+            // Card Central
+            var cardObj = CreateUiElement("CombatCard", modalRoot.transform);
+            var cardRt = cardObj.GetComponent<RectTransform>();
+            cardRt.anchorMin = new Vector2(0.5f, 0.5f);
+            cardRt.anchorMax = new Vector2(0.5f, 0.5f);
+            cardRt.pivot = new Vector2(0.5f, 0.5f);
+            cardRt.anchoredPosition = Vector2.zero;
+            cardRt.sizeDelta = new Vector2(760f, 580f);
+            var cardImg = cardObj.AddComponent<Image>();
+            cardImg.color = new Color(0.11f, 0.13f, 0.18f, 1f);
+
+            // Título
+            var titleObj = CreateUiElement("Text_HeaderTitle", cardObj.transform);
+            var tRt = titleObj.GetComponent<RectTransform>();
+            tRt.anchorMin = new Vector2(0f, 1f);
+            tRt.anchorMax = new Vector2(1f, 1f);
+            tRt.pivot = new Vector2(0.5f, 1f);
+            tRt.anchoredPosition = new Vector2(0f, -20f);
+            tRt.sizeDelta = new Vector2(0f, 40f);
+            CreateTMP(titleObj, "RELATÓRIO DE COMBATE", 22f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Linha de Territórios (Atacante vs Defensor)
+            var terrRow = CreateUiElement("TerritoriesRow", cardObj.transform);
+            var trRt = terrRow.GetComponent<RectTransform>();
+            trRt.anchorMin = new Vector2(0f, 1f);
+            trRt.anchorMax = new Vector2(1f, 1f);
+            trRt.pivot = new Vector2(0.5f, 1f);
+            trRt.anchoredPosition = new Vector2(0f, -65f);
+            trRt.sizeDelta = new Vector2(700f, 50f);
+
+            // Badge Atacante
+            var atkBadge = CreateUiElement("AttackerBadge", terrRow.transform);
+            var abRt = atkBadge.GetComponent<RectTransform>();
+            abRt.anchorMin = new Vector2(0f, 0.5f);
+            abRt.anchorMax = new Vector2(0f, 0.5f);
+            abRt.pivot = new Vector2(0f, 0.5f);
+            abRt.anchoredPosition = Vector2.zero;
+            abRt.sizeDelta = new Vector2(290f, 48f);
+            var attackerColorBadge = atkBadge.AddComponent<Image>();
+            attackerColorBadge.color = new Color(0.6f, 0.15f, 0.15f, 1f);
+
+            var atkTextObj = CreateUiElement("Text_AttackerName", atkBadge.transform);
+            StretchFull(atkTextObj.GetComponent<RectTransform>());
+            var attackerTerritoryText = CreateTMP(atkTextObj, "⚔ ATACANTE", 15f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // VS Label
+            var vsObj = CreateUiElement("Text_VS", terrRow.transform);
+            var vsRt = vsObj.GetComponent<RectTransform>();
+            vsRt.anchorMin = new Vector2(0.5f, 0.5f);
+            vsRt.anchorMax = new Vector2(0.5f, 0.5f);
+            vsRt.pivot = new Vector2(0.5f, 0.5f);
+            vsRt.anchoredPosition = Vector2.zero;
+            vsRt.sizeDelta = new Vector2(60f, 48f);
+            CreateTMP(vsObj, "VS", 18f, new Color(0.7f, 0.75f, 0.85f, 1f), TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Badge Defensor
+            var defBadge = CreateUiElement("DefenderBadge", terrRow.transform);
+            var dbRt = defBadge.GetComponent<RectTransform>();
+            dbRt.anchorMin = new Vector2(1f, 0.5f);
+            dbRt.anchorMax = new Vector2(1f, 0.5f);
+            dbRt.pivot = new Vector2(1f, 0.5f);
+            dbRt.anchoredPosition = Vector2.zero;
+            dbRt.sizeDelta = new Vector2(290f, 48f);
+            var defenderColorBadge = defBadge.AddComponent<Image>();
+            defenderColorBadge.color = new Color(0.55f, 0.42f, 0.1f, 1f);
+
+            var defTextObj = CreateUiElement("Text_DefenderName", defBadge.transform);
+            StretchFull(defTextObj.GetComponent<RectTransform>());
+            var defenderTerritoryText = CreateTMP(defTextObj, "🛡 DEFENSOR", 15f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Seção de Dados (Attacker & Defender)
+            var diceSection = CreateUiElement("DiceSection", cardObj.transform);
+            var dsRt = diceSection.GetComponent<RectTransform>();
+            dsRt.anchorMin = new Vector2(0.5f, 0.5f);
+            dsRt.anchorMax = new Vector2(0.5f, 0.5f);
+            dsRt.pivot = new Vector2(0.5f, 0.5f);
+            dsRt.anchoredPosition = new Vector2(0f, 95f);
+            dsRt.sizeDelta = new Vector2(700f, 85f);
+
+            // Dados do Atacante (3 caixas vermelhas)
+            var atkDiceBoxes = new GameObject[3];
+            var atkDiceTexts = new TMP_Text[3];
+            for (var i = 0; i < 3; i++)
+            {
+                var box = CreateUiElement($"Die_Atk_{i + 1}", diceSection.transform);
+                var bRt = box.GetComponent<RectTransform>();
+                bRt.anchorMin = new Vector2(0f, 0.5f);
+                bRt.anchorMax = new Vector2(0f, 0.5f);
+                bRt.pivot = new Vector2(0.5f, 0.5f);
+                bRt.anchoredPosition = new Vector2(50f + i * 85f, 0f);
+                bRt.sizeDelta = new Vector2(65f, 65f);
+                var bImg = box.AddComponent<Image>();
+                bImg.color = new Color(0.86f, 0.15f, 0.15f, 1f);
+
+                var txtObj = CreateUiElement("Text_DieVal", box.transform);
+                StretchFull(txtObj.GetComponent<RectTransform>());
+                var dTxt = CreateTMP(txtObj, "6", 32f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+                atkDiceBoxes[i] = box;
+                atkDiceTexts[i] = dTxt;
+            }
+
+            // Dados do Defensor (3 caixas amarelas)
+            var defDiceBoxes = new GameObject[3];
+            var defDiceTexts = new TMP_Text[3];
+            for (var i = 0; i < 3; i++)
+            {
+                var box = CreateUiElement($"Die_Def_{i + 1}", diceSection.transform);
+                var bRt = box.GetComponent<RectTransform>();
+                bRt.anchorMin = new Vector2(1f, 0.5f);
+                bRt.anchorMax = new Vector2(1f, 0.5f);
+                bRt.pivot = new Vector2(0.5f, 0.5f);
+                bRt.anchoredPosition = new Vector2(-220f + i * 85f, 0f);
+                bRt.sizeDelta = new Vector2(65f, 65f);
+                var bImg = box.AddComponent<Image>();
+                bImg.color = new Color(0.92f, 0.72f, 0.1f, 1f);
+
+                var txtObj = CreateUiElement("Text_DieVal", box.transform);
+                StretchFull(txtObj.GetComponent<RectTransform>());
+                var dTxt = CreateTMP(txtObj, "5", 32f, new Color(0.1f, 0.1f, 0.15f, 1f), TextAlignmentOptions.Center, FontStyles.Bold);
+
+                defDiceBoxes[i] = box;
+                defDiceTexts[i] = dTxt;
+            }
+
+            // Comparações Par a Par Box
+            var compBox = CreateUiElement("ComparisonsPanel", cardObj.transform);
+            var cpRt = compBox.GetComponent<RectTransform>();
+            cpRt.anchorMin = new Vector2(0.5f, 0.5f);
+            cpRt.anchorMax = new Vector2(0.5f, 0.5f);
+            cpRt.pivot = new Vector2(0.5f, 0.5f);
+            cpRt.anchoredPosition = new Vector2(0f, -15f);
+            cpRt.sizeDelta = new Vector2(680f, 105f);
+            var cpImg = compBox.AddComponent<Image>();
+            cpImg.color = new Color(0.08f, 0.1f, 0.14f, 0.95f);
+
+            var compTextObj = CreateUiElement("Text_Comparisons", compBox.transform);
+            var ctRt = compTextObj.GetComponent<RectTransform>();
+            ctRt.anchorMin = new Vector2(0f, 0f);
+            ctRt.anchorMax = new Vector2(1f, 1f);
+            ctRt.offsetMin = new Vector2(15f, 8f);
+            ctRt.offsetMax = new Vector2(-15f, -8f);
+            var comparisonsText = CreateTMP(compTextObj, "Dado 1: [6] vs [5] ➜ Vitória do Atacante\nDado 2: [4] vs [4] ➜ Vitória da Defesa (Empate favorece a defesa)", 14f, new Color(0.9f, 0.93f, 0.98f, 1f), TextAlignmentOptions.Left);
+
+            // Resumo de Baixas
+            var lossesObj = CreateUiElement("Text_LossesSummary", cardObj.transform);
+            var lRt = lossesObj.GetComponent<RectTransform>();
+            lRt.anchorMin = new Vector2(0.5f, 0.5f);
+            lRt.anchorMax = new Vector2(0.5f, 0.5f);
+            lRt.pivot = new Vector2(0.5f, 0.5f);
+            lRt.anchoredPosition = new Vector2(0f, -95f);
+            lRt.sizeDelta = new Vector2(680f, 32f);
+            var lossesSummaryText = CreateTMP(lossesObj, "Baixas: Atacante perdeu 1 | Defensor perdeu 1", 16f, new Color(1f, 0.45f, 0.45f, 1f), TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Banner de Conquista
+            var bannerObj = CreateUiElement("ConquestBanner", cardObj.transform);
+            var bnRt = bannerObj.GetComponent<RectTransform>();
+            bnRt.anchorMin = new Vector2(0.5f, 0.5f);
+            bnRt.anchorMax = new Vector2(0.5f, 0.5f);
+            bnRt.pivot = new Vector2(0.5f, 0.5f);
+            bnRt.anchoredPosition = new Vector2(0f, -145f);
+            bnRt.sizeDelta = new Vector2(680f, 44f);
+            var bnImg = bannerObj.AddComponent<Image>();
+            bnImg.color = new Color(0.09f, 0.64f, 0.29f, 1f);
+
+            var bannerTextObj = CreateUiElement("Text_ConquestLabel", bannerObj.transform);
+            StretchFull(bannerTextObj.GetComponent<RectTransform>());
+            var conquestBannerText = CreateTMP(bannerTextObj, "★ TERRITÓRIO CONQUISTADO! ★", 16f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Botão Fechar / Continuar
+            var closeBtnObj = CreateUiElement("Btn_CloseCombat", cardObj.transform);
+            var cbRt = closeBtnObj.GetComponent<RectTransform>();
+            cbRt.anchorMin = new Vector2(0.5f, 0f);
+            cbRt.anchorMax = new Vector2(0.5f, 0f);
+            cbRt.pivot = new Vector2(0.5f, 0f);
+            cbRt.anchoredPosition = new Vector2(0f, 25f);
+            cbRt.sizeDelta = new Vector2(220f, 48f);
+            var cbImg = closeBtnObj.AddComponent<Image>();
+            cbImg.color = new Color(0.15f, 0.45f, 0.85f, 1f);
+            var closeBtn = closeBtnObj.AddComponent<Button>();
+
+            var cbTxtObj = CreateUiElement("Text_Label", closeBtnObj.transform);
+            StretchFull(cbTxtObj.GetComponent<RectTransform>());
+            CreateTMP(cbTxtObj, "Continuar", 15f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Serializa campos no CombatPanelUI
+            var cSo = new SerializedObject(combatUI);
+            cSo.FindProperty("modalRoot").objectReferenceValue = modalRoot;
+            cSo.FindProperty("attackerTerritoryText").objectReferenceValue = attackerTerritoryText;
+            cSo.FindProperty("attackerColorBadge").objectReferenceValue = attackerColorBadge;
+            cSo.FindProperty("defenderTerritoryText").objectReferenceValue = defenderTerritoryText;
+            cSo.FindProperty("defenderColorBadge").objectReferenceValue = defenderColorBadge;
+            cSo.FindProperty("comparisonsText").objectReferenceValue = comparisonsText;
+            cSo.FindProperty("lossesSummaryText").objectReferenceValue = lossesSummaryText;
+            cSo.FindProperty("conquestBanner").objectReferenceValue = bannerObj;
+            cSo.FindProperty("conquestBannerText").objectReferenceValue = conquestBannerText;
+            cSo.FindProperty("closeButton").objectReferenceValue = closeBtn;
+            cSo.FindProperty("presenter").objectReferenceValue = presenter;
+
+            var atkBoxesProp = cSo.FindProperty("attackerDiceBoxes");
+            atkBoxesProp.arraySize = 3;
+            for (var i = 0; i < 3; i++) atkBoxesProp.GetArrayElementAtIndex(i).objectReferenceValue = atkDiceBoxes[i];
+
+            var atkTextsProp = cSo.FindProperty("attackerDiceTexts");
+            atkTextsProp.arraySize = 3;
+            for (var i = 0; i < 3; i++) atkTextsProp.GetArrayElementAtIndex(i).objectReferenceValue = atkDiceTexts[i];
+
+            var defBoxesProp = cSo.FindProperty("defenderDiceBoxes");
+            defBoxesProp.arraySize = 3;
+            for (var i = 0; i < 3; i++) defBoxesProp.GetArrayElementAtIndex(i).objectReferenceValue = defDiceBoxes[i];
+
+            var defTextsProp = cSo.FindProperty("defenderDiceTexts");
+            defTextsProp.arraySize = 3;
+            for (var i = 0; i < 3; i++) defTextsProp.GetArrayElementAtIndex(i).objectReferenceValue = defDiceTexts[i];
+
+            cSo.ApplyModifiedProperties();
+
+            // Começa fechado
+            modalRoot.SetActive(false);
+
+            return modalRoot;
+        }
+
+        private static GameObject SetupObjectiveModalUI(Transform canvasTransform)
+        {
+            var modalRoot = CreateUiElement("Modal_ObjectivePanel", canvasTransform);
+            StretchFull(modalRoot.GetComponent<RectTransform>());
+
+            var backdropImg = modalRoot.AddComponent<Image>();
+            backdropImg.color = new Color(0f, 0f, 0f, 0.72f);
+
+            var objUI = modalRoot.AddComponent<ObjectiveModalUI>();
+
+            // Card Central
+            var cardObj = CreateUiElement("ObjectiveCard", modalRoot.transform);
+            var cardRt = cardObj.GetComponent<RectTransform>();
+            cardRt.anchorMin = new Vector2(0.5f, 0.5f);
+            cardRt.anchorMax = new Vector2(0.5f, 0.5f);
+            cardRt.pivot = new Vector2(0.5f, 0.5f);
+            cardRt.anchoredPosition = Vector2.zero;
+            cardRt.sizeDelta = new Vector2(680f, 500f);
+            var cardImg = cardObj.AddComponent<Image>();
+            cardImg.color = new Color(0.1f, 0.13f, 0.18f, 1f);
+
+            // Cabeçalho
+            var headerObj = CreateUiElement("Text_HeaderTitle", cardObj.transform);
+            var hRt = headerObj.GetComponent<RectTransform>();
+            hRt.anchorMin = new Vector2(0f, 1f);
+            hRt.anchorMax = new Vector2(1f, 1f);
+            hRt.pivot = new Vector2(0.5f, 1f);
+            hRt.anchoredPosition = new Vector2(0f, -20f);
+            hRt.sizeDelta = new Vector2(0f, 35f);
+            CreateTMP(headerObj, "ORDEM SECRETA DO ESTADO-MAIOR", 20f, new Color(0.96f, 0.62f, 0.12f, 1f), TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Identificador do Jogador
+            var playerInfo = CreateUiElement("PlayerInfoRow", cardObj.transform);
+            var piRt = playerInfo.GetComponent<RectTransform>();
+            piRt.anchorMin = new Vector2(0.5f, 1f);
+            piRt.anchorMax = new Vector2(0.5f, 1f);
+            piRt.pivot = new Vector2(0.5f, 1f);
+            piRt.anchoredPosition = new Vector2(0f, -60f);
+            piRt.sizeDelta = new Vector2(300f, 32f);
+
+            var dotObj = CreateUiElement("Dot", playerInfo.transform);
+            var dRt = dotObj.GetComponent<RectTransform>();
+            dRt.anchorMin = new Vector2(0f, 0.5f);
+            dRt.anchorMax = new Vector2(0f, 0.5f);
+            dRt.pivot = new Vector2(0.5f, 0.5f);
+            dRt.anchoredPosition = new Vector2(16f, 0f);
+            dRt.sizeDelta = new Vector2(18f, 18f);
+            var playerColorBadge = dotObj.AddComponent<Image>();
+            playerColorBadge.color = new Color(0.88f, 0.22f, 0.22f, 1f);
+
+            var pnObj = CreateUiElement("Text_PlayerName", playerInfo.transform);
+            var pnRt = pnObj.GetComponent<RectTransform>();
+            pnRt.anchorMin = new Vector2(0f, 0f);
+            pnRt.anchorMax = new Vector2(1f, 1f);
+            pnRt.offsetMin = new Vector2(35f, 0f);
+            pnRt.offsetMax = Vector2.zero;
+            var playerNameText = CreateTMP(pnObj, "Missão de: Exército Vermelho", 15f, new Color(0.75f, 0.8f, 0.88f, 1f), TextAlignmentOptions.Left);
+
+            // Título da Missão
+            var titleObj = CreateUiElement("Text_MissionTitle", cardObj.transform);
+            var tRt = titleObj.GetComponent<RectTransform>();
+            tRt.anchorMin = new Vector2(0.5f, 1f);
+            tRt.anchorMax = new Vector2(0.5f, 1f);
+            tRt.pivot = new Vector2(0.5f, 1f);
+            tRt.anchoredPosition = new Vector2(0f, -100f);
+            tRt.sizeDelta = new Vector2(620f, 40f);
+            var titleText = CreateTMP(titleObj, "Conquistar 24 Territórios", 20f, new Color(0.22f, 0.74f, 0.97f, 1f), TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Descrição da Missão
+            var descPanel = CreateUiElement("DescPanel", cardObj.transform);
+            var dpRt = descPanel.GetComponent<RectTransform>();
+            dpRt.anchorMin = new Vector2(0.5f, 0.5f);
+            dpRt.anchorMax = new Vector2(0.5f, 0.5f);
+            dpRt.pivot = new Vector2(0.5f, 0.5f);
+            dpRt.anchoredPosition = new Vector2(0f, 40f);
+            dpRt.sizeDelta = new Vector2(620f, 110f);
+            var dpImg = descPanel.AddComponent<Image>();
+            dpImg.color = new Color(0.07f, 0.09f, 0.13f, 0.95f);
+
+            var descTextObj = CreateUiElement("Text_Desc", descPanel.transform);
+            var dtRt = descTextObj.GetComponent<RectTransform>();
+            dtRt.anchorMin = new Vector2(0f, 0f);
+            dtRt.anchorMax = new Vector2(1f, 1f);
+            dtRt.offsetMin = new Vector2(20f, 10f);
+            dtRt.offsetMax = new Vector2(-20f, -10f);
+            var descriptionText = CreateTMP(descTextObj, "Conquiste 24 territórios à sua escolha pelo mundo para consagrar a vitória militar sobre todos os outros generais.", 15f, new Color(0.92f, 0.94f, 0.97f, 1f), TextAlignmentOptions.Left);
+
+            // Painel de Progresso
+            var progPanel = CreateUiElement("ProgressPanel", cardObj.transform);
+            var ppRt = progPanel.GetComponent<RectTransform>();
+            ppRt.anchorMin = new Vector2(0.5f, 0.5f);
+            ppRt.anchorMax = new Vector2(0.5f, 0.5f);
+            ppRt.pivot = new Vector2(0.5f, 0.5f);
+            ppRt.anchoredPosition = new Vector2(0f, -75f);
+            ppRt.sizeDelta = new Vector2(620f, 95f);
+            var ppImg = progPanel.AddComponent<Image>();
+            ppImg.color = new Color(0.07f, 0.09f, 0.13f, 0.95f);
+
+            var progTextObj = CreateUiElement("Text_Progress", progPanel.transform);
+            var prRt = progTextObj.GetComponent<RectTransform>();
+            prRt.anchorMin = new Vector2(0f, 0f);
+            prRt.anchorMax = new Vector2(1f, 1f);
+            prRt.offsetMin = new Vector2(20f, 10f);
+            prRt.offsetMax = new Vector2(-20f, -10f);
+            var progressText = CreateTMP(progTextObj, "Progresso de Territórios:\n• Dominados: 12 / 24 (50%)", 14f, new Color(0.2f, 0.83f, 0.6f, 1f), TextAlignmentOptions.Left);
+
+            // Botão Fechar
+            var closeBtnObj = CreateUiElement("Btn_CloseObjective", cardObj.transform);
+            var cbRt = closeBtnObj.GetComponent<RectTransform>();
+            cbRt.anchorMin = new Vector2(0.5f, 0f);
+            cbRt.anchorMax = new Vector2(0.5f, 0f);
+            cbRt.pivot = new Vector2(0.5f, 0f);
+            cbRt.anchoredPosition = new Vector2(0f, 22f);
+            cbRt.sizeDelta = new Vector2(180f, 44f);
+            var cbImg = closeBtnObj.AddComponent<Image>();
+            cbImg.color = new Color(0.28f, 0.33f, 0.41f, 1f);
+            var closeBtn = closeBtnObj.AddComponent<Button>();
+
+            var cbTxtObj = CreateUiElement("Text_Label", closeBtnObj.transform);
+            StretchFull(cbTxtObj.GetComponent<RectTransform>());
+            CreateTMP(cbTxtObj, "Fechar Missão", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Serializa campos no ObjectiveModalUI
+            var oSo = new SerializedObject(objUI);
+            oSo.FindProperty("modalRoot").objectReferenceValue = modalRoot;
+            oSo.FindProperty("titleText").objectReferenceValue = titleText;
+            oSo.FindProperty("descriptionText").objectReferenceValue = descriptionText;
+            oSo.FindProperty("playerNameText").objectReferenceValue = playerNameText;
+            oSo.FindProperty("progressText").objectReferenceValue = progressText;
+            oSo.FindProperty("playerColorBadge").objectReferenceValue = playerColorBadge;
+            oSo.FindProperty("closeButton").objectReferenceValue = closeBtn;
+            oSo.ApplyModifiedProperties();
+
+            // Começa fechado
+            modalRoot.SetActive(false);
+
+            return modalRoot;
+        }
+
+        private static GameObject CreateUiElement(string name, Transform parent)
+        {
+            var obj = new GameObject(name, typeof(RectTransform));
+            obj.transform.SetParent(parent, false);
+            return obj;
+        }
+
+        private static void StretchFull(RectTransform rt)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+        }
+
+        private static TextMeshProUGUI CreateTMP(
+            GameObject obj,
+            string initialText,
+            float fontSize,
+            Color color,
+            TextAlignmentOptions alignment = TextAlignmentOptions.Center,
+            FontStyles fontStyle = FontStyles.Normal)
+        {
+            var tmp = obj.AddComponent<TextMeshProUGUI>();
+            tmp.text = initialText;
+            tmp.fontSize = fontSize;
+            tmp.color = color;
+            tmp.alignment = alignment;
+            tmp.fontStyle = fontStyle;
+            return tmp;
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (Object.FindFirstObjectByType<EventSystem>() != null) return;
+
+            var esObj = new GameObject("EventSystem");
+            esObj.AddComponent<EventSystem>();
+            esObj.AddComponent<StandaloneInputModule>();
+        }
+        #endregion
     }
 }
 
