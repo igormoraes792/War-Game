@@ -38,11 +38,11 @@ namespace War.Core.Game
                 throw new InvalidOperationException($"Partida já foi iniciada. Fase atual: {State.CurrentPhase}");
             }
 
-            // Garante que todos os jogadores tenham objetivos secretos
-            var needObjectives = State.Players.Any(p => p.SecretObjective == null);
-            if (needObjectives)
+            // Garante que jogadores sem objetivo recebam seus objetivos secretos
+            var playersNeedingObjectives = State.Players.Where(p => p.SecretObjective == null).ToList();
+            if (playersNeedingObjectives.Count > 0)
             {
-                ClassicObjectives.DistributeObjectives(State.Players, rng);
+                ClassicObjectives.DistributeObjectives(playersNeedingObjectives, rng);
             }
 
             State.CurrentPlayerIndex = 0;
