@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using War.Core.Models;
+using War.Core.Game;
 using War.Presentation.Game;
 
 namespace War.Presentation.UI
