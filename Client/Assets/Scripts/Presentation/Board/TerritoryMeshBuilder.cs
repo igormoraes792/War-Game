@@ -14,6 +14,7 @@ namespace War.Presentation.Board
     public static class TerritoryMeshBuilder
     {
         public const float DefaultExtrusionHeight = 0.28f;
+        public const float PolygonInsetAmount = 0.065f;
 
         private static readonly Dictionary<string, Vector2[]> TerritoryPolygons = new(StringComparer.OrdinalIgnoreCase);
 
@@ -23,11 +24,13 @@ namespace War.Presentation.Board
         }
 
         /// <summary>
-        /// Gera uma malha 3D completa (topo, fundo e paredes laterais) para o território especificado.
+        /// Gera uma malha 3D completa (topo, fundo e paredes laterais) para o território especificado,
+        /// aplicando um sutil recuo (inset) proporcional para eliminar Z-fighting entre países vizinhos.
         /// </summary>
         public static Mesh CreateTerritoryMesh(string territoryId, float height = DefaultExtrusionHeight)
         {
-            var poly = GetTerritoryPolygon(territoryId);
+            var rawPoly = GetTerritoryPolygon(territoryId);
+            var poly = InsetPolygon(rawPoly, PolygonInsetAmount);
             int n = poly.Length;
 
             var mesh = new Mesh
@@ -228,6 +231,38 @@ namespace War.Presentation.Board
             }
 
             return new Vector2(cx / (6f * signedArea), cy / (6f * signedArea));
+        }
+
+        /// <summary>
+        /// Aplica um pequeno recuo/inset em relação ao centroide do polígono.
+        /// Cria folgas limpas entre peças de quebra-cabeça vizinhas, eliminando Z-fighting nas arestas compartilhadas.
+        /// </summary>
+        public static Vector2[] InsetPolygon(Vector2[] poly, float insetAmount)
+        {
+            if (poly == null || poly.Length == 0) return Array.Empty<Vector2>();
+            if (insetAmount <= 0.0001f) return poly;
+
+            Vector2 centroid = GetPolygonCentroid(poly);
+            var insetPoly = new Vector2[poly.Length];
+
+            for (int i = 0; i < poly.Length; i++)
+            {
+                Vector2 diff = poly[i] - centroid;
+                float dist = diff.magnitude;
+
+                if (dist > 0.05f)
+                {
+                    // Limita o recuo a no máximo 14% da distância ao centro para não colapsar pontas estreitas
+                    float effectiveInset = Mathf.Min(insetAmount, dist * 0.14f);
+                    insetPoly[i] = poly[i] - (diff / dist) * effectiveInset;
+                }
+                else
+                {
+                    insetPoly[i] = poly[i];
+                }
+            }
+
+            return insetPoly;
         }
 
         /// <summary>

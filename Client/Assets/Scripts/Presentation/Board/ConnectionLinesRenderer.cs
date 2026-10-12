@@ -134,13 +134,12 @@ namespace War.Presentation.Board
 
             var startPoint = new Vector3(posA.x, linesHeightY, posA.z);
             var endPoint = new Vector3(posB.x, linesHeightY, posB.z);
+            float distance = Vector3.Distance(startPoint, endPoint);
 
             if (isSea)
             {
                 // Rota marítima com leve arco estético
                 lr.textureMode = LineTextureMode.Tile;
-                float distance = Vector3.Distance(startPoint, endPoint);
-                lr.materials[0].mainTextureScale = new Vector2(distance / seaDottedTileSize, 1f);
 
                 var midPoint = (startPoint + endPoint) * 0.5f;
                 // Leve arqueamento suave para a lateral ou norte

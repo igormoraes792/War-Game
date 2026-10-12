@@ -98,10 +98,17 @@ namespace War.Presentation.Editor
                 boardViewSo.ApplyModifiedProperties();
             }
 
-            // 4.1 Criação dos Marcadores e Badges dos Continentes com Bônus Táticos
+            // 4.1 Criação dos Marcadores e Badges dos Continentes com Bônus Táticos e Linhas Indicadoras
             var continentsObj = new GameObject("Indicadores_Continentes");
             continentsObj.transform.SetParent(boardObj.transform, false);
             var continentRenderer = continentsObj.AddComponent<ContinentIndicatorsRenderer>();
+            var continentSo = new SerializedObject(continentRenderer);
+            var bvProp = continentSo.FindProperty("boardView");
+            if (bvProp != null)
+            {
+                bvProp.objectReferenceValue = boardView;
+                continentSo.ApplyModifiedProperties();
+            }
             continentRenderer.RebuildIndicators();
 
             // 5. Criação da Câmera Tática
@@ -178,6 +185,8 @@ namespace War.Presentation.Editor
             if (renderer != null)
             {
                 renderer.sharedMaterial = mat;
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.receiveShadows = true;
             }
 
             // Moldura elevada com acabamento biselado
@@ -209,7 +218,12 @@ namespace War.Presentation.Editor
             rim.transform.localScale = localScale;
 
             var r = rim.GetComponent<MeshRenderer>();
-            if (r != null) r.sharedMaterial = mat;
+            if (r != null)
+            {
+                r.sharedMaterial = mat;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.receiveShadows = true;
+            }
         }
 
         private static GameObject CreateBoardGraphicSurface(Transform parent)
@@ -221,6 +235,13 @@ namespace War.Presentation.Editor
             surface.transform.localPosition = new Vector3(0f, 0.02f, 0f);
             surface.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             surface.transform.localScale = new Vector3(52f, 32f, 1f);
+
+            var surfRenderer = surface.GetComponent<MeshRenderer>();
+            if (surfRenderer != null)
+            {
+                surfRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                surfRenderer.receiveShadows = true;
+            }
 
             // Remove o colisor da superfície para que raycasts e cliques atinjam os territórios sem obstrução
             var col = surface.GetComponent<Collider>();
@@ -248,6 +269,7 @@ namespace War.Presentation.Editor
                 color = new Color(0.72f, 0.72f, 0.76f, 1f),
                 enableInstancing = true
             };
+            defaultTerritoryMat.EnableKeyword("_EMISSION");
             if (defaultTerritoryMat.HasProperty("_Smoothness"))
             {
                 defaultTerritoryMat.SetFloat("_Smoothness", 0.55f);
@@ -263,14 +285,24 @@ namespace War.Presentation.Editor
             if (brassMat.HasProperty("_Smoothness")) brassMat.SetFloat("_Smoothness", 0.65f);
             if (brassMat.HasProperty("_Metallic")) brassMat.SetFloat("_Metallic", 0.75f);
 
-            // Material do badge do pin tático
+            // Material do badge do pin tático (disco escuro de alto contraste com aro)
             var badgeMat = new Material(defaultShader)
             {
                 name = "Pin_Badge_Mat",
-                color = new Color(0.12f, 0.15f, 0.22f, 1f),
+                color = new Color(0.10f, 0.13f, 0.18f, 1f),
                 enableInstancing = true
             };
+            badgeMat.EnableKeyword("_EMISSION");
             if (badgeMat.HasProperty("_Smoothness")) badgeMat.SetFloat("_Smoothness", 0.5f);
+
+            // Material da plaqueta de identificação do território
+            var plaqueMat = new Material(defaultShader)
+            {
+                name = "Territory_Plaque_Mat",
+                color = new Color(0.06f, 0.08f, 0.12f, 0.95f),
+                enableInstancing = true
+            };
+            if (plaqueMat.HasProperty("_Smoothness")) plaqueMat.SetFloat("_Smoothness", 0.45f);
 
             foreach (var def in defs)
             {
@@ -302,7 +334,7 @@ namespace War.Presentation.Editor
                 var poly = TerritoryMeshBuilder.GetTerritoryPolygon(def.Id);
                 var centroid = TerritoryMeshBuilder.GetPolygonCentroid(poly);
 
-                // 3. Estandarte / Pin Tático Elegante
+                // 3. Estandarte / Pin Tático Elegante de Alto Contraste
                 var pinRoot = new GameObject("Pin_TacticalRoot");
                 pinRoot.transform.SetParent(terrObj.transform, false);
                 pinRoot.transform.localPosition = new Vector3(centroid.x, TerritoryMeshBuilder.DefaultExtrusionHeight, centroid.y);
@@ -312,58 +344,81 @@ namespace War.Presentation.Editor
                 pedestal.name = "Pin_Pedestal";
                 pedestal.transform.SetParent(pinRoot.transform, false);
                 pedestal.transform.localPosition = new Vector3(0f, 0.04f, 0f);
-                pedestal.transform.localScale = new Vector3(0.55f, 0.04f, 0.55f);
+                pedestal.transform.localScale = new Vector3(0.65f, 0.04f, 0.65f);
                 var pedRend = pedestal.GetComponent<MeshRenderer>();
-                if (pedRend != null) pedRend.sharedMaterial = brassMat;
+                if (pedRend != null)
+                {
+                    pedRend.sharedMaterial = brassMat;
+                    pedRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
                 var pedCol = pedestal.GetComponent<Collider>();
                 if (pedCol != null) Object.DestroyImmediate(pedCol);
 
-                // Badge / Cabeça do pin
+                // Badge / Cabeça do pin (disco circular ampliado para excelente visibilidade)
                 var badge = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                 badge.name = "Pin_Badge";
                 badge.transform.SetParent(pinRoot.transform, false);
-                badge.transform.localPosition = new Vector3(0f, 0.10f, 0f);
-                badge.transform.localScale = new Vector3(0.68f, 0.03f, 0.68f);
+                badge.transform.localPosition = new Vector3(0f, 0.12f, 0f);
+                badge.transform.localScale = new Vector3(0.92f, 0.04f, 0.92f);
                 var badgeRend = badge.GetComponent<MeshRenderer>();
-                if (badgeRend != null) badgeRend.sharedMaterial = badgeMat;
+                if (badgeRend != null)
+                {
+                    badgeRend.sharedMaterial = badgeMat;
+                    badgeRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
                 var badgeCol = badge.GetComponent<Collider>();
                 if (badgeCol != null) Object.DestroyImmediate(badgeCol);
 
                 // Ponto de spawn de tropas
                 var spawnPoint = new GameObject("ArmySpawnPoint");
                 spawnPoint.transform.SetParent(pinRoot.transform, false);
-                spawnPoint.transform.localPosition = new Vector3(0f, 0.16f, 0f);
+                spawnPoint.transform.localPosition = new Vector3(0f, 0.20f, 0f);
 
-                // Texto do contador de tropas no pin
+                // Texto do contador de tropas no pin (nítido, com fonte ampliada e alto contraste)
                 var textObj = new GameObject("Text_ArmyCount");
                 textObj.transform.SetParent(pinRoot.transform, false);
-                textObj.transform.localPosition = new Vector3(0f, 0.13f, 0f);
+                textObj.transform.localPosition = new Vector3(0f, 0.17f, 0f);
                 textObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                textObj.transform.localScale = Vector3.one * 0.12f;
+                textObj.transform.localScale = Vector3.one * 0.16f;
 
                 var textMesh = textObj.AddComponent<TextMesh>();
                 textMesh.text = "1";
-                textMesh.fontSize = 64;
-                textMesh.characterSize = 0.20f;
+                textMesh.fontSize = 72;
+                textMesh.characterSize = 0.26f;
                 textMesh.anchor = TextAnchor.MiddleCenter;
                 textMesh.alignment = TextAlignment.Center;
                 textMesh.color = Color.white;
                 textMesh.fontStyle = FontStyle.Bold;
 
-                // Rótulo discreto do nome do país
+                // Plaqueta de fundo para o nome do país (garante legibilidade máxima em qualquer cor de território)
+                var plaqueObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                plaqueObj.name = "Plaque_Background";
+                plaqueObj.transform.SetParent(pinRoot.transform, false);
+                plaqueObj.transform.localPosition = new Vector3(0f, 0.04f, -1.20f);
+                plaqueObj.transform.localScale = new Vector3(2.5f, 0.025f, 0.60f);
+                var plaqueRend = plaqueObj.GetComponent<MeshRenderer>();
+                if (plaqueRend != null)
+                {
+                    plaqueRend.sharedMaterial = plaqueMat;
+                    plaqueRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
+                var plaqueCol = plaqueObj.GetComponent<Collider>();
+                if (plaqueCol != null) Object.DestroyImmediate(plaqueCol);
+
+                // Texto do nome do país nítido e proeminente sobre a plaqueta
                 var nameObj = new GameObject("Text_Name");
                 nameObj.transform.SetParent(pinRoot.transform, false);
-                nameObj.transform.localPosition = new Vector3(0f, 0.02f, -1.05f);
+                nameObj.transform.localPosition = new Vector3(0f, 0.08f, -1.20f);
                 nameObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                nameObj.transform.localScale = Vector3.one * 0.10f;
+                nameObj.transform.localScale = Vector3.one * 0.14f;
 
                 var nameTextMesh = nameObj.AddComponent<TextMesh>();
                 nameTextMesh.text = def.Name;
-                nameTextMesh.fontSize = 38;
-                nameTextMesh.characterSize = 0.17f;
+                nameTextMesh.fontSize = 44;
+                nameTextMesh.characterSize = 0.20f;
                 nameTextMesh.anchor = TextAnchor.MiddleCenter;
                 nameTextMesh.alignment = TextAlignment.Center;
-                nameTextMesh.color = new Color(0.92f, 0.94f, 0.98f, 0.92f);
+                nameTextMesh.color = new Color(0.98f, 0.98f, 1.0f, 1.0f);
                 nameTextMesh.fontStyle = FontStyle.Bold;
 
                 // Serialização dos campos no TerritoryView

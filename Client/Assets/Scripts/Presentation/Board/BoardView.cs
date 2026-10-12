@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using War.Core.Data;
 using War.Core.Game;
 using War.Core.Models;
 
@@ -227,6 +228,48 @@ namespace War.Presentation.Board
                         view.SetDimmed(true);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Destaca visualmente todos os territórios pertencentes a um continente específico.
+        /// </summary>
+        public void HighlightContinent(ContinentType continent, bool highlight)
+        {
+            var territoryDefs = ClassicMapData.GetTerritoriesByContinent(continent);
+            var ids = new List<string>();
+            foreach (var def in territoryDefs)
+            {
+                ids.Add(def.Id);
+            }
+            HighlightTerritories(ids, highlight);
+        }
+
+        /// <summary>
+        /// Destaca visualmente todos os territórios de um continente pelo nome padronizado.
+        /// </summary>
+        public void HighlightContinent(string continentName, bool highlight)
+        {
+            if (string.IsNullOrWhiteSpace(continentName)) return;
+
+            string normalized = continentName.Trim().ToLowerInvariant()
+                .Replace("á", "a").Replace("é", "e").Replace("í", "i").Replace("ó", "o").Replace("ú", "u")
+                .Replace(" ", "_");
+
+            ContinentType? targetContinent = normalized switch
+            {
+                "america_do_norte" or "north_america" => ContinentType.NorthAmerica,
+                "america_do_sul" or "south_america" => ContinentType.SouthAmerica,
+                "europa" or "europe" => ContinentType.Europe,
+                "africa" => ContinentType.Africa,
+                "asia" => ContinentType.Asia,
+                "oceania" => ContinentType.Oceania,
+                _ => null
+            };
+
+            if (targetContinent.HasValue)
+            {
+                HighlightContinent(targetContinent.Value, highlight);
             }
         }
 

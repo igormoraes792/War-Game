@@ -53,8 +53,8 @@ namespace War.Presentation.Board
         private bool _isSelected;
         private bool _isDimmed;
         private int _currentArmyCount = 1;
-        private Material? _runtimeMaterial;
-        private Material? _runtimePinMaterial;
+        private MaterialPropertyBlock? _propertyBlock;
+        private MaterialPropertyBlock? _pinPropertyBlock;
 
         // Animação 3D física de elevação e pin
         private Vector3 _initialLocalPosition;
@@ -116,33 +116,15 @@ namespace War.Presentation.Board
                 armyCountText = GetComponentInChildren<TMP_Text>();
             }
 
-            // Garante cópia de material com shader válido
-            if (territoryRenderer != null)
+            // Garante que o material compartilhado tenha GPU Instancing ativo
+            if (territoryRenderer != null && territoryRenderer.sharedMaterial != null)
             {
-                var mat = territoryRenderer.material;
-                if (mat.shader == null || mat.shader.name == "Hidden/InternalErrorShader")
-                {
-                    mat.shader = Shader.Find("Universal Render Pipeline/Lit") 
-                                 ?? Shader.Find("Standard") 
-                                 ?? Shader.Find("Diffuse");
-                }
-
-                if (mat.HasProperty(SmoothnessProp))
-                {
-                    mat.SetFloat(SmoothnessProp, 0.55f);
-                }
-
-                mat.enableInstancing = true;
-                _runtimeMaterial = mat;
+                territoryRenderer.sharedMaterial.enableInstancing = true;
             }
 
-            if (pinBadgeRenderer != null)
+            if (pinBadgeRenderer != null && pinBadgeRenderer.sharedMaterial != null)
             {
-                _runtimePinMaterial = pinBadgeRenderer.material;
-                if (_runtimePinMaterial != null)
-                {
-                    _runtimePinMaterial.enableInstancing = true;
-                }
+                pinBadgeRenderer.sharedMaterial.enableInstancing = true;
             }
 
             _initialLocalPosition = transform.localPosition;
@@ -176,21 +158,6 @@ namespace War.Presentation.Board
                     _currentPinScale = Mathf.Lerp(_currentPinScale, targetPinScale, Time.deltaTime * 14f);
                     tacticalPinRoot.localScale = _initialPinScale * _currentPinScale;
                 }
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (_runtimeMaterial != null)
-            {
-                Destroy(_runtimeMaterial);
-                _runtimeMaterial = null;
-            }
-
-            if (_runtimePinMaterial != null)
-            {
-                Destroy(_runtimePinMaterial);
-                _runtimePinMaterial = null;
             }
         }
 
@@ -272,17 +239,6 @@ namespace War.Presentation.Board
         /// </summary>
         private void ApplyVisualState()
         {
-            if (_runtimeMaterial == null && territoryRenderer != null)
-            {
-                _runtimeMaterial = territoryRenderer.material;
-                if (_runtimeMaterial != null)
-                {
-                    _runtimeMaterial.enableInstancing = true;
-                }
-            }
-
-            if (_runtimeMaterial == null) return;
-
             Color targetColor;
             Color emissionColor = Color.black;
 
@@ -295,9 +251,13 @@ namespace War.Presentation.Board
             }
             else if (_isHighlighted)
             {
-                // Hover suave clareando apenas 12%
-                targetColor = Color.Lerp(_ownerColor, Color.white, 0.12f);
-                emissionColor = Color.black;
+                // Hover INTENSO e vibrante (fica mais forte, nunca pálido/branco!)
+                Color.RGBToHSV(_ownerColor, out float h, out float s, out float v);
+                float boostedS = Mathf.Clamp01(s * 1.35f + 0.12f);
+                float boostedV = Mathf.Clamp01(v * 1.25f + 0.10f);
+                targetColor = Color.HSVToRGB(h, boostedS, boostedV);
+                // Emissão viva e rica na própria cor do território
+                emissionColor = new Color(targetColor.r * 0.45f, targetColor.g * 0.45f, targetColor.b * 0.45f, 1f);
             }
             else if (_isDimmed)
             {
@@ -311,46 +271,33 @@ namespace War.Presentation.Board
                 emissionColor = Color.black;
             }
 
-            if (_runtimeMaterial.HasProperty(BaseColorProp))
+            if (_propertyBlock == null)
             {
-                _runtimeMaterial.SetColor(BaseColorProp, targetColor);
-            }
-            else if (_runtimeMaterial.HasProperty(LegacyColorProp))
-            {
-                _runtimeMaterial.SetColor(LegacyColorProp, targetColor);
-            }
-            else
-            {
-                _runtimeMaterial.color = targetColor;
+                _propertyBlock = new MaterialPropertyBlock();
             }
 
-            if (_runtimeMaterial.HasProperty(EmissionColorProp))
+            _propertyBlock.SetColor(BaseColorProp, targetColor);
+            _propertyBlock.SetColor(LegacyColorProp, targetColor);
+            _propertyBlock.SetColor(EmissionColorProp, emissionColor);
+
+            if (territoryRenderer != null)
             {
-                if (emissionColor != Color.black)
-                {
-                    _runtimeMaterial.EnableKeyword("_EMISSION");
-                    _runtimeMaterial.SetColor(EmissionColorProp, emissionColor);
-                }
-                else
-                {
-                    _runtimeMaterial.SetColor(EmissionColorProp, Color.black);
-                }
+                territoryRenderer.SetPropertyBlock(_propertyBlock);
             }
 
-            // Atualiza o pin tático com a cor correspondente
-            if (_runtimePinMaterial != null)
+            // Atualiza o pin tático com a cor correspondente via MaterialPropertyBlock
+            if (pinBadgeRenderer != null)
             {
+                if (_pinPropertyBlock == null)
+                {
+                    _pinPropertyBlock = new MaterialPropertyBlock();
+                }
+
                 Color pinColor = _isSelected ? _ownerColor : (_isDimmed ? _ownerColor * 0.45f : _ownerColor);
-
-                if (_runtimePinMaterial.HasProperty(BaseColorProp))
-                    _runtimePinMaterial.SetColor(BaseColorProp, pinColor);
-                else
-                    _runtimePinMaterial.color = pinColor;
-
-                if (_runtimePinMaterial.HasProperty(EmissionColorProp))
-                {
-                    _runtimePinMaterial.SetColor(EmissionColorProp, Color.black);
-                }
+                _pinPropertyBlock.SetColor(BaseColorProp, pinColor);
+                _pinPropertyBlock.SetColor(LegacyColorProp, pinColor);
+                _pinPropertyBlock.SetColor(EmissionColorProp, Color.black);
+                pinBadgeRenderer.SetPropertyBlock(_pinPropertyBlock);
             }
 
             // Diminui a intensidade do texto das tropas se esmaecido
