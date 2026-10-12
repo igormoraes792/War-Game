@@ -36,7 +36,31 @@ namespace War.Presentation.Board
         /// </summary>
         public Texture2D GenerateAndApplyTexture()
         {
-            var tex = GenerateProceduralMapTexture(textureWidth, textureHeight);
+            Texture2D tex = null!;
+
+#if UNITY_EDITOR
+            var realTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Materials/WorldMap_Texture.jpg");
+            if (realTex != null)
+            {
+                tex = realTex;
+            }
+#endif
+            if (tex == null)
+            {
+                var filePath = System.IO.Path.Combine(Application.dataPath, "Materials", "WorldMap_Texture.jpg");
+                if (System.IO.File.Exists(filePath))
+                {
+                    var bytes = System.IO.File.ReadAllBytes(filePath);
+                    tex = new Texture2D(2, 2);
+                    tex.LoadImage(bytes);
+                }
+            }
+
+            if (tex == null)
+            {
+                tex = GenerateProceduralMapTexture(textureWidth, textureHeight);
+            }
+
             generatedTexture = tex;
 
             var meshRenderer = GetComponent<MeshRenderer>();
@@ -58,7 +82,7 @@ namespace War.Presentation.Board
                 }
                 if (boardMaterial.HasProperty("_Smoothness"))
                 {
-                    boardMaterial.SetFloat("_Smoothness", 0.35f); // Acabamento acetinado militar
+                    boardMaterial.SetFloat("_Smoothness", 0.15f);
                 }
 
                 meshRenderer.sharedMaterial = boardMaterial;
