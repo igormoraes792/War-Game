@@ -45,15 +45,10 @@ namespace War.Presentation.Board
                 tex = realTex;
             }
 #endif
-            if (tex == null)
+
+            if (tex == null && boardMaterial != null && boardMaterial.mainTexture is Texture2D existingTex)
             {
-                var filePath = System.IO.Path.Combine(Application.dataPath, "Materials", "WorldMap_Texture.jpg");
-                if (System.IO.File.Exists(filePath))
-                {
-                    var bytes = System.IO.File.ReadAllBytes(filePath);
-                    tex = new Texture2D(2, 2);
-                    ImageConversion.LoadImage(tex, bytes);
-                }
+                tex = existingTex;
             }
 
             if (tex == null)

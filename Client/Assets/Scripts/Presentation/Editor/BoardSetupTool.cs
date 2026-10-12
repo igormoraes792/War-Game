@@ -26,17 +26,14 @@ namespace War.Presentation.Editor
         {
             const string rootName = "War_Mesa_Tatica";
 
-            // Remove montagem anterior caso já exista para evitar duplicatas
-            var existing = GameObject.Find(rootName);
-            if (existing != null)
+            // Limpeza automática completa de qualquer versão anterior na cena aberta
+            foreach (var oldName in new[] { "War_Mesa_Tatica", "War_Tabletop_Root", "War_Canvas", "EventSystem" })
             {
-                if (!EditorUtility.DisplayDialog("Substituir Tabuleiro Existente?",
-                    $"Um objeto '{rootName}' já existe na cena aberta. Deseja substituí-lo?",
-                    "Substituir", "Cancelar"))
+                var oldObj = GameObject.Find(oldName);
+                if (oldObj != null)
                 {
-                    return;
+                    Undo.DestroyObjectImmediate(oldObj);
                 }
-                Undo.DestroyObjectImmediate(existing);
             }
 
             var rootObj = new GameObject(rootName);
