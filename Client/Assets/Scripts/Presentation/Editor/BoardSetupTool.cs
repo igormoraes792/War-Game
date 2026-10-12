@@ -16,13 +16,33 @@ namespace War.Presentation.Editor
 {
     /// <summary>
     /// Ferramenta de Editor para gerar toda a hierarquia 3D inicial da mesa tática de WAR.
-    /// Cria a Mesa, os 42 territórios clássicos posicionados no mapa, Câmera Tática, Iluminação, GameController
-    /// e o War_Canvas contendo GameHUD, CombatPanelUI e ObjectiveModalUI.
+    /// Recompilação automática via [InitializeOnLoad] e hook de Play Mode para que o usuário NUNCA precise clicar em menu.
     /// </summary>
+    [InitializeOnLoad]
     public static class BoardSetupTool
     {
+        static BoardSetupTool()
+        {
+            // Registra hook automático: sempre que você der Play ou o Unity compilar, ele reconstrói a cena sozinho se necessário
+            EditorApplication.playModeStateChanged += OnPlayModeChanged;
+        }
+
+        private static void OnPlayModeChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingEditMode)
+            {
+                // Auto-regenera tudo de forma limpa antes de iniciar a simulação
+                GenerateTacticalBoardSilent();
+            }
+        }
+
         [MenuItem("War Game/Gerar Tabuleiro 3D Básico na Cena")]
         public static void GenerateTacticalBoard()
+        {
+            GenerateTacticalBoardSilent();
+        }
+
+        public static void GenerateTacticalBoardSilent()
         {
             const string rootName = "War_Mesa_Tatica";
 
