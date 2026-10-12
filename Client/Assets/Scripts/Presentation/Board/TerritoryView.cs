@@ -39,8 +39,14 @@ namespace War.Presentation.Board
         [Tooltip("Transform raiz do estandarte/pin tático do território.")]
         [SerializeField] private Transform? tacticalPinRoot;
 
+        [Tooltip("GameObject raiz contendo a plaqueta e texto do nome do país para controle de zoom.")]
+        [SerializeField] private GameObject? nameTagRoot;
+
         [Tooltip("Renderer do emblema/badge do pin tático.")]
         [SerializeField] private MeshRenderer? pinBadgeRenderer;
+
+        [Tooltip("Renderer do anel/borda do pin tático.")]
+        [SerializeField] private MeshRenderer? pinRimRenderer;
 
         [Header("Configuração de Cores")]
         [SerializeField] private Color defaultNeutralColor = new Color(0.68f, 0.68f, 0.72f, 1f);
@@ -55,6 +61,7 @@ namespace War.Presentation.Board
         private int _currentArmyCount = 1;
         private MaterialPropertyBlock? _propertyBlock;
         private MaterialPropertyBlock? _pinPropertyBlock;
+        private MaterialPropertyBlock? _rimPropertyBlock;
 
         // Animação 3D física de elevação e pin
         private Vector3 _initialLocalPosition;
@@ -104,6 +111,23 @@ namespace War.Presentation.Board
                 if (pinChild != null) tacticalPinRoot = pinChild;
             }
 
+            if (nameTagRoot == null && tacticalPinRoot != null)
+            {
+                var tagChild = tacticalPinRoot.Find("NameTag_Root");
+                if (tagChild != null) nameTagRoot = tagChild.gameObject;
+                else
+                {
+                    var plaqueChild = tacticalPinRoot.Find("Plaque_Background");
+                    if (plaqueChild != null) nameTagRoot = plaqueChild.gameObject;
+                }
+            }
+
+            if (pinRimRenderer == null && tacticalPinRoot != null)
+            {
+                var rimChild = tacticalPinRoot.Find("Pin_Rim") ?? tacticalPinRoot.Find("Pin_Pedestal");
+                if (rimChild != null) pinRimRenderer = rimChild.GetComponent<MeshRenderer>();
+            }
+
             if (armySpawnPoint == null)
             {
                 var spawnChild = transform.Find("ArmySpawnPoint");
@@ -125,6 +149,11 @@ namespace War.Presentation.Board
             if (pinBadgeRenderer != null && pinBadgeRenderer.sharedMaterial != null)
             {
                 pinBadgeRenderer.sharedMaterial.enableInstancing = true;
+            }
+
+            if (pinRimRenderer != null && pinRimRenderer.sharedMaterial != null)
+            {
+                pinRimRenderer.sharedMaterial.enableInstancing = true;
             }
 
             _initialLocalPosition = transform.localPosition;
@@ -157,6 +186,18 @@ namespace War.Presentation.Board
                 {
                     _currentPinScale = Mathf.Lerp(_currentPinScale, targetPinScale, Time.deltaTime * 14f);
                     tacticalPinRoot.localScale = _initialPinScale * _currentPinScale;
+                }
+            }
+
+            // Controle de visibilidade do nome do país baseado no nível de zoom (como no WAR real):
+            // O nome só fica visível quando aproximamos a câmera (zoom <= 32.5f) ou quando passamos o mouse / selecionamos!
+            if (nameTagRoot != null)
+            {
+                float camDist = War.Presentation.CameraControl.TacticalCameraController.CurrentDistance;
+                bool shouldShowName = (camDist <= 32.5f) || _isHighlighted || _isSelected;
+                if (nameTagRoot.activeSelf != shouldShowName)
+                {
+                    nameTagRoot.SetActive(shouldShowName);
                 }
             }
         }
@@ -285,7 +326,8 @@ namespace War.Presentation.Board
                 territoryRenderer.SetPropertyBlock(_propertyBlock);
             }
 
-            // Atualiza o pin tático com a cor correspondente via MaterialPropertyBlock
+            // Atualiza o token/bolinha tática com alto contraste:
+            // 1) O disco central onde fica o número é Preto/Grafite Profundo (#13161F) para contraste máximo
             if (pinBadgeRenderer != null)
             {
                 if (_pinPropertyBlock == null)
@@ -293,15 +335,38 @@ namespace War.Presentation.Board
                     _pinPropertyBlock = new MaterialPropertyBlock();
                 }
 
-                Color pinColor = _isSelected ? _ownerColor : (_isDimmed ? _ownerColor * 0.45f : _ownerColor);
-                _pinPropertyBlock.SetColor(BaseColorProp, pinColor);
-                _pinPropertyBlock.SetColor(LegacyColorProp, pinColor);
-                _pinPropertyBlock.SetColor(EmissionColorProp, Color.black);
+                Color badgeBg = _isSelected 
+                    ? new Color(0.18f, 0.22f, 0.28f, 1f) 
+                    : (_isDimmed ? new Color(0.06f, 0.07f, 0.09f, 1f) : new Color(0.10f, 0.12f, 0.16f, 1f));
+                Color badgeEmission = _isSelected ? new Color(0.25f, 0.22f, 0.10f, 1f) : Color.black;
+
+                _pinPropertyBlock.SetColor(BaseColorProp, badgeBg);
+                _pinPropertyBlock.SetColor(LegacyColorProp, badgeBg);
+                _pinPropertyBlock.SetColor(EmissionColorProp, badgeEmission);
                 pinBadgeRenderer.SetPropertyBlock(_pinPropertyBlock);
             }
 
-            // Diminui a intensidade do texto das tropas se esmaecido
-            Color textCol = _isDimmed && !_isSelected ? new Color(0.6f, 0.6f, 0.6f, 0.7f) : Color.white;
+            // 2) O anel/borda externa do token recebe a cor vibrante do jogador (separação perfeita)
+            if (pinRimRenderer != null)
+            {
+                if (_rimPropertyBlock == null)
+                {
+                    _rimPropertyBlock = new MaterialPropertyBlock();
+                }
+
+                Color rimColor = _isSelected 
+                    ? Color.Lerp(_ownerColor, Color.white, 0.35f) 
+                    : (_isDimmed ? _ownerColor * 0.45f : _ownerColor);
+                Color rimEmission = _isSelected ? rimColor * 0.4f : Color.black;
+
+                _rimPropertyBlock.SetColor(BaseColorProp, rimColor);
+                _rimPropertyBlock.SetColor(LegacyColorProp, rimColor);
+                _rimPropertyBlock.SetColor(EmissionColorProp, rimEmission);
+                pinRimRenderer.SetPropertyBlock(_rimPropertyBlock);
+            }
+
+            // Número da tropa sempre BRANCO PURO e de altíssimo contraste contra o fundo grafite
+            Color textCol = _isDimmed && !_isSelected ? new Color(0.65f, 0.65f, 0.65f, 0.8f) : Color.white;
             if (armyCountText != null) armyCountText.color = textCol;
             if (armyCountLegacyText != null) armyCountLegacyText.color = textCol;
         }

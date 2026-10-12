@@ -334,32 +334,32 @@ namespace War.Presentation.Editor
                 var poly = TerritoryMeshBuilder.GetTerritoryPolygon(def.Id);
                 var centroid = TerritoryMeshBuilder.GetPolygonCentroid(poly);
 
-                // 3. Estandarte / Pin Tático Elegante de Alto Contraste
+                // 3. Estandarte / Pin Tático Elegante de Alto Contraste (Estilo Token Militar War)
                 var pinRoot = new GameObject("Pin_TacticalRoot");
                 pinRoot.transform.SetParent(terrObj.transform, false);
                 pinRoot.transform.localPosition = new Vector3(centroid.x, TerritoryMeshBuilder.DefaultExtrusionHeight, centroid.y);
 
-                // Pedestal de latão do pin
-                var pedestal = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                pedestal.name = "Pin_Pedestal";
-                pedestal.transform.SetParent(pinRoot.transform, false);
-                pedestal.transform.localPosition = new Vector3(0f, 0.04f, 0f);
-                pedestal.transform.localScale = new Vector3(0.65f, 0.04f, 0.65f);
-                var pedRend = pedestal.GetComponent<MeshRenderer>();
-                if (pedRend != null)
+                // 3.1 Aro exterior (Rim) com a cor do jogador - Garante separação perfeita contra qualquer país
+                var rimObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                rimObj.name = "Pin_Rim";
+                rimObj.transform.SetParent(pinRoot.transform, false);
+                rimObj.transform.localPosition = new Vector3(0f, 0.06f, 0f);
+                rimObj.transform.localScale = new Vector3(1.35f, 0.04f, 1.35f);
+                var rimRend = rimObj.GetComponent<MeshRenderer>();
+                if (rimRend != null)
                 {
-                    pedRend.sharedMaterial = brassMat;
-                    pedRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    rimRend.sharedMaterial = badgeMat;
+                    rimRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 }
-                var pedCol = pedestal.GetComponent<Collider>();
-                if (pedCol != null) Object.DestroyImmediate(pedCol);
+                var rimCol = rimObj.GetComponent<Collider>();
+                if (rimCol != null) Object.DestroyImmediate(rimCol);
 
-                // Badge / Cabeça do pin (disco circular ampliado para excelente visibilidade)
+                // 3.2 Disco central interno (Preto/Grafite profundo para contraste máximo do número)
                 var badge = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                 badge.name = "Pin_Badge";
                 badge.transform.SetParent(pinRoot.transform, false);
-                badge.transform.localPosition = new Vector3(0f, 0.12f, 0f);
-                badge.transform.localScale = new Vector3(0.92f, 0.04f, 0.92f);
+                badge.transform.localPosition = new Vector3(0f, 0.10f, 0f);
+                badge.transform.localScale = new Vector3(1.12f, 0.05f, 1.12f);
                 var badgeRend = badge.GetComponent<MeshRenderer>();
                 if (badgeRend != null)
                 {
@@ -369,33 +369,38 @@ namespace War.Presentation.Editor
                 var badgeCol = badge.GetComponent<Collider>();
                 if (badgeCol != null) Object.DestroyImmediate(badgeCol);
 
-                // Ponto de spawn de tropas
+                // 3.3 Ponto de spawn de tropas
                 var spawnPoint = new GameObject("ArmySpawnPoint");
                 spawnPoint.transform.SetParent(pinRoot.transform, false);
-                spawnPoint.transform.localPosition = new Vector3(0f, 0.20f, 0f);
+                spawnPoint.transform.localPosition = new Vector3(0f, 0.22f, 0f);
 
-                // Texto do contador de tropas no pin (nítido, com fonte ampliada e alto contraste)
+                // 3.4 Texto do contador de tropas no pin (BRANCO PURO, grande e de alto contraste contra o disco preto)
                 var textObj = new GameObject("Text_ArmyCount");
                 textObj.transform.SetParent(pinRoot.transform, false);
                 textObj.transform.localPosition = new Vector3(0f, 0.17f, 0f);
                 textObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                textObj.transform.localScale = Vector3.one * 0.16f;
+                textObj.transform.localScale = Vector3.one * 0.20f;
 
                 var textMesh = textObj.AddComponent<TextMesh>();
                 textMesh.text = "1";
                 textMesh.fontSize = 72;
-                textMesh.characterSize = 0.26f;
+                textMesh.characterSize = 0.28f;
                 textMesh.anchor = TextAnchor.MiddleCenter;
                 textMesh.alignment = TextAlignment.Center;
                 textMesh.color = Color.white;
                 textMesh.fontStyle = FontStyle.Bold;
 
-                // Plaqueta de fundo para o nome do país (garante legibilidade máxima em qualquer cor de território)
+                // 3.5 Root da Plaqueta de Nome do País (controlada pelo nível de zoom da câmera)
+                var nameTagRoot = new GameObject("NameTag_Root");
+                nameTagRoot.transform.SetParent(pinRoot.transform, false);
+                nameTagRoot.transform.localPosition = new Vector3(0f, 0.04f, -1.35f);
+
+                // Plaqueta cartográfica de fundo (obsidiana escura para legibilidade absoluta)
                 var plaqueObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 plaqueObj.name = "Plaque_Background";
-                plaqueObj.transform.SetParent(pinRoot.transform, false);
-                plaqueObj.transform.localPosition = new Vector3(0f, 0.04f, -1.20f);
-                plaqueObj.transform.localScale = new Vector3(2.5f, 0.025f, 0.60f);
+                plaqueObj.transform.SetParent(nameTagRoot.transform, false);
+                plaqueObj.transform.localPosition = Vector3.zero;
+                plaqueObj.transform.localScale = new Vector3(3.4f, 0.025f, 0.75f);
                 var plaqueRend = plaqueObj.GetComponent<MeshRenderer>();
                 if (plaqueRend != null)
                 {
@@ -405,20 +410,20 @@ namespace War.Presentation.Editor
                 var plaqueCol = plaqueObj.GetComponent<Collider>();
                 if (plaqueCol != null) Object.DestroyImmediate(plaqueCol);
 
-                // Texto do nome do país nítido e proeminente sobre a plaqueta
+                // Texto do nome do país sobre a plaqueta
                 var nameObj = new GameObject("Text_Name");
-                nameObj.transform.SetParent(pinRoot.transform, false);
-                nameObj.transform.localPosition = new Vector3(0f, 0.08f, -1.20f);
+                nameObj.transform.SetParent(nameTagRoot.transform, false);
+                nameObj.transform.localPosition = new Vector3(0f, 0.04f, 0f);
                 nameObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                nameObj.transform.localScale = Vector3.one * 0.14f;
+                nameObj.transform.localScale = Vector3.one * 0.15f;
 
                 var nameTextMesh = nameObj.AddComponent<TextMesh>();
                 nameTextMesh.text = def.Name;
-                nameTextMesh.fontSize = 44;
-                nameTextMesh.characterSize = 0.20f;
+                nameTextMesh.fontSize = 50;
+                nameTextMesh.characterSize = 0.22f;
                 nameTextMesh.anchor = TextAnchor.MiddleCenter;
                 nameTextMesh.alignment = TextAlignment.Center;
-                nameTextMesh.color = new Color(0.98f, 0.98f, 1.0f, 1.0f);
+                nameTextMesh.color = Color.white;
                 nameTextMesh.fontStyle = FontStyle.Bold;
 
                 // Serialização dos campos no TerritoryView
@@ -426,7 +431,9 @@ namespace War.Presentation.Editor
                 viewSo.FindProperty("territoryId").stringValue = def.Id;
                 viewSo.FindProperty("territoryRenderer").objectReferenceValue = meshRenderer;
                 viewSo.FindProperty("tacticalPinRoot").objectReferenceValue = pinRoot.transform;
+                viewSo.FindProperty("nameTagRoot").objectReferenceValue = nameTagRoot;
                 viewSo.FindProperty("pinBadgeRenderer").objectReferenceValue = badgeRend;
+                viewSo.FindProperty("pinRimRenderer").objectReferenceValue = rimRend;
                 viewSo.FindProperty("armySpawnPoint").objectReferenceValue = spawnPoint.transform;
                 viewSo.FindProperty("armyCountLegacyText").objectReferenceValue = textMesh;
                 viewSo.FindProperty("territoryNameLegacyText").objectReferenceValue = nameTextMesh;

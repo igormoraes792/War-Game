@@ -36,6 +36,9 @@ namespace War.Presentation.CameraControl
         [SerializeField] private Vector2 panLimitX = new Vector2(-40f, 40f);
         [SerializeField] private Vector2 panLimitZ = new Vector2(-28f, 28f);
 
+        // Distância atual exposta para sistemas de zoom tático (ex: visibilidade do nome de países)
+        public static float CurrentDistance { get; private set; } = 35f;
+
         // Estados alvo para interpolação suave
         private Vector3 _targetPivot;
         private float _targetDistance;
@@ -171,6 +174,7 @@ namespace War.Presentation.CameraControl
             defaultDistance = Mathf.SmoothDamp(defaultDistance, _targetDistance, ref _distanceVelocity, smoothTime);
             defaultYaw = Mathf.SmoothDamp(defaultYaw, _targetYaw, ref _yawVelocity, smoothTime);
             defaultPitch = Mathf.SmoothDamp(defaultPitch, _targetPitch, ref _pitchVelocity, smoothTime);
+            CurrentDistance = defaultDistance;
 
             var rotation = Quaternion.Euler(defaultPitch, defaultYaw, 0f);
             var offset = rotation * new Vector3(0f, 0f, -defaultDistance);
@@ -183,6 +187,7 @@ namespace War.Presentation.CameraControl
         {
             pivotPosition = _targetPivot;
             defaultDistance = _targetDistance;
+            CurrentDistance = defaultDistance;
             defaultYaw = _targetYaw;
             defaultPitch = _targetPitch;
 
