@@ -190,11 +190,12 @@ namespace War.Presentation.Board
             }
 
             // Controle de visibilidade do nome do país baseado no nível de zoom (como no WAR real):
-            // O nome só fica visível quando aproximamos a câmera (zoom <= 32.5f) ou quando passamos o mouse / selecionamos!
+            // O nome fica visível na distância padrão de jogo (<= 48f) ou quando passamos o mouse / selecionamos,
+            // e oculta suavemente apenas no zoom out estratégico máximo (> 48f).
             if (nameTagRoot != null)
             {
                 float camDist = War.Presentation.CameraControl.TacticalCameraController.CurrentDistance;
-                bool shouldShowName = (camDist <= 32.5f) || _isHighlighted || _isSelected;
+                bool shouldShowName = (camDist <= 48.0f) || _isHighlighted || _isSelected;
                 if (nameTagRoot.activeSelf != shouldShowName)
                 {
                     nameTagRoot.SetActive(shouldShowName);

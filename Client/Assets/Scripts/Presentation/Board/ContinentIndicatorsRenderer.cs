@@ -1,15 +1,16 @@
 #nullable enable
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 using War.Core.Models;
 
 namespace War.Presentation.Board
 {
     /// <summary>
-    /// Renderiza marcadores cartográficos náuticos para os 6 continentes nos oceanos do tabuleiro,
-    /// inspirados no design oficial do jogo WAR.
-    /// Tipografia clássica náutica (sem cubos 3D ou caixas flutuantes), linhas táticas com inflexão
-    /// e suporte a hover para destacar o continente inteiro.
+    /// Renderiza marcadores cartográficos náuticos oficiais para os 6 continentes nos oceanos do tabuleiro,
+    /// inspirados no design clássico do jogo de tabuleiro WAR (Grow).
+    /// Utiliza cartelas náuticas refinadas com moldura colorida, tipografia vetorial TextMeshPro SDF de alta nitidez,
+    /// linhas de ancoragem litorânea com materiais URP seguros (zero magenta) e destaque interativo ao passar o mouse.
     /// </summary>
     public class ContinentIndicatorsRenderer : MonoBehaviour
     {
@@ -39,28 +40,27 @@ namespace War.Presentation.Board
         [SerializeField] private BoardView? boardView;
 
         private readonly List<GameObject> _spawnedIndicators = new();
-        private static Material? _lineMaterial;
 
-        // Posições estratégicas nos oceanos e pontos de ancoragem litorânea
+        // Posições estratégicas nos oceanos e pontos de ancoragem litorânea oficiais
         public static readonly ContinentCallout[] ClassicContinents = new ContinentCallout[]
         {
             new ContinentCallout("AMÉRICA DO NORTE", ContinentType.NorthAmerica, 5, new Color(0.95f, 0.48f, 0.15f),
-                new Vector3(-25.0f, 0.05f, 12.5f), new Vector3(-17.0f, 0.15f, 8.5f)),
+                new Vector3(-24.5f, 0.05f, 12.5f), new Vector3(-17.0f, 0.15f, 8.5f)),
 
-            new ContinentCallout("AMÉRICA DO SUL", ContinentType.SouthAmerica, 2, new Color(0.35f, 0.82f, 0.25f),
-                new Vector3(-23.0f, 0.05f, -9.0f), new Vector3(-13.5f, 0.15f, -5.0f)),
+            new ContinentCallout("AMÉRICA DO SUL", ContinentType.SouthAmerica, 2, new Color(0.35f, 0.85f, 0.28f),
+                new Vector3(-22.5f, 0.05f, -9.0f), new Vector3(-13.5f, 0.15f, -5.0f)),
 
-            new ContinentCallout("EUROPA", ContinentType.Europe, 5, new Color(0.18f, 0.78f, 0.95f),
-                new Vector3(1.5f, 0.05f, 15.0f), new Vector3(1.5f, 0.15f, 9.8f)),
+            new ContinentCallout("EUROPA", ContinentType.Europe, 5, new Color(0.20f, 0.80f, 0.98f),
+                new Vector3(-1.0f, 0.05f, 15.0f), new Vector3(1.5f, 0.15f, 9.8f)),
 
-            new ContinentCallout("ÁFRICA", ContinentType.Africa, 3, new Color(0.90f, 0.22f, 0.58f),
+            new ContinentCallout("ÁFRICA", ContinentType.Africa, 3, new Color(0.92f, 0.28f, 0.65f),
                 new Vector3(2.5f, 0.05f, -14.5f), new Vector3(2.5f, 0.15f, -8.0f)),
 
-            new ContinentCallout("ÁSIA", ContinentType.Asia, 7, new Color(0.95f, 0.76f, 0.12f),
-                new Vector3(23.5f, 0.05f, 14.5f), new Vector3(16.5f, 0.15f, 8.5f)),
+            new ContinentCallout("ÁSIA", ContinentType.Asia, 7, new Color(0.98f, 0.78f, 0.15f),
+                new Vector3(23.0f, 0.05f, 14.5f), new Vector3(16.5f, 0.15f, 8.5f)),
 
-            new ContinentCallout("OCEANIA", ContinentType.Oceania, 2, new Color(0.92f, 0.25f, 0.25f),
-                new Vector3(23.5f, 0.05f, -13.5f), new Vector3(19.0f, 0.15f, -7.5f))
+            new ContinentCallout("OCEANIA", ContinentType.Oceania, 2, new Color(0.95f, 0.28f, 0.28f),
+                new Vector3(23.0f, 0.05f, -13.5f), new Vector3(19.0f, 0.15f, -7.5f))
         };
 
         private void Start()
@@ -77,7 +77,7 @@ namespace War.Presentation.Board
         }
 
         /// <summary>
-        /// Reconstrói as inscrições e linhas náuticas dos continentes (estilo WAR oficial).
+        /// Reconstrói as cartelas cartográficas náuticas dos continentes (estilo oficial WAR).
         /// </summary>
         public void RebuildIndicators()
         {
@@ -94,7 +94,8 @@ namespace War.Presentation.Board
                 boardView = GetComponentInParent<BoardView>() ?? Object.FindAnyObjectByType<BoardView>();
             }
 
-            EnsureLineMaterial();
+            var safeShader = GetSafeShader();
+            var sdfFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
 
             foreach (var continent in ClassicContinents)
             {
@@ -102,73 +103,106 @@ namespace War.Presentation.Board
                 rootGo.transform.SetParent(transform, false);
                 rootGo.transform.position = continent.TextPosition;
 
-                // 1. Inscrição Cartográfica Náutica (Plana no oceano, estilo mapa de guerra)
+                // 1. Cartela Base Náutica 3D (Elegante placa de comando com moldura na cor do continente)
+                var cartoucheObj = new GameObject("Cartouche_Root");
+                cartoucheObj.transform.SetParent(rootGo.transform, false);
+                cartoucheObj.transform.localPosition = Vector3.zero;
+
+                // 1.1 Moldura exterior da cartela (cor do continente)
+                var rimObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                rimObj.name = "Cartouche_Border";
+                rimObj.transform.SetParent(cartoucheObj.transform, false);
+                rimObj.transform.localPosition = new Vector3(0f, 0.015f, 0f);
+                rimObj.transform.localScale = new Vector3(8.8f, 0.03f, 2.8f);
+
+                var rimMat = new Material(safeShader)
+                {
+                    name = $"Mat_CartoucheRim_{continent.Name}",
+                    color = continent.ThemeColor,
+                    enableInstancing = true
+                };
+                if (rimMat.HasProperty("_BaseColor")) rimMat.SetColor("_BaseColor", continent.ThemeColor);
+                if (rimMat.HasProperty("_Smoothness")) rimMat.SetFloat("_Smoothness", 0.6f);
+
+                var rimRend = rimObj.GetComponent<MeshRenderer>();
+                if (rimRend != null)
+                {
+                    rimRend.sharedMaterial = rimMat;
+                    rimRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
+                var rimCol = rimObj.GetComponent<Collider>();
+                if (rimCol != null) DestroyImmediate(rimCol);
+
+                // 1.2 Fundo interior da cartela (azul marinho profundo / ardósia de alta classe)
+                var plateObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                plateObj.name = "Cartouche_Plate";
+                plateObj.transform.SetParent(cartoucheObj.transform, false);
+                plateObj.transform.localPosition = new Vector3(0f, 0.035f, 0f);
+                plateObj.transform.localScale = new Vector3(8.5f, 0.03f, 2.5f);
+
+                var plateMat = new Material(safeShader)
+                {
+                    name = $"Mat_CartouchePlate_{continent.Name}",
+                    color = new Color(0.08f, 0.11f, 0.16f, 0.96f),
+                    enableInstancing = true
+                };
+                if (plateMat.HasProperty("_BaseColor")) plateMat.SetColor("_BaseColor", new Color(0.08f, 0.11f, 0.16f, 0.96f));
+                if (plateMat.HasProperty("_Smoothness")) plateMat.SetFloat("_Smoothness", 0.45f);
+
+                var plateRend = plateObj.GetComponent<MeshRenderer>();
+                if (plateRend != null)
+                {
+                    plateRend.sharedMaterial = plateMat;
+                    plateRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
+                var plateCol = plateObj.GetComponent<Collider>();
+                if (plateCol != null) DestroyImmediate(plateCol);
+
+                // 2. Tipografia Vetorial TextMeshPro SDF de Alta Nitidez
                 var textContainer = new GameObject("Text_Container");
-                textContainer.transform.SetParent(rootGo.transform, false);
-                textContainer.transform.localPosition = Vector3.zero;
+                textContainer.transform.SetParent(cartoucheObj.transform, false);
+                textContainer.transform.localPosition = new Vector3(0f, 0.06f, 0f);
                 textContainer.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
 
-                // 1.1 Sombra do Nome para contraste náutico absoluto
-                var nameShadowObj = new GameObject("Name_Shadow");
-                nameShadowObj.transform.SetParent(textContainer.transform, false);
-                nameShadowObj.transform.localPosition = new Vector3(0.04f, 0.36f, 0f);
-                nameShadowObj.transform.localScale = Vector3.one * 0.14f;
-
-                var nameShadowMesh = nameShadowObj.AddComponent<TextMesh>();
-                nameShadowMesh.text = $"◎  {continent.Name}";
-                nameShadowMesh.fontSize = 44;
-                nameShadowMesh.characterSize = 0.20f;
-                nameShadowMesh.anchor = TextAnchor.MiddleCenter;
-                nameShadowMesh.alignment = TextAlignment.Center;
-                nameShadowMesh.color = new Color(0f, 0f, 0f, 0.85f);
-                nameShadowMesh.fontStyle = FontStyle.Bold;
-
-                // 1.2 Nome do Continente em Caixa Alta Nítida
+                // 2.1 Nome do Continente em Caixa Alta Nítida
                 var nameObj = new GameObject("Text_Name");
                 nameObj.transform.SetParent(textContainer.transform, false);
                 nameObj.transform.localPosition = new Vector3(0f, 0.40f, 0f);
-                nameObj.transform.localScale = Vector3.one * 0.14f;
+                nameObj.transform.localRotation = Quaternion.identity;
 
-                var nameTextMesh = nameObj.AddComponent<TextMesh>();
-                nameTextMesh.text = $"◎  {continent.Name}";
-                nameTextMesh.fontSize = 44;
-                nameTextMesh.characterSize = 0.20f;
-                nameTextMesh.anchor = TextAnchor.MiddleCenter;
-                nameTextMesh.alignment = TextAlignment.Center;
-                nameTextMesh.color = Color.white;
-                nameTextMesh.fontStyle = FontStyle.Bold;
+                var nameTmp = nameObj.AddComponent<TextMeshPro>();
+                nameTmp.text = continent.Name;
+                nameTmp.fontSize = 3.6f;
+                nameTmp.fontStyle = FontStyles.Bold;
+                nameTmp.alignment = TextAlignmentOptions.Center;
+                nameTmp.color = Color.Lerp(continent.ThemeColor, Color.white, 0.45f);
+                nameTmp.outlineWidth = 0.22f;
+                nameTmp.outlineColor = Color.black;
+                nameTmp.textWrappingMode = TextWrappingModes.NoWrap;
+                if (sdfFont != null) nameTmp.font = sdfFont;
+                var nameRt = nameObj.GetComponent<RectTransform>();
+                if (nameRt != null) nameRt.sizeDelta = new Vector2(8.2f, 1.2f);
 
-                // 1.3 Sombra do Bônus
-                var bonusShadowObj = new GameObject("Bonus_Shadow");
-                bonusShadowObj.transform.SetParent(textContainer.transform, false);
-                bonusShadowObj.transform.localPosition = new Vector3(0.04f, -0.44f, 0f);
-                bonusShadowObj.transform.localScale = Vector3.one * 0.12f;
-
-                var bonusShadowMesh = bonusShadowObj.AddComponent<TextMesh>();
-                bonusShadowMesh.text = $"+{continent.ArmyBonus} EXÉRCITOS";
-                bonusShadowMesh.fontSize = 38;
-                bonusShadowMesh.characterSize = 0.19f;
-                bonusShadowMesh.anchor = TextAnchor.MiddleCenter;
-                bonusShadowMesh.alignment = TextAlignment.Center;
-                bonusShadowMesh.color = new Color(0f, 0f, 0f, 0.85f);
-                bonusShadowMesh.fontStyle = FontStyle.Bold;
-
-                // 1.4 Texto do Bônus em Destaque na Cor do Continente
+                // 2.2 Texto do Bônus de Tropas (Ex: "+2 EXÉRCITOS / RODADA")
                 var bonusObj = new GameObject("Text_Bonus");
                 bonusObj.transform.SetParent(textContainer.transform, false);
-                bonusObj.transform.localPosition = new Vector3(0f, -0.40f, 0f);
-                bonusObj.transform.localScale = Vector3.one * 0.12f;
+                bonusObj.transform.localPosition = new Vector3(0f, -0.42f, 0f);
+                bonusObj.transform.localRotation = Quaternion.identity;
 
-                var bonusTextMesh = bonusObj.AddComponent<TextMesh>();
-                bonusTextMesh.text = $"+{continent.ArmyBonus} EXÉRCITOS";
-                bonusTextMesh.fontSize = 38;
-                bonusTextMesh.characterSize = 0.19f;
-                bonusTextMesh.anchor = TextAnchor.MiddleCenter;
-                bonusTextMesh.alignment = TextAlignment.Center;
-                bonusTextMesh.color = Color.Lerp(continent.ThemeColor, Color.white, 0.35f);
-                bonusTextMesh.fontStyle = FontStyle.Bold;
+                var bonusTmp = bonusObj.AddComponent<TextMeshPro>();
+                bonusTmp.text = $"+{continent.ArmyBonus} EXÉRCITOS / RODADA";
+                bonusTmp.fontSize = 2.4f;
+                bonusTmp.fontStyle = FontStyles.Bold;
+                bonusTmp.alignment = TextAlignmentOptions.Center;
+                bonusTmp.color = new Color(0.92f, 0.95f, 1.0f, 0.92f);
+                bonusTmp.outlineWidth = 0.20f;
+                bonusTmp.outlineColor = Color.black;
+                bonusTmp.textWrappingMode = TextWrappingModes.NoWrap;
+                if (sdfFont != null) bonusTmp.font = sdfFont;
+                var bonusRt = bonusObj.GetComponent<RectTransform>();
+                if (bonusRt != null) bonusRt.sizeDelta = new Vector2(8.2f, 1.0f);
 
-                // 2. Linha Tática Náutica com Ângulo Suave
+                // 3. Linha Náutica Tática até o Litoral do Continente (Material URP Seguro)
                 var lineGo = new GameObject($"Line_{continent.Name}");
                 lineGo.transform.SetParent(rootGo.transform, false);
 
@@ -180,15 +214,24 @@ namespace War.Presentation.Board
                 lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 lr.receiveShadows = false;
 
-                if (_lineMaterial != null) lr.sharedMaterial = _lineMaterial;
+                // Material dedicado com cor exata do continente (garante que NUNCA fique magenta)
+                var lineMat = new Material(safeShader)
+                {
+                    name = $"Mat_Line_{continent.Name}",
+                    color = continent.ThemeColor,
+                    enableInstancing = true
+                };
+                if (lineMat.HasProperty("_BaseColor")) lineMat.SetColor("_BaseColor", continent.ThemeColor);
+                lr.sharedMaterial = lineMat;
 
-                var defaultLineColor = continent.ThemeColor;
-                defaultLineColor.a = 0.45f;
-                lr.startColor = defaultLineColor;
-                lr.endColor = defaultLineColor;
+                var lineColor = continent.ThemeColor;
+                lineColor.a = 0.65f;
+                lr.startColor = lineColor;
+                lr.endColor = lineColor;
 
-                // Traçado náutico do texto até a costa
-                Vector3 startPos = continent.TextPosition + (continent.TargetPosition - continent.TextPosition).normalized * 3.5f;
+                // Traçado náutico elegante da borda da cartela até o litoral
+                Vector3 toTarget = (continent.TargetPosition - continent.TextPosition).normalized;
+                Vector3 startPos = continent.TextPosition + toTarget * 4.4f;
                 startPos.y = 0.06f;
                 Vector3 endPos = continent.TargetPosition;
                 endPos.y = 0.12f;
@@ -200,77 +243,117 @@ namespace War.Presentation.Board
                 lr.SetPosition(1, midPos);
                 lr.SetPosition(2, endPos);
 
-                // 3. Colisor para detecção de hover do mouse sobre o texto
+                // 4. Ancoragem Litorânea (Pequeno anel náutico no litoral indicando o continente)
+                var anchorObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                anchorObj.name = $"Anchor_{continent.Name}";
+                anchorObj.transform.SetParent(rootGo.transform, false);
+                anchorObj.transform.position = endPos;
+                anchorObj.transform.localScale = new Vector3(0.55f, 0.02f, 0.55f);
+
+                var anchorRend = anchorObj.GetComponent<MeshRenderer>();
+                if (anchorRend != null)
+                {
+                    anchorRend.sharedMaterial = rimMat;
+                    anchorRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
+                var anchorCol = anchorObj.GetComponent<Collider>();
+                if (anchorCol != null) DestroyImmediate(anchorCol);
+
+                // 5. Colisor para detecção de hover do mouse sobre a cartela
                 var col = rootGo.AddComponent<BoxCollider>();
-                col.size = new Vector3(7.2f, 1.2f, 2.2f);
-                col.center = Vector3.zero;
+                col.size = new Vector3(9.2f, 1.2f, 3.2f);
+                col.center = new Vector3(0f, 0.1f, 0f);
 
                 var trigger = rootGo.AddComponent<ContinentWatermarkHoverTrigger>();
-                trigger.Init(continent.Continent, boardView, nameTextMesh, bonusTextMesh, lr, continent.ThemeColor);
+                trigger.Init(continent.Continent, boardView, nameTmp, bonusTmp, lr, cartoucheObj.transform, continent.ThemeColor);
 
                 _spawnedIndicators.Add(rootGo);
             }
         }
 
-        private static void EnsureLineMaterial()
+        private static Shader GetSafeShader()
         {
-            if (_lineMaterial == null)
+            var isUrp = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null;
+            if (isUrp)
             {
-                var unlitShader = Shader.Find("Universal Render Pipeline/Unlit") 
-                               ?? Shader.Find("Sprites/Default") 
-                               ?? Shader.Find("Unlit/Color");
+                var urpLit = Shader.Find("Universal Render Pipeline/Lit");
+                if (urpLit != null) return urpLit;
 
-                _lineMaterial = new Material(unlitShader)
-                {
-                    name = "Continent_Line_Mat",
-                    enableInstancing = true
-                };
+                var urpSimpleLit = Shader.Find("Universal Render Pipeline/Simple Lit");
+                if (urpSimpleLit != null) return urpSimpleLit;
+
+                var urpUnlit = Shader.Find("Universal Render Pipeline/Unlit");
+                if (urpUnlit != null) return urpUnlit;
             }
+
+            return Shader.Find("Standard") ?? Shader.Find("Diffuse") ?? Shader.Find("Unlit/Color");
         }
     }
 
     /// <summary>
-    /// Componente que escuta eventos de mouse sobre o rótulo do continente
+    /// Componente que escuta eventos de mouse sobre a cartela do continente
     /// e destaca automaticamente todos os territórios da região no BoardView.
     /// </summary>
     public class ContinentWatermarkHoverTrigger : MonoBehaviour
     {
         private ContinentType _continent;
         private BoardView? _boardView;
-        private TextMesh? _nameTextMesh;
-        private TextMesh? _bonusTextMesh;
+        private TMP_Text? _nameTmp;
+        private TMP_Text? _bonusTmp;
         private LineRenderer? _lineRenderer;
+        private Transform? _cartoucheRoot;
         private Color _themeColor;
+        private Vector3 _initialCartouchePos;
 
-        public void Init(ContinentType continent, BoardView? boardView, TextMesh? nameText, TextMesh? bonusText, LineRenderer? lr, Color themeColor)
+        public void Init(
+            ContinentType continent,
+            BoardView? boardView,
+            TMP_Text? nameText,
+            TMP_Text? bonusText,
+            LineRenderer? lr,
+            Transform? cartoucheRoot,
+            Color themeColor)
         {
             _continent = continent;
             _boardView = boardView;
-            _nameTextMesh = nameText;
-            _bonusTextMesh = bonusText;
+            _nameTmp = nameText;
+            _bonusTmp = bonusText;
             _lineRenderer = lr;
+            _cartoucheRoot = cartoucheRoot;
             _themeColor = themeColor;
+
+            if (_cartoucheRoot != null)
+            {
+                _initialCartouchePos = _cartoucheRoot.localPosition;
+            }
         }
 
         private void OnMouseEnter()
         {
-            if (_nameTextMesh != null)
+            if (_nameTmp != null)
             {
-                _nameTextMesh.color = Color.Lerp(_themeColor, Color.white, 0.55f);
+                _nameTmp.color = Color.white;
             }
-            if (_bonusTextMesh != null)
+            if (_bonusTmp != null)
             {
-                _bonusTextMesh.color = Color.white;
+                _bonusTmp.color = Color.Lerp(_themeColor, Color.white, 0.70f);
             }
 
             if (_lineRenderer != null)
             {
                 var brightLine = _themeColor;
-                brightLine.a = 0.95f;
+                brightLine.a = 1.0f;
                 _lineRenderer.startColor = brightLine;
                 _lineRenderer.endColor = brightLine;
-                _lineRenderer.startWidth = 0.13f;
+                _lineRenderer.startWidth = 0.12f;
                 _lineRenderer.endWidth = 0.08f;
+            }
+
+            if (_cartoucheRoot != null)
+            {
+                var p = _initialCartouchePos;
+                p.y += 0.12f;
+                _cartoucheRoot.localPosition = p;
             }
 
             if (_boardView != null)
@@ -281,23 +364,28 @@ namespace War.Presentation.Board
 
         private void OnMouseExit()
         {
-            if (_nameTextMesh != null)
+            if (_nameTmp != null)
             {
-                _nameTextMesh.color = Color.white;
+                _nameTmp.color = Color.Lerp(_themeColor, Color.white, 0.45f);
             }
-            if (_bonusTextMesh != null)
+            if (_bonusTmp != null)
             {
-                _bonusTextMesh.color = Color.Lerp(_themeColor, Color.white, 0.35f);
+                _bonusTmp.color = new Color(0.92f, 0.95f, 1.0f, 0.92f);
             }
 
             if (_lineRenderer != null)
             {
                 var defaultLine = _themeColor;
-                defaultLine.a = 0.45f;
+                defaultLine.a = 0.65f;
                 _lineRenderer.startColor = defaultLine;
                 _lineRenderer.endColor = defaultLine;
                 _lineRenderer.startWidth = 0.08f;
                 _lineRenderer.endWidth = 0.05f;
+            }
+
+            if (_cartoucheRoot != null)
+            {
+                _cartoucheRoot.localPosition = _initialCartouchePos;
             }
 
             if (_boardView != null)

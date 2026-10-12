@@ -335,9 +335,10 @@ namespace War.Presentation.Editor
                 var centroid = TerritoryMeshBuilder.GetPolygonCentroid(poly);
 
                 // 3. Estandarte / Pin Tático Elegante de Alto Contraste (Estilo Token Militar War)
+                // Posicionado levemente elevado em Y+ para acomodar harmoniosamente o nome do país logo abaixo
                 var pinRoot = new GameObject("Pin_TacticalRoot");
                 pinRoot.transform.SetParent(terrObj.transform, false);
-                pinRoot.transform.localPosition = new Vector3(centroid.x, TerritoryMeshBuilder.DefaultExtrusionHeight, centroid.y);
+                pinRoot.transform.localPosition = new Vector3(centroid.x, TerritoryMeshBuilder.DefaultExtrusionHeight, centroid.y + 0.35f);
 
                 // 3.1 Aro exterior (Rim) com a cor do jogador - Garante separação perfeita contra qualquer país
                 var rimObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -374,13 +375,27 @@ namespace War.Presentation.Editor
                 spawnPoint.transform.SetParent(pinRoot.transform, false);
                 spawnPoint.transform.localPosition = new Vector3(0f, 0.22f, 0f);
 
-                // 3.4 Texto do contador de tropas no pin (BRANCO PURO, grande e de alto contraste contra o disco preto)
+                // Carrega fonte SDF padrão TextMeshPro de alta definição
+                var sdfFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+
+                // 3.4 Texto do contador de tropas no pin (TextMeshPro SDF de alta nitidez vetorial)
                 var textObj = new GameObject("Text_ArmyCount");
                 textObj.transform.SetParent(pinRoot.transform, false);
-                textObj.transform.localPosition = new Vector3(0f, 0.17f, 0f);
+                textObj.transform.localPosition = new Vector3(0f, 0.16f, 0f);
                 textObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                textObj.transform.localScale = Vector3.one * 0.20f;
 
+                var armyCountTmp = textObj.AddComponent<TextMeshPro>();
+                armyCountTmp.text = "1";
+                armyCountTmp.fontSize = 8.5f;
+                armyCountTmp.fontStyle = FontStyles.Bold;
+                armyCountTmp.alignment = TextAlignmentOptions.Center;
+                armyCountTmp.color = Color.white;
+                armyCountTmp.textWrappingMode = TextWrappingModes.NoWrap;
+                if (sdfFont != null) armyCountTmp.font = sdfFont;
+                var armyCountRt = textObj.GetComponent<RectTransform>();
+                if (armyCountRt != null) armyCountRt.sizeDelta = new Vector2(2.5f, 2.5f);
+
+                // Fallback Legacy TextMesh caso necessário
                 var textMesh = textObj.AddComponent<TextMesh>();
                 textMesh.text = "1";
                 textMesh.fontSize = 72;
@@ -390,34 +405,33 @@ namespace War.Presentation.Editor
                 textMesh.color = Color.white;
                 textMesh.fontStyle = FontStyle.Bold;
 
-                // 3.5 Nome do País impresso diretamente dentro do território (sem tarjas ou placas)
+                // 3.5 Nome do País impresso com alta definição vetorial (TextMeshPro SDF)
+                // Posicionado com folga limpa abaixo do pin (gap de segurança) para nunca sobrepor o token militar
                 var nameTagRoot = new GameObject("NameTag_Root");
                 nameTagRoot.transform.SetParent(terrObj.transform, false);
-                nameTagRoot.transform.localPosition = new Vector3(centroid.x, TerritoryMeshBuilder.DefaultExtrusionHeight + 0.015f, centroid.y - 0.70f);
+                nameTagRoot.transform.localPosition = new Vector3(centroid.x, TerritoryMeshBuilder.DefaultExtrusionHeight + 0.02f, centroid.y - 0.95f);
                 nameTagRoot.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
 
-                // Sombra suave projetada para contraste perfeito em qualquer cor de país
-                var shadowObj = new GameObject("Text_Shadow");
-                shadowObj.transform.SetParent(nameTagRoot.transform, false);
-                shadowObj.transform.localPosition = new Vector3(0.04f, -0.04f, 0f);
-                shadowObj.transform.localRotation = Quaternion.identity;
-                shadowObj.transform.localScale = Vector3.one * 0.14f;
-
-                var shadowMesh = shadowObj.AddComponent<TextMesh>();
-                shadowMesh.text = def.Name.ToUpperInvariant();
-                shadowMesh.fontSize = 44;
-                shadowMesh.characterSize = 0.18f;
-                shadowMesh.anchor = TextAnchor.MiddleCenter;
-                shadowMesh.alignment = TextAlignment.Center;
-                shadowMesh.color = new Color(0f, 0f, 0f, 0.75f);
-                shadowMesh.fontStyle = FontStyle.Bold;
-
-                // Texto principal do nome do país em caixa alta
                 var nameObj = new GameObject("Text_Name");
                 nameObj.transform.SetParent(nameTagRoot.transform, false);
                 nameObj.transform.localPosition = Vector3.zero;
                 nameObj.transform.localRotation = Quaternion.identity;
-                nameObj.transform.localScale = Vector3.one * 0.14f;
+
+                var nameTmp = nameObj.AddComponent<TextMeshPro>();
+                nameTmp.text = def.Name.ToUpperInvariant();
+                nameTmp.fontSize = 4.2f;
+                nameTmp.fontStyle = FontStyles.Bold;
+                nameTmp.alignment = TextAlignmentOptions.Center;
+                nameTmp.color = Color.white;
+                nameTmp.outlineWidth = 0.30f;
+                nameTmp.outlineColor = Color.black;
+                nameTmp.textWrappingMode = TextWrappingModes.NoWrap;
+                nameTmp.enableAutoSizing = true;
+                nameTmp.fontSizeMin = 2.4f;
+                nameTmp.fontSizeMax = 4.4f;
+                if (sdfFont != null) nameTmp.font = sdfFont;
+                var nameRt = nameObj.GetComponent<RectTransform>();
+                if (nameRt != null) nameRt.sizeDelta = new Vector2(7.5f, 2.0f);
 
                 var nameTextMesh = nameObj.AddComponent<TextMesh>();
                 nameTextMesh.text = def.Name.ToUpperInvariant();
@@ -437,7 +451,9 @@ namespace War.Presentation.Editor
                 viewSo.FindProperty("pinBadgeRenderer").objectReferenceValue = badgeRend;
                 viewSo.FindProperty("pinRimRenderer").objectReferenceValue = rimRend;
                 viewSo.FindProperty("armySpawnPoint").objectReferenceValue = spawnPoint.transform;
+                viewSo.FindProperty("armyCountText").objectReferenceValue = armyCountTmp;
                 viewSo.FindProperty("armyCountLegacyText").objectReferenceValue = textMesh;
+                viewSo.FindProperty("territoryNameText").objectReferenceValue = nameTmp;
                 viewSo.FindProperty("territoryNameLegacyText").objectReferenceValue = nameTextMesh;
                 viewSo.ApplyModifiedProperties();
 
