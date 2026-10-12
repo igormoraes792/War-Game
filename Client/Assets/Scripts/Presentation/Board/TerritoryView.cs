@@ -281,6 +281,7 @@ namespace War.Presentation.Board
                 else
                     _runtimePinMaterial.color = pinColor;
             }
+        }
 
         #region Interação com o Mouse
         private void OnMouseEnter()
