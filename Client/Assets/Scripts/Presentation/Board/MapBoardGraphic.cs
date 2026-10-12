@@ -36,27 +36,12 @@ namespace War.Presentation.Board
         /// </summary>
         public Texture2D GenerateAndApplyTexture()
         {
-            Texture2D tex = null!;
-
-#if UNITY_EDITOR
-            var realTex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Materials/WorldMap_Texture.jpg");
-            if (realTex != null)
+            if (generatedTexture == null)
             {
-                tex = realTex;
-            }
-#endif
-
-            if (tex == null && boardMaterial != null && boardMaterial.mainTexture is Texture2D existingTex)
-            {
-                tex = existingTex;
+                generatedTexture = GenerateProceduralMapTexture(textureWidth, textureHeight);
             }
 
-            if (tex == null)
-            {
-                tex = GenerateProceduralMapTexture(textureWidth, textureHeight);
-            }
-
-            generatedTexture = tex;
+            var tex = generatedTexture;
 
             var meshRenderer = GetComponent<MeshRenderer>();
             if (meshRenderer != null)
@@ -66,8 +51,13 @@ namespace War.Presentation.Board
                 {
                     boardMaterial = new Material(shader)
                     {
-                        name = "War_MapBoard_Procedural_Mat"
+                        name = "War_MapBoard_Procedural_Mat",
+                        enableInstancing = true
                     };
+                }
+                else
+                {
+                    boardMaterial.enableInstancing = true;
                 }
 
                 boardMaterial.mainTexture = tex;
@@ -101,14 +91,10 @@ namespace War.Presentation.Board
 
             var pixels = new Color[width * height];
 
-            // Cores do oceano (gradiente de sala de comando / ardósia marinho profundo)
-            var oceanDeep = new Color(0.045f, 0.082f, 0.137f, 1f);      // #0B1523
-            var oceanMid = new Color(0.075f, 0.125f, 0.196f, 1f);       // #132032
-            var oceanTrench = new Color(0.030f, 0.055f, 0.090f, 1f);
-
-            // Centros aproximados dos continentes normalizados [0, 1]
-            // Mesa vai de X: -26 a +26 (largura 52), Z: -16 a +16 (profundidade 32)
-            var continentBlobs = GetContinentBlobData();
+            // Cores do oceano (gradiente de sala de comando / marinho oceânico rico)
+            var oceanDeep = new Color(0.04f, 0.08f, 0.16f, 1f);      // Azul marinho profundo
+            var oceanMid = new Color(0.07f, 0.15f, 0.28f, 1f);       // Azul oceânico rico
+            var oceanLight = new Color(0.10f, 0.22f, 0.38f, 1f);     // Plataforma marítima suave
 
             for (int y = 0; y < height; y++)
             {
@@ -120,49 +106,13 @@ namespace War.Presentation.Board
                     float u = (float)x / width;
                     float worldX = Mathf.Lerp(-26f, 26f, u);
 
-                    // 1. Base do Oceano com vinheta e leve gradiente radial
+                    // 1. Base do Oceano com vinheta suave e gradiente de profundidade
                     float distFromCenter = Vector2.Distance(new Vector2(u, v), new Vector2(0.5f, 0.5f));
-                    Color current = Color.Lerp(oceanMid, oceanDeep, Mathf.Clamp01(distFromCenter * 1.3f));
+                    Color current = Color.Lerp(oceanMid, oceanDeep, Mathf.Clamp01(distFromCenter * 1.25f));
 
-                    // Leve textura de batimetria / ruído sutil de profundidade
-                    float depthNoise = Mathf.PerlinNoise(u * 12f, v * 12f) * 0.04f;
-                    current += new Color(depthNoise, depthNoise * 1.2f, depthNoise * 1.5f, 0f);
-
-                    // 2. Projeção das silhuetas dos 6 Continentes com gradientes e tons temáticos
-                    float landInfluence = 0f;
-                    Color landColorAcc = Color.clear;
-
-                    foreach (var blob in continentBlobs)
-                    {
-                        float dX = (worldX - blob.CenterX) / blob.RadiusX;
-                        float dZ = (worldZ - blob.CenterZ) / blob.RadiusZ;
-                        float distSq = dX * dX + dZ * dZ;
-
-                        if (distSq < 1.6f)
-                        {
-                            // Ruído na costa para criar relevo orgânico irregular
-                            float coastlineNoise = (Mathf.PerlinNoise(worldX * 0.45f + blob.NoiseOffset, worldZ * 0.45f + blob.NoiseOffset) - 0.5f) * 0.35f;
-                            float effectiveDist = Mathf.Sqrt(distSq) + coastlineNoise;
-
-                            if (effectiveDist < 1.0f)
-                            {
-                                float alpha = Mathf.SmoothStep(1.0f, 0.3f, effectiveDist);
-                                landInfluence = Mathf.Max(landInfluence, alpha);
-                                landColorAcc = Color.Lerp(landColorAcc, blob.ThemeColor, alpha * 0.75f);
-                            }
-                            else if (effectiveDist < 1.15f)
-                            {
-                                // Borda costeira sutil (halo azul-turquesa / linha de costa militar)
-                                float shelfAlpha = Mathf.SmoothStep(1.15f, 1.0f, effectiveDist) * 0.22f;
-                                current = Color.Lerp(current, new Color(0.12f, 0.32f, 0.42f, 1f), shelfAlpha);
-                            }
-                        }
-                    }
-
-                    if (landInfluence > 0f)
-                    {
-                        current = Color.Lerp(current, landColorAcc, landInfluence * 0.85f);
-                    }
+                    // Leve textura de batimetria suave
+                    float depthNoise = (Mathf.PerlinNoise(u * 8f, v * 8f) - 0.5f) * 0.03f;
+                    current += new Color(depthNoise * 0.5f, depthNoise * 1.0f, depthNoise * 1.5f, 0f);
 
                     // 3. Grid tático náutico (Latitude / Longitude finas)
                     bool isGridX = (Mathf.Abs(worldX % 4f) < 0.08f);

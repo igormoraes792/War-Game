@@ -157,13 +157,13 @@ namespace War.Presentation.Game
         {
             return color switch
             {
-                PlayerColor.Red => new Color(0.88f, 0.22f, 0.22f, 1f),
-                PlayerColor.Blue => new Color(0.22f, 0.48f, 0.92f, 1f),
-                PlayerColor.Green => new Color(0.18f, 0.78f, 0.28f, 1f),
-                PlayerColor.Yellow => new Color(0.96f, 0.85f, 0.15f, 1f),
-                PlayerColor.Black => new Color(0.22f, 0.22f, 0.26f, 1f),
-                PlayerColor.White => new Color(0.94f, 0.94f, 0.96f, 1f),
-                _ => new Color(0.6f, 0.6f, 0.6f, 1f)
+                PlayerColor.Red => new Color(0.82f, 0.28f, 0.26f, 1f),       // Terracotta / Crimson Imperial
+                PlayerColor.Blue => new Color(0.26f, 0.54f, 0.82f, 1f),      // Azul Cobalto / Steel Azure
+                PlayerColor.Green => new Color(0.28f, 0.64f, 0.38f, 1f),     // Verde Tático / Olive Sage
+                PlayerColor.Yellow => new Color(0.88f, 0.70f, 0.24f, 1f),    // Ouro Âmbar / Mostarda Militar
+                PlayerColor.Black => new Color(0.20f, 0.22f, 0.26f, 1f),     // Grafite Tático
+                PlayerColor.White => new Color(0.92f, 0.90f, 0.84f, 1f),     // Marfim Militar / Bone
+                _ => new Color(0.55f, 0.58f, 0.65f, 1f)
             };
         }
 

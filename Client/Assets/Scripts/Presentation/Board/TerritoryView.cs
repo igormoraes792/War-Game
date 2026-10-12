@@ -124,12 +124,17 @@ namespace War.Presentation.Board
                     mat.SetFloat(SmoothnessProp, 0.55f);
                 }
 
+                mat.enableInstancing = true;
                 _runtimeMaterial = mat;
             }
 
             if (pinBadgeRenderer != null)
             {
                 _runtimePinMaterial = pinBadgeRenderer.material;
+                if (_runtimePinMaterial != null)
+                {
+                    _runtimePinMaterial.enableInstancing = true;
+                }
             }
 
             _ownerColor = defaultNeutralColor;
@@ -221,6 +226,10 @@ namespace War.Presentation.Board
             if (_runtimeMaterial == null && territoryRenderer != null)
             {
                 _runtimeMaterial = territoryRenderer.material;
+                if (_runtimeMaterial != null)
+                {
+                    _runtimeMaterial.enableInstancing = true;
+                }
             }
 
             if (_runtimeMaterial == null) return;

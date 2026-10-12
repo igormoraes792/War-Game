@@ -427,6 +427,7 @@ namespace War.Presentation.Board
 
         private static void SetMaterialColorProperties(Material mat, Color col)
         {
+            mat.enableInstancing = true;
             mat.color = col;
             if (mat.HasProperty("_BaseColor"))
             {

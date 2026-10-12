@@ -10,6 +10,7 @@ using War.Core.Data;
 using War.Presentation.Board;
 using War.Presentation.CameraControl;
 using War.Presentation.Game;
+using War.Presentation.Performance;
 using War.Presentation.UI;
 
 namespace War.Presentation.Editor
@@ -58,6 +59,9 @@ namespace War.Presentation.Editor
 
             var rootObj = new GameObject(rootName);
             Undo.RegisterCreatedObjectUndo(rootObj, "Gerar Tabuleiro 3D Básico");
+
+            // Otimizador de desempenho e limitação de FPS (60 FPS + VSync)
+            rootObj.AddComponent<PerformanceOptimizer>();
 
             // 1. Criação da Mesa de Madeira com Moldura Nobre Biselada
             var tableObj = CreateWoodTable(rootObj.transform);
@@ -156,7 +160,8 @@ namespace War.Presentation.Editor
             var mat = new Material(woodShader)
             {
                 name = "Mesa_Madeira_Mat",
-                color = new Color(0.20f, 0.13f, 0.08f, 1f) // Mogno escuro acetinado
+                color = new Color(0.20f, 0.13f, 0.08f, 1f), // Mogno escuro acetinado
+                enableInstancing = true
             };
             if (mat.HasProperty("_Smoothness"))
             {
@@ -173,7 +178,8 @@ namespace War.Presentation.Editor
             var rimMat = new Material(woodShader)
             {
                 name = "Moldura_Bisel_Mat",
-                color = new Color(0.14f, 0.09f, 0.05f, 1f)
+                color = new Color(0.14f, 0.09f, 0.05f, 1f),
+                enableInstancing = true
             };
             if (rimMat.HasProperty("_Smoothness"))
             {
@@ -233,7 +239,8 @@ namespace War.Presentation.Editor
             var defaultTerritoryMat = new Material(defaultShader)
             {
                 name = "Territorio_Base_Mat",
-                color = new Color(0.72f, 0.72f, 0.76f, 1f)
+                color = new Color(0.72f, 0.72f, 0.76f, 1f),
+                enableInstancing = true
             };
             if (defaultTerritoryMat.HasProperty("_Smoothness"))
             {
@@ -244,7 +251,8 @@ namespace War.Presentation.Editor
             var brassMat = new Material(defaultShader)
             {
                 name = "Pin_Pedestal_Brass_Mat",
-                color = new Color(0.24f, 0.20f, 0.14f, 1f)
+                color = new Color(0.24f, 0.20f, 0.14f, 1f),
+                enableInstancing = true
             };
             if (brassMat.HasProperty("_Smoothness")) brassMat.SetFloat("_Smoothness", 0.65f);
             if (brassMat.HasProperty("_Metallic")) brassMat.SetFloat("_Metallic", 0.75f);
@@ -253,7 +261,8 @@ namespace War.Presentation.Editor
             var badgeMat = new Material(defaultShader)
             {
                 name = "Pin_Badge_Mat",
-                color = new Color(0.12f, 0.15f, 0.22f, 1f)
+                color = new Color(0.12f, 0.15f, 0.22f, 1f),
+                enableInstancing = true
             };
             if (badgeMat.HasProperty("_Smoothness")) badgeMat.SetFloat("_Smoothness", 0.5f);
 
@@ -387,6 +396,12 @@ namespace War.Presentation.Editor
 
             cameraObj.transform.SetParent(parent, false);
 
+            if (cam != null)
+            {
+                cam.nearClipPlane = 0.5f;
+                cam.farClipPlane = 200f;
+            }
+
             var controller = cameraObj.GetComponent<TacticalCameraController>();
             if (controller == null)
             {
@@ -418,6 +433,10 @@ namespace War.Presentation.Editor
             lightComponent.color = new Color(1f, 0.97f, 0.92f);
             lightComponent.intensity = 1.25f;
             lightComponent.shadows = LightShadows.Soft;
+            lightComponent.shadowResolution = UnityEngine.Rendering.LightShadowResolution.Medium;
+            lightComponent.shadowNearPlane = 0.5f;
+            lightComponent.shadowBias = 0.05f;
+            lightComponent.shadowNormalBias = 0.4f;
         }
 
         /// <summary>
