@@ -410,16 +410,17 @@ namespace War2D.Presentation.Editor
         {
             return new Dictionary<string, Vector2>(System.StringComparer.OrdinalIgnoreCase)
             {
-                // América do Sul (5)
+                // América do Sul (6)
                 [TerritoryIds.Venezuela] = new Vector2(-13.02f, -1.97f),
                 [TerritoryIds.Peru] = new Vector2(-13.20f, -5.40f),
                 [TerritoryIds.Brasil] = new Vector2(-10.09f, -4.75f),
+                [TerritoryIds.Chile] = new Vector2(-14.10f, -9.00f),
                 [TerritoryIds.Argentina] = new Vector2(-12.38f, -10.40f),
                 [TerritoryIds.Uruguai] = new Vector2(-10.20f, -8.70f),
 
                 // América do Norte (8)
                 [TerritoryIds.Alasca] = new Vector2(-21.66f, 9.99f),
-                [TerritoryIds.Mackenzie] = new Vector2(-17.20f, 9.00f),
+                [TerritoryIds.Mackenzie] = new Vector2(-16.50f, 9.20f),
                 [TerritoryIds.Groenlandia] = new Vector2(-7.91f, 11.69f),
                 [TerritoryIds.Ottawa] = new Vector2(-14.18f, 7.13f),
                 [TerritoryIds.Labrador] = new Vector2(-10.97f, 7.22f),

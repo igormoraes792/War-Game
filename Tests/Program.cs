@@ -21,7 +21,7 @@ namespace War.Tests
             Console.WriteLine("  INICIANDO SUÍTE DE TESTES: WAR CORE ENGINE - ETAPA 2");
             Console.WriteLine("==================================================");
 
-            RunTest("Cartas: Inicialização do baralho com 42 cartas (40 territórios + 2 coringas)", TestCardDeckInitialization);
+            RunTest("Cartas: Inicialização do baralho com 43 cartas (41 territórios + 2 coringas)", TestCardDeckInitialization);
             RunTest("Cartas: Validação de combinações de troca (3 iguais, 3 distintas, Coringa)", TestCardTradeCombinations);
             RunTest("Cartas: Tabela progressiva de tropas nas trocas (4, 6, 8, 10, 12, 15, 20...)", TestCardTradeProgression);
             RunTest("Cartas: Bônus de +2 tropas para territórios dominados presentes nas cartas", TestCardTradeTerritoryBonus);
@@ -69,11 +69,11 @@ namespace War.Tests
             }
         }
 
-        // 1. Baralho de 42 cartas (40 territórios + 2 coringas)
+        // 1. Baralho de 43 cartas (41 territórios + 2 coringas)
         static void TestCardDeckInitialization()
         {
             var deck = new CardDeck(shuffle: false);
-            Assert(deck.RemainingCardsCount == 42, $"Total de cartas deve ser 42, obtido: {deck.RemainingCardsCount}");
+            Assert(deck.RemainingCardsCount == 43, $"Total de cartas deve ser 43, obtido: {deck.RemainingCardsCount}");
 
             var cards = new List<Card>();
             while (deck.RemainingCardsCount > 0)
@@ -83,10 +83,10 @@ namespace War.Tests
 
             Assert(cards.Count(c => c.IsWildcard) == 2, "Devem existir exatamente 2 Coringas.");
             var nonWildcards = cards.Where(c => !c.IsWildcard).ToList();
-            Assert(nonWildcards.Count == 40, "Devem existir exatamente 40 cartas de territórios.");
+            Assert(nonWildcards.Count == 41, "Devem existir exatamente 41 cartas de territórios.");
 
             var territoryIds = nonWildcards.Select(c => c.TerritoryId).Distinct().ToList();
-            Assert(territoryIds.Count == 40, "Todas as 40 cartas devem referenciar territórios únicos.");
+            Assert(territoryIds.Count == 41, "Todas as 41 cartas devem referenciar territórios únicos.");
         }
 
         // 2. Validação de trocas de cartas
@@ -439,16 +439,21 @@ namespace War.Tests
             Assert(manager.State.Winner == p1, "Alice deve ser a vencedora.");
         }
 
-        // 15. Cartografia: Polígonos de Mackenzie e Rússia Asiática
+        // 15. Cartografia: Polígonos de Mackenzie, Rússia Asiática, Chile, Peru e Argentina
         static void TestMackenzieAndRussiaPolygons()
         {
             var mackenzie = new (float x, float y)[]
             {
-                (-1.88f, -2.62f), (0.00f, -2.63f), (1.41f, -2.66f),
-                (1.60f, -1.00f), (2.72f, -0.50f), (2.92f, 0.21f),
-                (3.80f, 1.20f), (3.70f, 2.20f), (1.20f, 2.80f),
-                (-1.30f, 2.80f), (-3.05f, 2.33f), (-3.13f, 0.42f),
-                (-2.61f, 0.35f), (-2.11f, -0.83f), (-2.50f, -1.40f)
+                (-2.58f, -2.82f), (-1.00f, -2.83f), (0.71f, -2.86f),
+                (0.98f, 0.05f), (2.22f, 0.01f), (2.02f, -0.70f),
+                (2.52f, -1.23f), (3.82f, -1.39f), (4.12f, -1.51f),
+                (4.66f, -1.15f), (4.50f, -0.54f), (4.86f, -0.16f),
+                (4.76f, 0.23f), (4.90f, 1.00f), (4.10f, 2.00f),
+                (3.00f, 1.10f), (2.30f, 2.40f), (1.50f, 1.60f),
+                (0.50f, 2.90f), (-0.50f, 1.80f), (-1.50f, 2.80f),
+                (-2.30f, 2.00f), (-3.00f, 2.70f), (-3.75f, 2.13f),
+                (-3.83f, 0.22f), (-3.31f, 0.15f), (-2.81f, -1.03f),
+                (-3.20f, -1.60f), (-3.00f, -2.30f)
             };
 
             var russiaAsiatica = new (float x, float y)[]
@@ -460,23 +465,68 @@ namespace War.Tests
                 (0.44f, -2.15f), (0.94f, -1.30f), (1.52f, -1.25f),
                 (3.35f, -3.20f), (4.00f, -4.00f), (5.30f, -3.30f),
                 (6.00f, -1.60f), (7.30f, 0.00f), (8.30f, 1.70f),
-                (7.70f, 2.80f), (6.00f, 3.40f), (4.00f, 3.60f),
-                (1.50f, 3.70f), (-1.00f, 3.50f), (-3.50f, 3.30f),
-                (-5.50f, 2.70f)
+                (7.70f, 2.80f), (7.10f, 3.60f), (6.20f, 3.00f),
+                (5.30f, 3.80f), (4.50f, 3.10f), (3.70f, 3.90f),
+                (3.00f, 3.40f), (2.30f, 4.20f), (1.50f, 3.50f),
+                (0.80f, 4.40f), (0.00f, 4.60f), (-0.80f, 4.00f),
+                (-1.50f, 3.30f), (-2.20f, 4.10f), (-2.70f, 3.10f),
+                (-3.50f, 4.00f), (-4.50f, 3.00f), (-5.50f, 3.40f),
+                (-6.00f, 2.70f)
+            };
+
+            var chile = new (float x, float y)[]
+            {
+                (-0.62f, 2.80f), (0.60f, 2.20f), (0.70f, 1.50f),
+                (0.80f, -0.20f), (0.70f, -2.00f), (0.80f, -3.80f),
+                (0.90f, -4.80f), (0.60f, -5.20f), (0.10f, -5.00f),
+                (-0.50f, -3.80f), (-0.60f, -2.00f), (-0.70f, -0.20f),
+                (-0.70f, 1.50f)
+            };
+
+            var peru = new (float x, float y)[]
+            {
+                (-1.52f, 2.09f), (-1.45f, 2.71f), (-0.42f, 2.09f),
+                (0.36f, 0.74f), (1.64f, 0.15f), (3.07f, -2.14f),
+                (2.17f, -2.49f), (2.31f, -1.93f), (0.59f, -1.30f),
+                (0.33f, -1.64f), (-0.30f, -1.40f), (-1.52f, -0.80f),
+                (-2.28f, 0.85f), (-2.58f, 2.09f)
+            };
+
+            var argentina = new (float x, float y)[]
+            {
+                (-1.12f, 3.60f), (-0.49f, 3.36f), (-0.23f, 3.02f),
+                (0.58f, 2.90f), (1.50f, 2.40f), (2.26f, 2.18f),
+                (1.58f, 0.90f), (0.88f, -0.80f), (1.38f, -2.10f),
+                (0.88f, -3.40f), (-0.42f, -3.80f), (-1.12f, -3.80f),
+                (-0.82f, -3.40f), (-0.92f, -2.40f), (-1.02f, -0.60f),
+                (-0.92f, 1.20f), (-1.02f, 2.90f)
             };
 
             float areaM = Math.Abs(ComputeArea(mackenzie));
-            Assert(areaM > 10f, $"Área de Mackenzie deve ser substancial para cobrir todo o oeste canadense, obtido: {areaM}");
+            Assert(areaM > 15f, $"Área de Mackenzie deve cobrir todo o oeste e norte canadense, obtido: {areaM}");
 
             float areaR = Math.Abs(ComputeArea(russiaAsiatica));
             Assert(areaR > 50f, $"Área da Rússia Asiática deve cobrir a vasta massa continental siberiana, obtido: {areaR}");
+
+            float areaC = Math.Abs(ComputeArea(chile));
+            Assert(areaC > 4f, $"Área do Chile deve ser positiva e substancial, obtido: {areaC}");
 
             int triM = EarClipCount(mackenzie);
             Assert(triM == mackenzie.Length - 2, $"Mackenzie deve triangular {mackenzie.Length - 2} triângulos, obtido: {triM}");
 
             int triR = EarClipCount(russiaAsiatica);
             Assert(triR == russiaAsiatica.Length - 2, $"Rússia Asiática deve triangular {russiaAsiatica.Length - 2} triângulos, obtido: {triR}");
+
+            int triC = EarClipCount(chile);
+            Assert(triC == chile.Length - 2, $"Chile deve triangular {chile.Length - 2} triângulos, obtido: {triC}");
+
+            int triP = EarClipCount(peru);
+            Assert(triP == peru.Length - 2, $"Peru deve triangular {peru.Length - 2} triângulos, obtido: {triP}");
+
+            int triA = EarClipCount(argentina);
+            Assert(triA == argentina.Length - 2, $"Argentina deve triangular {argentina.Length - 2} triângulos, obtido: {triA}");
         }
+
 
         static float ComputeArea((float x, float y)[] poly)
         {

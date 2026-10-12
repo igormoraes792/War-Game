@@ -23,10 +23,11 @@ namespace War.Core.Data
         public const string NovaYork = "nova_york";
         public const string Mexico = "mexico";
 
-        // América do Sul (5)
+        // América do Sul (6)
         public const string Venezuela = "venezuela";
         public const string Peru = "peru";
         public const string Brasil = "brasil";
+        public const string Chile = "chile";
         public const string Argentina = "argentina";
         public const string Uruguai = "uruguai";
 
@@ -92,7 +93,7 @@ namespace War.Core.Data
     /// </summary>
     public static class ClassicMapData
     {
-        public const int TotalTerritoriesCount = 40;
+        public const int TotalTerritoriesCount = 41;
 
         private static readonly Dictionary<string, TerritoryDefinition> Definitions = new(StringComparer.OrdinalIgnoreCase);
 
@@ -103,7 +104,7 @@ namespace War.Core.Data
                 TerritoryIds.Mackenzie, TerritoryIds.RussiaAsiatica);
 
             RegisterWithGeo(TerritoryIds.Mackenzie, "Mackenzie", "Mackenzie", ContinentType.NorthAmerica,
-                TerritoryIds.Alasca, TerritoryIds.Groenlandia, TerritoryIds.Ottawa, TerritoryIds.California);
+                TerritoryIds.Alasca, TerritoryIds.Groenlandia, TerritoryIds.Ottawa, TerritoryIds.Labrador, TerritoryIds.California);
 
             RegisterWithGeo(TerritoryIds.Groenlandia, "Groenlândia", "Groenlândia", ContinentType.NorthAmerica,
                 TerritoryIds.Mackenzie, TerritoryIds.Labrador, TerritoryIds.Islandia);
@@ -112,7 +113,7 @@ namespace War.Core.Data
                 TerritoryIds.Mackenzie, TerritoryIds.Labrador, TerritoryIds.California, TerritoryIds.NovaYork);
 
             RegisterWithGeo(TerritoryIds.Labrador, "Labrador", "Labrador", ContinentType.NorthAmerica,
-                TerritoryIds.Groenlandia, TerritoryIds.Ottawa, TerritoryIds.NovaYork);
+                TerritoryIds.Groenlandia, TerritoryIds.Mackenzie, TerritoryIds.Ottawa, TerritoryIds.NovaYork);
 
             RegisterWithGeo(TerritoryIds.California, "Califórnia", "Califórnia", ContinentType.NorthAmerica,
                 TerritoryIds.Mackenzie, TerritoryIds.Ottawa, TerritoryIds.NovaYork, TerritoryIds.Mexico);
@@ -123,18 +124,21 @@ namespace War.Core.Data
             RegisterWithGeo(TerritoryIds.Mexico, "México", "México", ContinentType.NorthAmerica,
                 TerritoryIds.California, TerritoryIds.NovaYork, TerritoryIds.Venezuela);
 
-            // América do Sul (5)
+            // América do Sul (6)
             RegisterWithGeo(TerritoryIds.Venezuela, "Venezuela", "Venezuela", ContinentType.SouthAmerica,
                 TerritoryIds.Mexico, TerritoryIds.Peru, TerritoryIds.Brasil);
 
             RegisterWithGeo(TerritoryIds.Peru, "Peru", "Peru", ContinentType.SouthAmerica,
-                TerritoryIds.Venezuela, TerritoryIds.Brasil, TerritoryIds.Argentina);
+                TerritoryIds.Venezuela, TerritoryIds.Brasil, TerritoryIds.Argentina, TerritoryIds.Chile);
 
             RegisterWithGeo(TerritoryIds.Brasil, "Brasil", "Brasil", ContinentType.SouthAmerica,
                 TerritoryIds.Venezuela, TerritoryIds.Peru, TerritoryIds.Argentina, TerritoryIds.Uruguai, TerritoryIds.Argelia);
 
+            RegisterWithGeo(TerritoryIds.Chile, "Chile", "Chile", ContinentType.SouthAmerica,
+                TerritoryIds.Peru, TerritoryIds.Argentina);
+
             RegisterWithGeo(TerritoryIds.Argentina, "Argentina", "Argentina", ContinentType.SouthAmerica,
-                TerritoryIds.Peru, TerritoryIds.Brasil, TerritoryIds.Uruguai);
+                TerritoryIds.Peru, TerritoryIds.Chile, TerritoryIds.Brasil, TerritoryIds.Uruguai);
 
             RegisterWithGeo(TerritoryIds.Uruguai, "Uruguai", "Uruguai", ContinentType.SouthAmerica,
                 TerritoryIds.Brasil, TerritoryIds.Argentina);
