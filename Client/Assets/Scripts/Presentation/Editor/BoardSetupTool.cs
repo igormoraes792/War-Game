@@ -421,65 +421,61 @@ namespace War.Presentation.Editor
         }
 
         /// <summary>
-        /// Mapeamento de coordenadas (X, Z) proporcionais para os 42 territórios clássicos no plano da mesa.
+        /// Mapeamento de coordenadas (X, Z) centrais exatas para os 42 territórios clássicos no plano da mesa.
+        /// Calibrado com encaixe milimétrico para as peças 3D volumétricas.
         /// </summary>
         private static Dictionary<string, Vector2> GetTerritoryWorldCoordinates()
         {
             return new Dictionary<string, Vector2>(System.StringComparer.OrdinalIgnoreCase)
             {
-                // América do Norte (9)
-                [TerritoryIds.Alasca] = new Vector2(-22.5f, 11.5f),
-                [TerritoryIds.Mackenzie] = new Vector2(-17.5f, 11.5f),
-                [TerritoryIds.Groenlandia] = new Vector2(-6.0f, 12.8f),
-                [TerritoryIds.Vancouver] = new Vector2(-18.0f, 8.5f),
-                [TerritoryIds.Ottawa] = new Vector2(-13.0f, 8.5f),
-                [TerritoryIds.Labrador] = new Vector2(-9.0f, 9.2f),
-                [TerritoryIds.California] = new Vector2(-17.8f, 5.2f),
-                [TerritoryIds.NovaYork] = new Vector2(-11.5f, 5.8f),
-                [TerritoryIds.Mexico] = new Vector2(-14.8f, 2.2f),
-
                 // América do Sul (4)
-                [TerritoryIds.Venezuela] = new Vector2(-9.5f, -1.2f),
-                [TerritoryIds.Peru] = new Vector2(-10.5f, -4.5f),
-                [TerritoryIds.Brasil] = new Vector2(-6.5f, -4.2f),
-                [TerritoryIds.Argentina] = new Vector2(-8.8f, -9.2f),
-
+                [TerritoryIds.Venezuela] = new Vector2(-13.02f, -1.97f),
+                [TerritoryIds.Peru] = new Vector2(-13.20f, -5.40f),
+                [TerritoryIds.Brasil] = new Vector2(-10.09f, -4.75f),
+                [TerritoryIds.Argentina] = new Vector2(-12.38f, -9.72f),
+                // América do Norte (9)
+                [TerritoryIds.Alasca] = new Vector2(-21.66f, 9.99f),
+                [TerritoryIds.Mackenzie] = new Vector2(-16.66f, 10.34f),
+                [TerritoryIds.Groenlandia] = new Vector2(-7.91f, 11.69f),
+                [TerritoryIds.Vancouver] = new Vector2(-17.58f, 7.86f),
+                [TerritoryIds.Ottawa] = new Vector2(-14.18f, 7.13f),
+                [TerritoryIds.Labrador] = new Vector2(-10.97f, 7.22f),
+                [TerritoryIds.California] = new Vector2(-17.27f, 4.64f),
+                [TerritoryIds.NovaYork] = new Vector2(-13.73f, 3.92f),
+                [TerritoryIds.Mexico] = new Vector2(-16.91f, 0.96f),
                 // Europa (7)
-                [TerritoryIds.Islandia] = new Vector2(-3.0f, 11.5f),
-                [TerritoryIds.Inglaterra] = new Vector2(-1.5f, 8.8f),
-                [TerritoryIds.Franca] = new Vector2(-0.8f, 6.2f),
-                [TerritoryIds.Alemanha] = new Vector2(1.5f, 7.2f),
-                [TerritoryIds.Suecia] = new Vector2(2.8f, 10.8f),
-                [TerritoryIds.Polonia] = new Vector2(4.2f, 7.2f),
-                [TerritoryIds.Moscou] = new Vector2(7.2f, 9.5f),
-
+                [TerritoryIds.Islandia] = new Vector2(-3.75f, 8.82f),
+                [TerritoryIds.Inglaterra] = new Vector2(-4.34f, 5.55f),
+                [TerritoryIds.Franca] = new Vector2(-3.50f, 1.68f),
+                [TerritoryIds.Alemanha] = new Vector2(-0.07f, 4.81f),
+                [TerritoryIds.Suecia] = new Vector2(0.42f, 8.98f),
+                [TerritoryIds.Polonia] = new Vector2(0.36f, 2.14f),
+                [TerritoryIds.Moscou] = new Vector2(4.68f, 6.81f),
                 // África (6)
-                [TerritoryIds.Nigeria] = new Vector2(0.5f, 1.2f),
-                [TerritoryIds.Egito] = new Vector2(4.2f, 3.8f),
-                [TerritoryIds.Sudao] = new Vector2(5.5f, 0.5f),
-                [TerritoryIds.Congo] = new Vector2(2.8f, -3.2f),
-                [TerritoryIds.AfricaDoSul] = new Vector2(3.5f, -7.8f),
-                [TerritoryIds.Madagascar] = new Vector2(7.5f, -6.8f),
-
+                [TerritoryIds.Nigeria] = new Vector2(-1.63f, -3.62f),
+                [TerritoryIds.Egito] = new Vector2(1.82f, -2.22f),
+                [TerritoryIds.Sudao] = new Vector2(4.23f, -5.91f),
+                [TerritoryIds.Congo] = new Vector2(1.93f, -7.31f),
+                [TerritoryIds.AfricaDoSul] = new Vector2(2.31f, -10.93f),
+                [TerritoryIds.Madagascar] = new Vector2(6.65f, -11.26f),
                 // Ásia (12)
-                [TerritoryIds.OrienteMedio] = new Vector2(6.8f, 3.5f),
-                [TerritoryIds.Aral] = new Vector2(10.2f, 7.5f),
-                [TerritoryIds.Omsk] = new Vector2(11.5f, 10.2f),
-                [TerritoryIds.Dudinka] = new Vector2(14.8f, 12.2f),
-                [TerritoryIds.Siberia] = new Vector2(19.2f, 12.2f),
-                [TerritoryIds.Tchita] = new Vector2(17.5f, 9.2f),
-                [TerritoryIds.Mongolia] = new Vector2(15.2f, 7.2f),
-                [TerritoryIds.China] = new Vector2(14.8f, 4.2f),
-                [TerritoryIds.India] = new Vector2(11.2f, 2.2f),
-                [TerritoryIds.Vietna] = new Vector2(15.2f, 1.2f),
-                [TerritoryIds.Vladivostok] = new Vector2(20.5f, 8.5f),
-                [TerritoryIds.Japao] = new Vector2(21.5f, 5.5f),
-
+                [TerritoryIds.OrienteMedio] = new Vector2(5.99f, -0.87f),
+                [TerritoryIds.Aral] = new Vector2(8.44f, 3.84f),
+                [TerritoryIds.Omsk] = new Vector2(9.45f, 7.81f),
+                [TerritoryIds.Dudinka] = new Vector2(11.95f, 9.86f),
+                [TerritoryIds.Siberia] = new Vector2(15.68f, 10.98f),
+                [TerritoryIds.Tchita] = new Vector2(15.10f, 7.22f),
+                [TerritoryIds.Mongolia] = new Vector2(15.85f, 4.55f),
+                [TerritoryIds.China] = new Vector2(14.26f, 1.86f),
+                [TerritoryIds.India] = new Vector2(11.18f, -0.79f),
+                [TerritoryIds.Vietna] = new Vector2(15.36f, -2.05f),
+                [TerritoryIds.Vladivostok] = new Vector2(18.96f, 9.49f),
+                [TerritoryIds.Japao] = new Vector2(20.50f, 4.50f),
                 // Oceania (4)
-                [TerritoryIds.Sumatra] = new Vector2(14.8f, -1.8f),
-                [TerritoryIds.Borneo] = new Vector2(17.8f, -0.8f),
-                [TerritoryIds.NovaGuine] = new Vector2(21.2f, -1.8f),
-                [TerritoryIds.Australia] = new Vector2(19.5f, -6.5f)
+                [TerritoryIds.Sumatra] = new Vector2(14.68f, -7.02f),
+                [TerritoryIds.Borneo] = new Vector2(16.41f, -6.40f),
+                [TerritoryIds.NovaGuine] = new Vector2(20.34f, -5.71f),
+                [TerritoryIds.Australia] = new Vector2(20.25f, -10.79f)
             };
         }
 
