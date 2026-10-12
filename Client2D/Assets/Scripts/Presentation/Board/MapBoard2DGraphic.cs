@@ -23,6 +23,38 @@ namespace War2D.Presentation.Board
 
         private Texture2D? _generatedTexture;
 
+        private void Awake()
+        {
+            EnsureMaterial();
+        }
+
+        public void EnsureMaterial()
+        {
+            var rend = GetComponent<MeshRenderer>();
+            if (rend == null) return;
+
+            var tex = GenerateMapTexture();
+            var mat = rend.sharedMaterial;
+
+            bool isInvalidShader = mat == null || mat.shader == null || !mat.shader.isSupported ||
+                (mat.shader.name.StartsWith("Universal Render Pipeline") && UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline == null);
+
+            if (isInvalidShader)
+            {
+                var shader = ShaderUtils2D.GetTextureShader();
+                mat = new Material(shader)
+                {
+                    name = "Mat_Ocean_2D_Safe",
+                    mainTexture = tex
+                };
+                rend.sharedMaterial = mat;
+            }
+            else
+            {
+                mat.mainTexture = tex;
+            }
+        }
+
         public Texture2D GenerateMapTexture()
         {
             if (_generatedTexture != null) return _generatedTexture;
@@ -127,3 +159,4 @@ namespace War2D.Presentation.Board
         }
     }
 }
+

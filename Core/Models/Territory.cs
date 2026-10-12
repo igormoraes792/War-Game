@@ -22,6 +22,11 @@ namespace War.Core.Models
         public string Name { get; }
 
         /// <summary>
+        /// Nome geopolítico/país soberano correspondente (ex: "EUA Ocidental", "Brasil", "Reino Unido").
+        /// </summary>
+        public string GeopoliticalName { get; }
+
+        /// <summary>
         /// Continente ao qual o território pertence.
         /// </summary>
         public ContinentType Continent { get; }
@@ -48,7 +53,8 @@ namespace War.Core.Models
             ContinentType continent,
             string? ownerId = null,
             int armies = 1,
-            IEnumerable<string>? adjacentTerritoryIds = null)
+            IEnumerable<string>? adjacentTerritoryIds = null,
+            string? geopoliticalName = null)
         {
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentException("Id do território não pode ser vazio.", nameof(id));
@@ -59,6 +65,7 @@ namespace War.Core.Models
 
             Id = id.Trim().ToLowerInvariant();
             Name = name.Trim();
+            GeopoliticalName = !string.IsNullOrWhiteSpace(geopoliticalName) ? geopoliticalName.Trim() : Name;
             Continent = continent;
             OwnerId = ownerId;
             Armies = armies;

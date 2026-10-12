@@ -168,8 +168,8 @@ namespace War.Presentation.Board
 
         private void Update()
         {
-            // Elevação física 3D suave da peça do país (estilo maquete / mapa de comando de referência)
-            float targetElevation = _isSelected ? 0.45f : (_isHighlighted && !_isDimmed ? 0.22f : 0f);
+            // Elevação física 3D suave da peça do país (estilo relevo em tela de galeria)
+            float targetElevation = _isSelected ? 0.32f : (_isHighlighted && !_isDimmed ? 0.15f : 0f);
             if (Mathf.Abs(_currentElevation - targetElevation) > 0.001f)
             {
                 _currentElevation = Mathf.Lerp(_currentElevation, targetElevation, Time.deltaTime * 14f);

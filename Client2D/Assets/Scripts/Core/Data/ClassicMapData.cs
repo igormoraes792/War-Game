@@ -8,26 +8,27 @@ using War.Core.Models;
 namespace War.Core.Data
 {
     /// <summary>
-    /// Constantes com os IDs padronizados de todos os 42 territórios clássicos do WAR brasileiro.
+    /// Constantes com os IDs padronizados de todos os 40 territórios do WAR.
+    /// Atualizado para divisão geopolítica por países soberanos e regiões.
     /// </summary>
     public static class TerritoryIds
     {
-        // América do Norte (9)
+        // América do Norte (8)
         public const string Alasca = "alasca";
         public const string Mackenzie = "mackenzie";
         public const string Groenlandia = "groenlandia";
-        public const string Vancouver = "vancouver";
         public const string Ottawa = "ottawa";
         public const string Labrador = "labrador";
         public const string California = "california";
         public const string NovaYork = "nova_york";
         public const string Mexico = "mexico";
 
-        // América do Sul (4)
+        // América do Sul (5)
         public const string Venezuela = "venezuela";
         public const string Peru = "peru";
         public const string Brasil = "brasil";
         public const string Argentina = "argentina";
+        public const string Uruguai = "uruguai";
 
         // Europa (7)
         public const string Islandia = "islandia";
@@ -36,197 +37,192 @@ namespace War.Core.Data
         public const string Alemanha = "alemanha";
         public const string Franca = "franca";
         public const string Polonia = "polonia";
-        public const string Moscou = "moscou";
+        public const string RussiaEuropeia = "russia_europeia";
 
         // África (6)
-        public const string Nigeria = "nigeria"; // Representa Argélia/Nigéria no mapa clássico
+        public const string Argelia = "argelia";
         public const string Egito = "egito";
         public const string Sudao = "sudao";
         public const string Congo = "congo";
         public const string AfricaDoSul = "africa_do_sul";
         public const string Madagascar = "madagascar";
 
-        // Ásia (12)
-        public const string OrienteMedio = "oriente_medio";
-        public const string Aral = "aral";
-        public const string Omsk = "omsk";
-        public const string Dudinka = "dudinka";
-        public const string Siberia = "siberia";
-        public const string Tchita = "tchita";
-        public const string Mongolia = "mongolia";
-        public const string Vladivostok = "vladivostok";
+        // Ásia (9)
+        public const string RussiaAsiatica = "russia_asiatica";
+        public const string Cazaquistao = "cazaquistao";
+        public const string ArabiaSaudita = "arabia_saudita";
+        public const string Ira = "ira";
         public const string China = "china";
-        public const string Japao = "japao";
         public const string India = "india";
+        public const string Mongolia = "mongolia";
+        public const string Japao = "japao";
         public const string Vietna = "vietna";
 
-        // Oceania (4)
-        public const string Sumatra = "sumatra";
-        public const string Borneo = "borneo";
-        public const string NovaGuine = "nova_guine";
+        // Oceania (5)
         public const string Australia = "australia";
+        public const string NovaGuine = "nova_guine";
+        public const string NovaZelandia = "nova_zelandia";
+        public const string IlhasSalomao = "ilhas_salomao";
+        public const string Fiji = "fiji";
     }
 
     /// <summary>
-    /// Definição estática imutável de cada território clássico.
+    /// Definição estática imutável de cada território do mapa.
     /// </summary>
     public sealed class TerritoryDefinition
     {
         public string Id { get; }
         public string Name { get; }
+        public string GeopoliticalName { get; }
         public ContinentType Continent { get; }
         public IReadOnlyCollection<string> Neighbors { get; }
 
-        public TerritoryDefinition(string id, string name, ContinentType continent, IEnumerable<string> neighbors)
+        public TerritoryDefinition(string id, string name, ContinentType continent, IEnumerable<string> neighbors, string? geopoliticalName = null)
         {
             Id = id;
             Name = name;
+            GeopoliticalName = !string.IsNullOrWhiteSpace(geopoliticalName) ? geopoliticalName! : name;
             Continent = continent;
             Neighbors = new ReadOnlyCollection<string>(neighbors.ToList());
         }
     }
 
     /// <summary>
-    /// Tabela de dados clássicos do WAR brasileiro (42 territórios, 6 continentes e grafo completo de adjacências).
+    /// Tabela de dados de territórios do WAR (40 territórios, 6 continentes e grafo completo de adjacências).
     /// </summary>
     public static class ClassicMapData
     {
-        public const int TotalTerritoriesCount = 42;
+        public const int TotalTerritoriesCount = 40;
 
         private static readonly Dictionary<string, TerritoryDefinition> Definitions = new(StringComparer.OrdinalIgnoreCase);
 
         static ClassicMapData()
         {
-            Register(TerritoryIds.Alasca, "Alasca", ContinentType.NorthAmerica,
-                TerritoryIds.Mackenzie, TerritoryIds.Vancouver, TerritoryIds.Vladivostok);
+            // América do Norte (8)
+            RegisterWithGeo(TerritoryIds.Alasca, "Alasca", "Alasca", ContinentType.NorthAmerica,
+                TerritoryIds.Mackenzie, TerritoryIds.RussiaAsiatica);
 
-            Register(TerritoryIds.Mackenzie, "Mackenzie", ContinentType.NorthAmerica,
-                TerritoryIds.Alasca, TerritoryIds.Vancouver, TerritoryIds.Ottawa, TerritoryIds.Groenlandia);
+            RegisterWithGeo(TerritoryIds.Mackenzie, "Mackenzie", "Mackenzie", ContinentType.NorthAmerica,
+                TerritoryIds.Alasca, TerritoryIds.Groenlandia, TerritoryIds.Ottawa, TerritoryIds.California);
 
-            Register(TerritoryIds.Groenlandia, "Groenlândia", ContinentType.NorthAmerica,
+            RegisterWithGeo(TerritoryIds.Groenlandia, "Groenlândia", "Groenlândia", ContinentType.NorthAmerica,
                 TerritoryIds.Mackenzie, TerritoryIds.Labrador, TerritoryIds.Islandia);
 
-            Register(TerritoryIds.Vancouver, "Vancouver", ContinentType.NorthAmerica,
-                TerritoryIds.Alasca, TerritoryIds.Mackenzie, TerritoryIds.Ottawa, TerritoryIds.California);
+            RegisterWithGeo(TerritoryIds.Ottawa, "Ottawa", "Ottawa", ContinentType.NorthAmerica,
+                TerritoryIds.Mackenzie, TerritoryIds.Labrador, TerritoryIds.California, TerritoryIds.NovaYork);
 
-            Register(TerritoryIds.Ottawa, "Ottawa", ContinentType.NorthAmerica,
-                TerritoryIds.Mackenzie, TerritoryIds.Vancouver, TerritoryIds.Labrador, TerritoryIds.California, TerritoryIds.NovaYork);
-
-            Register(TerritoryIds.Labrador, "Labrador", ContinentType.NorthAmerica,
+            RegisterWithGeo(TerritoryIds.Labrador, "Labrador", "Labrador", ContinentType.NorthAmerica,
                 TerritoryIds.Groenlandia, TerritoryIds.Ottawa, TerritoryIds.NovaYork);
 
-            Register(TerritoryIds.California, "Califórnia", ContinentType.NorthAmerica,
-                TerritoryIds.Vancouver, TerritoryIds.Ottawa, TerritoryIds.NovaYork, TerritoryIds.Mexico);
+            RegisterWithGeo(TerritoryIds.California, "Califórnia", "Califórnia", ContinentType.NorthAmerica,
+                TerritoryIds.Mackenzie, TerritoryIds.Ottawa, TerritoryIds.NovaYork, TerritoryIds.Mexico);
 
-            Register(TerritoryIds.NovaYork, "Nova York", ContinentType.NorthAmerica,
+            RegisterWithGeo(TerritoryIds.NovaYork, "Nova York", "Nova York", ContinentType.NorthAmerica,
                 TerritoryIds.Ottawa, TerritoryIds.Labrador, TerritoryIds.California, TerritoryIds.Mexico);
 
-            Register(TerritoryIds.Mexico, "México", ContinentType.NorthAmerica,
+            RegisterWithGeo(TerritoryIds.Mexico, "México", "México", ContinentType.NorthAmerica,
                 TerritoryIds.California, TerritoryIds.NovaYork, TerritoryIds.Venezuela);
 
-            // América do Sul (4)
-            Register(TerritoryIds.Venezuela, "Venezuela", ContinentType.SouthAmerica,
+            // América do Sul (5)
+            RegisterWithGeo(TerritoryIds.Venezuela, "Venezuela", "Venezuela", ContinentType.SouthAmerica,
                 TerritoryIds.Mexico, TerritoryIds.Peru, TerritoryIds.Brasil);
 
-            Register(TerritoryIds.Peru, "Peru", ContinentType.SouthAmerica,
+            RegisterWithGeo(TerritoryIds.Peru, "Peru", "Peru", ContinentType.SouthAmerica,
                 TerritoryIds.Venezuela, TerritoryIds.Brasil, TerritoryIds.Argentina);
 
-            Register(TerritoryIds.Brasil, "Brasil", ContinentType.SouthAmerica,
-                TerritoryIds.Venezuela, TerritoryIds.Peru, TerritoryIds.Argentina, TerritoryIds.Nigeria);
+            RegisterWithGeo(TerritoryIds.Brasil, "Brasil", "Brasil", ContinentType.SouthAmerica,
+                TerritoryIds.Venezuela, TerritoryIds.Peru, TerritoryIds.Argentina, TerritoryIds.Uruguai, TerritoryIds.Argelia);
 
-            Register(TerritoryIds.Argentina, "Argentina", ContinentType.SouthAmerica,
-                TerritoryIds.Peru, TerritoryIds.Brasil);
+            RegisterWithGeo(TerritoryIds.Argentina, "Argentina", "Argentina", ContinentType.SouthAmerica,
+                TerritoryIds.Peru, TerritoryIds.Brasil, TerritoryIds.Uruguai);
+
+            RegisterWithGeo(TerritoryIds.Uruguai, "Uruguai", "Uruguai", ContinentType.SouthAmerica,
+                TerritoryIds.Brasil, TerritoryIds.Argentina);
 
             // Europa (7)
-            Register(TerritoryIds.Islandia, "Islândia", ContinentType.Europe,
+            RegisterWithGeo(TerritoryIds.Islandia, "Islândia", "Islândia", ContinentType.Europe,
                 TerritoryIds.Groenlandia, TerritoryIds.Inglaterra);
 
-            Register(TerritoryIds.Inglaterra, "Inglaterra", ContinentType.Europe,
+            RegisterWithGeo(TerritoryIds.Inglaterra, "Inglaterra", "Inglaterra", ContinentType.Europe,
                 TerritoryIds.Islandia, TerritoryIds.Suecia, TerritoryIds.Franca, TerritoryIds.Alemanha);
 
-            Register(TerritoryIds.Suecia, "Suécia", ContinentType.Europe,
-                TerritoryIds.Inglaterra, TerritoryIds.Moscou);
+            RegisterWithGeo(TerritoryIds.Suecia, "Suécia", "Suécia", ContinentType.Europe,
+                TerritoryIds.Inglaterra, TerritoryIds.RussiaEuropeia);
 
-            Register(TerritoryIds.Alemanha, "Alemanha", ContinentType.Europe,
+            RegisterWithGeo(TerritoryIds.Alemanha, "Alemanha", "Alemanha", ContinentType.Europe,
                 TerritoryIds.Inglaterra, TerritoryIds.Franca, TerritoryIds.Polonia);
 
-            Register(TerritoryIds.Franca, "França", ContinentType.Europe,
-                TerritoryIds.Inglaterra, TerritoryIds.Alemanha, TerritoryIds.Polonia, TerritoryIds.Nigeria);
+            RegisterWithGeo(TerritoryIds.Franca, "França", "França", ContinentType.Europe,
+                TerritoryIds.Inglaterra, TerritoryIds.Alemanha, TerritoryIds.Polonia, TerritoryIds.Argelia);
 
-            Register(TerritoryIds.Polonia, "Polônia", ContinentType.Europe,
-                TerritoryIds.Alemanha, TerritoryIds.Franca, TerritoryIds.Moscou, TerritoryIds.Egito, TerritoryIds.OrienteMedio);
+            RegisterWithGeo(TerritoryIds.Polonia, "Polônia", "Polônia", ContinentType.Europe,
+                TerritoryIds.Alemanha, TerritoryIds.Franca, TerritoryIds.RussiaEuropeia, TerritoryIds.Egito, TerritoryIds.Ira);
 
-            Register(TerritoryIds.Moscou, "Moscou", ContinentType.Europe,
-                TerritoryIds.Suecia, TerritoryIds.Polonia, TerritoryIds.OrienteMedio, TerritoryIds.Aral, TerritoryIds.Omsk);
+            RegisterWithGeo(TerritoryIds.RussiaEuropeia, "Rússia Europeia", "Rússia Europeia", ContinentType.Europe,
+                TerritoryIds.Suecia, TerritoryIds.Polonia, TerritoryIds.Cazaquistao, TerritoryIds.Ira, TerritoryIds.RussiaAsiatica);
 
             // África (6)
-            Register(TerritoryIds.Nigeria, "Nigéria", ContinentType.Africa,
+            RegisterWithGeo(TerritoryIds.Argelia, "Argélia", "Argélia", ContinentType.Africa,
                 TerritoryIds.Brasil, TerritoryIds.Franca, TerritoryIds.Egito, TerritoryIds.Sudao, TerritoryIds.Congo);
 
-            Register(TerritoryIds.Egito, "Egito", ContinentType.Africa,
-                TerritoryIds.Nigeria, TerritoryIds.Polonia, TerritoryIds.OrienteMedio, TerritoryIds.Sudao);
+            RegisterWithGeo(TerritoryIds.Egito, "Egito", "Egito", ContinentType.Africa,
+                TerritoryIds.Argelia, TerritoryIds.Polonia, TerritoryIds.ArabiaSaudita, TerritoryIds.Sudao);
 
-            Register(TerritoryIds.Sudao, "Sudão", ContinentType.Africa,
-                TerritoryIds.Nigeria, TerritoryIds.Egito, TerritoryIds.Congo, TerritoryIds.AfricaDoSul, TerritoryIds.Madagascar);
+            RegisterWithGeo(TerritoryIds.Sudao, "Sudão", "Sudão", ContinentType.Africa,
+                TerritoryIds.Argelia, TerritoryIds.Egito, TerritoryIds.Congo, TerritoryIds.AfricaDoSul, TerritoryIds.Madagascar);
 
-            Register(TerritoryIds.Congo, "Congo", ContinentType.Africa,
-                TerritoryIds.Nigeria, TerritoryIds.Sudao, TerritoryIds.AfricaDoSul);
+            RegisterWithGeo(TerritoryIds.Congo, "Congo", "Congo", ContinentType.Africa,
+                TerritoryIds.Argelia, TerritoryIds.Sudao, TerritoryIds.AfricaDoSul);
 
-            Register(TerritoryIds.AfricaDoSul, "África do Sul", ContinentType.Africa,
+            RegisterWithGeo(TerritoryIds.AfricaDoSul, "África do Sul", "África do Sul", ContinentType.Africa,
                 TerritoryIds.Congo, TerritoryIds.Sudao, TerritoryIds.Madagascar);
 
-            Register(TerritoryIds.Madagascar, "Madagascar", ContinentType.Africa,
+            RegisterWithGeo(TerritoryIds.Madagascar, "Madagascar", "Madagascar", ContinentType.Africa,
                 TerritoryIds.Sudao, TerritoryIds.AfricaDoSul);
 
-            // Ásia (12)
-            Register(TerritoryIds.OrienteMedio, "Oriente Médio", ContinentType.Asia,
-                TerritoryIds.Polonia, TerritoryIds.Moscou, TerritoryIds.Egito, TerritoryIds.Aral, TerritoryIds.India);
+            // Ásia (9)
+            RegisterWithGeo(TerritoryIds.RussiaAsiatica, "Rússia Asiática", "Rússia Asiática", ContinentType.Asia,
+                TerritoryIds.RussiaEuropeia, TerritoryIds.Cazaquistao, TerritoryIds.Mongolia, TerritoryIds.China, TerritoryIds.Alasca, TerritoryIds.Japao);
 
-            Register(TerritoryIds.Aral, "Aral", ContinentType.Asia,
-                TerritoryIds.Moscou, TerritoryIds.OrienteMedio, TerritoryIds.Omsk, TerritoryIds.India, TerritoryIds.China);
+            RegisterWithGeo(TerritoryIds.Cazaquistao, "Cazaquistão", "Cazaquistão", ContinentType.Asia,
+                TerritoryIds.RussiaEuropeia, TerritoryIds.RussiaAsiatica, TerritoryIds.Ira, TerritoryIds.China, TerritoryIds.India);
 
-            Register(TerritoryIds.Omsk, "Omsk", ContinentType.Asia,
-                TerritoryIds.Moscou, TerritoryIds.Aral, TerritoryIds.Dudinka, TerritoryIds.Mongolia, TerritoryIds.China);
+            RegisterWithGeo(TerritoryIds.ArabiaSaudita, "Arábia Saudita", "Arábia Saudita", ContinentType.Asia,
+                TerritoryIds.Egito, TerritoryIds.Ira);
 
-            Register(TerritoryIds.Dudinka, "Dudinka", ContinentType.Asia,
-                TerritoryIds.Omsk, TerritoryIds.Siberia, TerritoryIds.Tchita, TerritoryIds.Mongolia);
+            RegisterWithGeo(TerritoryIds.Ira, "Irã", "Irã", ContinentType.Asia,
+                TerritoryIds.ArabiaSaudita, TerritoryIds.Polonia, TerritoryIds.RussiaEuropeia, TerritoryIds.Cazaquistao, TerritoryIds.India);
 
-            Register(TerritoryIds.Siberia, "Sibéria", ContinentType.Asia,
-                TerritoryIds.Dudinka, TerritoryIds.Tchita, TerritoryIds.Vladivostok);
+            RegisterWithGeo(TerritoryIds.China, "China", "China", ContinentType.Asia,
+                TerritoryIds.Cazaquistao, TerritoryIds.RussiaAsiatica, TerritoryIds.Mongolia, TerritoryIds.India, TerritoryIds.Vietna, TerritoryIds.Japao);
 
-            Register(TerritoryIds.Tchita, "Tchita", ContinentType.Asia,
-                TerritoryIds.Dudinka, TerritoryIds.Siberia, TerritoryIds.Mongolia, TerritoryIds.China, TerritoryIds.Vladivostok);
+            RegisterWithGeo(TerritoryIds.India, "Índia", "Índia", ContinentType.Asia,
+                TerritoryIds.Ira, TerritoryIds.Cazaquistao, TerritoryIds.China, TerritoryIds.Vietna);
 
-            Register(TerritoryIds.Mongolia, "Mongólia", ContinentType.Asia,
-                TerritoryIds.Omsk, TerritoryIds.Dudinka, TerritoryIds.Tchita, TerritoryIds.China, TerritoryIds.Vladivostok);
+            RegisterWithGeo(TerritoryIds.Mongolia, "Mongólia", "Mongólia", ContinentType.Asia,
+                TerritoryIds.RussiaAsiatica, TerritoryIds.China);
 
-            Register(TerritoryIds.Vladivostok, "Vladivostok", ContinentType.Asia,
-                TerritoryIds.Alasca, TerritoryIds.Siberia, TerritoryIds.Tchita, TerritoryIds.Mongolia, TerritoryIds.China, TerritoryIds.Japao);
+            RegisterWithGeo(TerritoryIds.Japao, "Japão", "Japão", ContinentType.Asia,
+                TerritoryIds.RussiaAsiatica, TerritoryIds.China);
 
-            Register(TerritoryIds.China, "China", ContinentType.Asia,
-                TerritoryIds.Aral, TerritoryIds.Omsk, TerritoryIds.Mongolia, TerritoryIds.Tchita, TerritoryIds.Vladivostok, TerritoryIds.Japao, TerritoryIds.India, TerritoryIds.Vietna);
+            RegisterWithGeo(TerritoryIds.Vietna, "Vietnã", "Vietnã", ContinentType.Asia,
+                TerritoryIds.China, TerritoryIds.India, TerritoryIds.Australia, TerritoryIds.NovaGuine);
 
-            Register(TerritoryIds.Japao, "Japão", ContinentType.Asia,
-                TerritoryIds.Vladivostok, TerritoryIds.China);
+            // Oceania (5)
+            RegisterWithGeo(TerritoryIds.Australia, "Austrália", "Austrália", ContinentType.Oceania,
+                TerritoryIds.Vietna, TerritoryIds.NovaGuine, TerritoryIds.NovaZelandia);
 
-            Register(TerritoryIds.India, "Índia", ContinentType.Asia,
-                TerritoryIds.OrienteMedio, TerritoryIds.Aral, TerritoryIds.China, TerritoryIds.Vietna, TerritoryIds.Sumatra);
+            RegisterWithGeo(TerritoryIds.NovaGuine, "Nova Guiné", "Nova Guiné", ContinentType.Oceania,
+                TerritoryIds.Vietna, TerritoryIds.Australia, TerritoryIds.IlhasSalomao);
 
-            Register(TerritoryIds.Vietna, "Vietnã", ContinentType.Asia,
-                TerritoryIds.China, TerritoryIds.India, TerritoryIds.Borneo);
+            RegisterWithGeo(TerritoryIds.IlhasSalomao, "Ilhas Salomão", "Ilhas Salomão", ContinentType.Oceania,
+                TerritoryIds.NovaGuine, TerritoryIds.Fiji);
 
-            // Oceania (4)
-            Register(TerritoryIds.Sumatra, "Sumatra", ContinentType.Oceania,
-                TerritoryIds.India, TerritoryIds.Australia);
+            RegisterWithGeo(TerritoryIds.Fiji, "Fiji", "Fiji", ContinentType.Oceania,
+                TerritoryIds.IlhasSalomao, TerritoryIds.NovaZelandia);
 
-            Register(TerritoryIds.Borneo, "Bornéu", ContinentType.Oceania,
-                TerritoryIds.Vietna, TerritoryIds.NovaGuine, TerritoryIds.Australia);
-
-            Register(TerritoryIds.NovaGuine, "Nova Guiné", ContinentType.Oceania,
-                TerritoryIds.Borneo, TerritoryIds.Australia);
-
-            Register(TerritoryIds.Australia, "Austrália", ContinentType.Oceania,
-                TerritoryIds.Sumatra, TerritoryIds.Borneo, TerritoryIds.NovaGuine);
+            RegisterWithGeo(TerritoryIds.NovaZelandia, "Nova Zelândia", "Nova Zelândia", ContinentType.Oceania,
+                TerritoryIds.Australia, TerritoryIds.Fiji);
 
             // Validação de simetria do grafo e integridade na carga estática
             ValidateGraphIntegrity();
@@ -234,7 +230,12 @@ namespace War.Core.Data
 
         private static void Register(string id, string name, ContinentType continent, params string[] neighbors)
         {
-            Definitions[id] = new TerritoryDefinition(id, name, continent, neighbors);
+            RegisterWithGeo(id, name, name, continent, neighbors);
+        }
+
+        private static void RegisterWithGeo(string id, string name, string geopoliticalName, ContinentType continent, params string[] neighbors)
+        {
+            Definitions[id] = new TerritoryDefinition(id, name, continent, neighbors, geopoliticalName);
         }
 
         /// <summary>
@@ -285,7 +286,7 @@ namespace War.Core.Data
         public static IReadOnlyCollection<TerritoryDefinition> GetAllDefinitions() => Definitions.Values;
 
         /// <summary>
-        /// Cria uma nova instância de mapa com todos os 42 territórios prontos para uso em jogo.
+        /// Cria uma nova instância de mapa com todos os 40 territórios prontos para uso em jogo.
         /// </summary>
         public static Dictionary<string, Territory> CreateClassicMap()
         {
@@ -299,7 +300,8 @@ namespace War.Core.Data
                     name: def.Name,
                     continent: def.Continent,
                     ownerId: null,
-                    armies: 1);
+                    armies: 1,
+                    geopoliticalName: def.GeopoliticalName);
             }
 
             // Depois conecta todas as adjacências

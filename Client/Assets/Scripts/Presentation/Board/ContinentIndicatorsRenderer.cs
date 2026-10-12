@@ -44,23 +44,29 @@ namespace War.Presentation.Board
         // Posições estratégicas nos oceanos e pontos de ancoragem litorânea oficiais
         public static readonly ContinentCallout[] ClassicContinents = new ContinentCallout[]
         {
-            new ContinentCallout("AMÉRICA DO NORTE", ContinentType.NorthAmerica, 5, new Color(0.95f, 0.48f, 0.15f),
-                new Vector3(-24.5f, 0.05f, 12.5f), new Vector3(-17.0f, 0.15f, 8.5f)),
+            // América do Norte: no Pacífico Norte a oeste da Califórnia / Vancouver
+            new ContinentCallout("AMÉRICA DO NORTE", ContinentType.NorthAmerica, 5, new Color(0.38f, 0.52f, 0.42f),
+                new Vector3(-24.0f, 0.05f, 4.5f), new Vector3(-18.0f, 0.15f, 6.5f)),
 
-            new ContinentCallout("AMÉRICA DO SUL", ContinentType.SouthAmerica, 2, new Color(0.35f, 0.85f, 0.28f),
-                new Vector3(-22.5f, 0.05f, -9.0f), new Vector3(-13.5f, 0.15f, -5.0f)),
+            // América do Sul: no Pacífico Sul a oeste do Peru / Chile
+            new ContinentCallout("AMÉRICA DO SUL", ContinentType.SouthAmerica, 2, new Color(0.78f, 0.38f, 0.36f),
+                new Vector3(-19.5f, 0.05f, -8.0f), new Vector3(-13.5f, 0.15f, -6.5f)),
 
-            new ContinentCallout("EUROPA", ContinentType.Europe, 5, new Color(0.20f, 0.80f, 0.98f),
-                new Vector3(-1.0f, 0.05f, 15.0f), new Vector3(1.5f, 0.15f, 9.8f)),
+            // Europa: no Atlântico Norte entre Groenlândia e Inglaterra
+            new ContinentCallout("EUROPA", ContinentType.Europe, 5, new Color(0.32f, 0.55f, 0.65f),
+                new Vector3(-5.5f, 0.05f, 14.5f), new Vector3(-1.5f, 0.15f, 8.5f)),
 
-            new ContinentCallout("ÁFRICA", ContinentType.Africa, 3, new Color(0.92f, 0.28f, 0.65f),
-                new Vector3(2.5f, 0.05f, -14.5f), new Vector3(2.5f, 0.15f, -8.0f)),
+            // África: no Atlântico Sul a sudoeste do Congo / África do Sul
+            new ContinentCallout("ÁFRICA", ContinentType.Africa, 3, new Color(0.78f, 0.60f, 0.32f),
+                new Vector3(-4.5f, 0.05f, -12.5f), new Vector3(0.5f, 0.15f, -8.0f)),
 
-            new ContinentCallout("ÁSIA", ContinentType.Asia, 7, new Color(0.98f, 0.78f, 0.15f),
-                new Vector3(23.0f, 0.05f, 14.5f), new Vector3(16.5f, 0.15f, 8.5f)),
+            // Ásia: no Oceano Ártico ao norte da Sibéria
+            new ContinentCallout("ÁSIA", ContinentType.Asia, 7, new Color(0.85f, 0.68f, 0.28f),
+                new Vector3(18.5f, 0.05f, 15.0f), new Vector3(15.5f, 0.15f, 9.5f)),
 
-            new ContinentCallout("OCEANIA", ContinentType.Oceania, 2, new Color(0.95f, 0.28f, 0.28f),
-                new Vector3(23.0f, 0.05f, -13.5f), new Vector3(19.0f, 0.15f, -7.5f))
+            // Oceania: no Oceano Índico a sudoeste da Austrália (100% desobstruído da Austrália)
+            new ContinentCallout("OCEANIA", ContinentType.Oceania, 2, new Color(0.42f, 0.60f, 0.45f),
+                new Vector3(13.8f, 0.05f, -14.2f), new Vector3(18.5f, 0.15f, -11.0f))
         };
 
         private void Start()
@@ -108,21 +114,22 @@ namespace War.Presentation.Board
                 cartoucheObj.transform.SetParent(rootGo.transform, false);
                 cartoucheObj.transform.localPosition = Vector3.zero;
 
-                // 1.1 Moldura exterior da cartela (cor do continente)
+                // 1.1 Moldura exterior da cartela (acabamento canvas de galeria com tom do continente)
                 var rimObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 rimObj.name = "Cartouche_Border";
                 rimObj.transform.SetParent(cartoucheObj.transform, false);
                 rimObj.transform.localPosition = new Vector3(0f, 0.015f, 0f);
-                rimObj.transform.localScale = new Vector3(8.8f, 0.03f, 2.8f);
+                rimObj.transform.localScale = new Vector3(5.2f, 0.03f, 1.7f);
 
+                var rimColor = Color.Lerp(continent.ThemeColor, new Color(0.85f, 0.88f, 0.92f), 0.40f);
                 var rimMat = new Material(safeShader)
                 {
                     name = $"Mat_CartoucheRim_{continent.Name}",
-                    color = continent.ThemeColor,
+                    color = rimColor,
                     enableInstancing = true
                 };
-                if (rimMat.HasProperty("_BaseColor")) rimMat.SetColor("_BaseColor", continent.ThemeColor);
-                if (rimMat.HasProperty("_Smoothness")) rimMat.SetFloat("_Smoothness", 0.6f);
+                if (rimMat.HasProperty("_BaseColor")) rimMat.SetColor("_BaseColor", rimColor);
+                if (rimMat.HasProperty("_Smoothness")) rimMat.SetFloat("_Smoothness", 0.15f);
 
                 var rimRend = rimObj.GetComponent<MeshRenderer>();
                 if (rimRend != null)
@@ -133,21 +140,22 @@ namespace War.Presentation.Board
                 var rimCol = rimObj.GetComponent<Collider>();
                 if (rimCol != null) DestroyImmediate(rimCol);
 
-                // 1.2 Fundo interior da cartela (azul marinho profundo / ardósia de alta classe)
+                // 1.2 Fundo interior da cartela (pergaminho/canvas claro estilo galeria de arte)
                 var plateObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 plateObj.name = "Cartouche_Plate";
                 plateObj.transform.SetParent(cartoucheObj.transform, false);
                 plateObj.transform.localPosition = new Vector3(0f, 0.035f, 0f);
-                plateObj.transform.localScale = new Vector3(8.5f, 0.03f, 2.5f);
+                plateObj.transform.localScale = new Vector3(4.9f, 0.035f, 1.45f);
 
+                var plateColor = new Color(0.97f, 0.96f, 0.94f, 0.96f); // Ivory canvas
                 var plateMat = new Material(safeShader)
                 {
                     name = $"Mat_CartouchePlate_{continent.Name}",
-                    color = new Color(0.08f, 0.11f, 0.16f, 0.96f),
+                    color = plateColor,
                     enableInstancing = true
                 };
-                if (plateMat.HasProperty("_BaseColor")) plateMat.SetColor("_BaseColor", new Color(0.08f, 0.11f, 0.16f, 0.96f));
-                if (plateMat.HasProperty("_Smoothness")) plateMat.SetFloat("_Smoothness", 0.45f);
+                if (plateMat.HasProperty("_BaseColor")) plateMat.SetColor("_BaseColor", plateColor);
+                if (plateMat.HasProperty("_Smoothness")) plateMat.SetFloat("_Smoothness", 0.10f);
 
                 var plateRend = plateObj.GetComponent<MeshRenderer>();
                 if (plateRend != null)
@@ -164,43 +172,43 @@ namespace War.Presentation.Board
                 textContainer.transform.localPosition = new Vector3(0f, 0.06f, 0f);
                 textContainer.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
 
-                // 2.1 Nome do Continente em Caixa Alta Nítida
+                // 2.1 Nome do Continente em Tipografia Editorial Elegante
                 var nameObj = new GameObject("Text_Name");
                 nameObj.transform.SetParent(textContainer.transform, false);
-                nameObj.transform.localPosition = new Vector3(0f, 0.40f, 0f);
+                nameObj.transform.localPosition = new Vector3(0f, 0.22f, 0f);
                 nameObj.transform.localRotation = Quaternion.identity;
 
                 var nameTmp = nameObj.AddComponent<TextMeshPro>();
                 nameTmp.text = continent.Name;
-                nameTmp.fontSize = 3.6f;
+                nameTmp.fontSize = 2.4f;
                 nameTmp.fontStyle = FontStyles.Bold;
                 nameTmp.alignment = TextAlignmentOptions.Center;
-                nameTmp.color = Color.Lerp(continent.ThemeColor, Color.white, 0.45f);
-                nameTmp.outlineWidth = 0.22f;
-                nameTmp.outlineColor = Color.black;
+                nameTmp.color = Color.Lerp(continent.ThemeColor, new Color(0.15f, 0.20f, 0.25f), 0.55f); // Grafite nobre com matiz da região
+                nameTmp.outlineWidth = 0.08f;
+                nameTmp.outlineColor = new Color(1f, 1f, 1f, 0.85f);
                 nameTmp.textWrappingMode = TextWrappingModes.NoWrap;
                 if (sdfFont != null) nameTmp.font = sdfFont;
                 var nameRt = nameObj.GetComponent<RectTransform>();
-                if (nameRt != null) nameRt.sizeDelta = new Vector2(8.2f, 1.2f);
+                if (nameRt != null) nameRt.sizeDelta = new Vector2(4.8f, 0.8f);
 
                 // 2.2 Texto do Bônus de Tropas (Ex: "+2 EXÉRCITOS / RODADA")
                 var bonusObj = new GameObject("Text_Bonus");
                 bonusObj.transform.SetParent(textContainer.transform, false);
-                bonusObj.transform.localPosition = new Vector3(0f, -0.42f, 0f);
+                bonusObj.transform.localPosition = new Vector3(0f, -0.22f, 0f);
                 bonusObj.transform.localRotation = Quaternion.identity;
 
                 var bonusTmp = bonusObj.AddComponent<TextMeshPro>();
                 bonusTmp.text = $"+{continent.ArmyBonus} EXÉRCITOS / RODADA";
-                bonusTmp.fontSize = 2.4f;
+                bonusTmp.fontSize = 1.6f;
                 bonusTmp.fontStyle = FontStyles.Bold;
                 bonusTmp.alignment = TextAlignmentOptions.Center;
-                bonusTmp.color = new Color(0.92f, 0.95f, 1.0f, 0.92f);
-                bonusTmp.outlineWidth = 0.20f;
-                bonusTmp.outlineColor = Color.black;
+                bonusTmp.color = new Color(0.35f, 0.40f, 0.46f, 1.0f); // Slate suave
+                bonusTmp.outlineWidth = 0.05f;
+                bonusTmp.outlineColor = new Color(1f, 1f, 1f, 0.8f);
                 bonusTmp.textWrappingMode = TextWrappingModes.NoWrap;
                 if (sdfFont != null) bonusTmp.font = sdfFont;
                 var bonusRt = bonusObj.GetComponent<RectTransform>();
-                if (bonusRt != null) bonusRt.sizeDelta = new Vector2(8.2f, 1.0f);
+                if (bonusRt != null) bonusRt.sizeDelta = new Vector2(4.8f, 0.6f);
 
                 // 3. Linha Náutica Tática até o Litoral do Continente (Material URP Seguro)
                 var lineGo = new GameObject($"Line_{continent.Name}");
@@ -209,8 +217,8 @@ namespace War.Presentation.Board
                 var lr = lineGo.AddComponent<LineRenderer>();
                 lr.useWorldSpace = true;
                 lr.positionCount = 3;
-                lr.startWidth = 0.08f;
-                lr.endWidth = 0.05f;
+                lr.startWidth = 0.07f;
+                lr.endWidth = 0.04f;
                 lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 lr.receiveShadows = false;
 
@@ -231,7 +239,7 @@ namespace War.Presentation.Board
 
                 // Traçado náutico elegante da borda da cartela até o litoral
                 Vector3 toTarget = (continent.TargetPosition - continent.TextPosition).normalized;
-                Vector3 startPos = continent.TextPosition + toTarget * 4.4f;
+                Vector3 startPos = continent.TextPosition + toTarget * 2.6f;
                 startPos.y = 0.06f;
                 Vector3 endPos = continent.TargetPosition;
                 endPos.y = 0.12f;
@@ -248,7 +256,7 @@ namespace War.Presentation.Board
                 anchorObj.name = $"Anchor_{continent.Name}";
                 anchorObj.transform.SetParent(rootGo.transform, false);
                 anchorObj.transform.position = endPos;
-                anchorObj.transform.localScale = new Vector3(0.55f, 0.02f, 0.55f);
+                anchorObj.transform.localScale = new Vector3(0.40f, 0.02f, 0.40f);
 
                 var anchorRend = anchorObj.GetComponent<MeshRenderer>();
                 if (anchorRend != null)
@@ -259,10 +267,10 @@ namespace War.Presentation.Board
                 var anchorCol = anchorObj.GetComponent<Collider>();
                 if (anchorCol != null) DestroyImmediate(anchorCol);
 
-                // 5. Colisor para detecção de hover do mouse sobre a cartela
+                // 5. Colisor para detecção de hover do mouse sobre a cartela (com altura e profundidade generosas)
                 var col = rootGo.AddComponent<BoxCollider>();
-                col.size = new Vector3(9.2f, 1.2f, 3.2f);
-                col.center = new Vector3(0f, 0.1f, 0f);
+                col.size = new Vector3(5.6f, 1.4f, 2.2f);
+                col.center = new Vector3(0f, 0.3f, 0f);
 
                 var trigger = rootGo.AddComponent<ContinentWatermarkHoverTrigger>();
                 trigger.Init(continent.Continent, boardView, nameTmp, bonusTmp, lr, cartoucheObj.transform, continent.ThemeColor);
@@ -330,13 +338,18 @@ namespace War.Presentation.Board
 
         private void OnMouseEnter()
         {
+            if (_boardView == null)
+            {
+                _boardView = Object.FindAnyObjectByType<BoardView>();
+            }
+
             if (_nameTmp != null)
             {
-                _nameTmp.color = Color.white;
+                _nameTmp.color = _themeColor;
             }
             if (_bonusTmp != null)
             {
-                _bonusTmp.color = Color.Lerp(_themeColor, Color.white, 0.70f);
+                _bonusTmp.color = new Color(0.15f, 0.20f, 0.25f);
             }
 
             if (_lineRenderer != null)
@@ -364,13 +377,18 @@ namespace War.Presentation.Board
 
         private void OnMouseExit()
         {
+            if (_boardView == null)
+            {
+                _boardView = Object.FindAnyObjectByType<BoardView>();
+            }
+
             if (_nameTmp != null)
             {
-                _nameTmp.color = Color.Lerp(_themeColor, Color.white, 0.45f);
+                _nameTmp.color = Color.Lerp(_themeColor, new Color(0.15f, 0.20f, 0.25f), 0.55f);
             }
             if (_bonusTmp != null)
             {
-                _bonusTmp.color = new Color(0.92f, 0.95f, 1.0f, 0.92f);
+                _bonusTmp.color = new Color(0.35f, 0.40f, 0.46f, 1.0f);
             }
 
             if (_lineRenderer != null)

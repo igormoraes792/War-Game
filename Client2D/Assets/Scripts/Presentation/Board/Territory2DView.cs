@@ -75,6 +75,29 @@ namespace War2D.Presentation.Board
             {
                 polygonCollider = GetComponent<PolygonCollider2D>();
             }
+
+            if (territoryRenderer == null)
+            {
+                territoryRenderer = GetComponent<MeshRenderer>();
+            }
+
+            if (territoryRenderer != null)
+            {
+                var mat = territoryRenderer.sharedMaterial;
+                bool isInvalid = mat == null || mat.shader == null || !mat.shader.isSupported ||
+                    (mat.shader.name.StartsWith("Universal Render Pipeline") && UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline == null);
+
+                if (isInvalid)
+                {
+                    var safeShader = ShaderUtils2D.GetColorShader();
+                    territoryRenderer.sharedMaterial = new Material(safeShader)
+                    {
+                        name = "Territorio2D_Safe_Mat",
+                        color = defaultNeutralColor,
+                        enableInstancing = true
+                    };
+                }
+            }
         }
 
         private void Start()
@@ -205,3 +228,4 @@ namespace War2D.Presentation.Board
         #endregion
     }
 }
+

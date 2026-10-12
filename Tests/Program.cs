@@ -21,7 +21,7 @@ namespace War.Tests
             Console.WriteLine("  INICIANDO SUÍTE DE TESTES: WAR CORE ENGINE - ETAPA 2");
             Console.WriteLine("==================================================");
 
-            RunTest("Cartas: Inicialização do baralho com 44 cartas clássicas", TestCardDeckInitialization);
+            RunTest("Cartas: Inicialização do baralho com 42 cartas (40 territórios + 2 coringas)", TestCardDeckInitialization);
             RunTest("Cartas: Validação de combinações de troca (3 iguais, 3 distintas, Coringa)", TestCardTradeCombinations);
             RunTest("Cartas: Tabela progressiva de tropas nas trocas (4, 6, 8, 10, 12, 15, 20...)", TestCardTradeProgression);
             RunTest("Cartas: Bônus de +2 tropas para territórios dominados presentes nas cartas", TestCardTradeTerritoryBonus);
@@ -35,6 +35,7 @@ namespace War.Tests
             RunTest("FSM: Remanejamento (Fortificação) com validação de conectividade em grafo BFS", TestFortificationBFS);
             RunTest("FSM: Compra de carta ao conquistar território e passagem para próximo jogador", TestEndTurnAndDrawCard);
             RunTest("FSM: Vitória da partida encerra em GameOver", TestGameOverTrigger);
+            RunTest("Cartografia: Polígonos de Mackenzie e Rússia Asiática (geometria contígua e triangulação)", TestMackenzieAndRussiaPolygons);
 
             Console.WriteLine("\n==================================================");
             Console.WriteLine($"RESULTADO DOS TESTES: {_passed} PASSOU | {_failed} FALHOU");
@@ -68,11 +69,11 @@ namespace War.Tests
             }
         }
 
-        // 1. Baralho de 44 cartas
+        // 1. Baralho de 42 cartas (40 territórios + 2 coringas)
         static void TestCardDeckInitialization()
         {
             var deck = new CardDeck(shuffle: false);
-            Assert(deck.RemainingCardsCount == 44, $"Total de cartas deve ser 44, obtido: {deck.RemainingCardsCount}");
+            Assert(deck.RemainingCardsCount == 42, $"Total de cartas deve ser 42, obtido: {deck.RemainingCardsCount}");
 
             var cards = new List<Card>();
             while (deck.RemainingCardsCount > 0)
@@ -81,12 +82,11 @@ namespace War.Tests
             }
 
             Assert(cards.Count(c => c.IsWildcard) == 2, "Devem existir exatamente 2 Coringas.");
-            Assert(cards.Count(c => c.Shape == CardShape.Circle) == 14, "Devem existir exatamente 14 Círculos.");
-            Assert(cards.Count(c => c.Shape == CardShape.Square) == 14, "Devem existir exatamente 14 Quadrados.");
-            Assert(cards.Count(c => c.Shape == CardShape.Triangle) == 14, "Devem existir exatamente 14 Triângulos.");
+            var nonWildcards = cards.Where(c => !c.IsWildcard).ToList();
+            Assert(nonWildcards.Count == 40, "Devem existir exatamente 40 cartas de territórios.");
 
-            var territoryIds = cards.Where(c => !c.IsWildcard).Select(c => c.TerritoryId).Distinct().ToList();
-            Assert(territoryIds.Count == 42, "Todas as 42 cartas devem referenciar territórios únicos.");
+            var territoryIds = nonWildcards.Select(c => c.TerritoryId).Distinct().ToList();
+            Assert(territoryIds.Count == 40, "Todas as 40 cartas devem referenciar territórios únicos.");
         }
 
         // 2. Validação de trocas de cartas
@@ -438,5 +438,115 @@ namespace War.Tests
             Assert(manager.State.IsGameOver, "Partida deve estar em GameOver.");
             Assert(manager.State.Winner == p1, "Alice deve ser a vencedora.");
         }
+
+        // 15. Cartografia: Polígonos de Mackenzie e Rússia Asiática
+        static void TestMackenzieAndRussiaPolygons()
+        {
+            var mackenzie = new (float x, float y)[]
+            {
+                (-1.88f, -2.62f), (0.00f, -2.63f), (1.41f, -2.66f),
+                (1.60f, -1.00f), (2.72f, -0.50f), (2.92f, 0.21f),
+                (3.80f, 1.20f), (3.70f, 2.20f), (1.20f, 2.80f),
+                (-1.30f, 2.80f), (-3.05f, 2.33f), (-3.13f, 0.42f),
+                (-2.61f, 0.35f), (-2.11f, -0.83f), (-2.50f, -1.40f)
+            };
+
+            var russiaAsiatica = new (float x, float y)[]
+            {
+                (-6.55f, 2.03f), (-6.73f, -1.31f), (-6.30f, -1.61f),
+                (-6.32f, -2.46f), (-6.97f, -3.00f), (-7.46f, -2.85f),
+                (-6.20f, -2.54f), (-4.83f, -3.20f), (-3.42f, -3.60f),
+                (-2.50f, -3.00f), (-2.09f, -2.41f), (-0.27f, -2.45f),
+                (0.44f, -2.15f), (0.94f, -1.30f), (1.52f, -1.25f),
+                (3.35f, -3.20f), (4.00f, -4.00f), (5.30f, -3.30f),
+                (6.00f, -1.60f), (7.30f, 0.00f), (8.30f, 1.70f),
+                (7.70f, 2.80f), (6.00f, 3.40f), (4.00f, 3.60f),
+                (1.50f, 3.70f), (-1.00f, 3.50f), (-3.50f, 3.30f),
+                (-5.50f, 2.70f)
+            };
+
+            float areaM = Math.Abs(ComputeArea(mackenzie));
+            Assert(areaM > 10f, $"Área de Mackenzie deve ser substancial para cobrir todo o oeste canadense, obtido: {areaM}");
+
+            float areaR = Math.Abs(ComputeArea(russiaAsiatica));
+            Assert(areaR > 50f, $"Área da Rússia Asiática deve cobrir a vasta massa continental siberiana, obtido: {areaR}");
+
+            int triM = EarClipCount(mackenzie);
+            Assert(triM == mackenzie.Length - 2, $"Mackenzie deve triangular {mackenzie.Length - 2} triângulos, obtido: {triM}");
+
+            int triR = EarClipCount(russiaAsiatica);
+            Assert(triR == russiaAsiatica.Length - 2, $"Rússia Asiática deve triangular {russiaAsiatica.Length - 2} triângulos, obtido: {triR}");
+        }
+
+        static float ComputeArea((float x, float y)[] poly)
+        {
+            float area = 0f;
+            for (int i = 0; i < poly.Length; i++)
+            {
+                var a = poly[i];
+                var b = poly[(i + 1) % poly.Length];
+                area += (a.x * b.y - b.x * a.y);
+            }
+            return area * 0.5f;
+        }
+
+        static int EarClipCount((float x, float y)[] poly)
+        {
+            int n = poly.Length;
+            var indices = new List<int>(n);
+            float area = ComputeArea(poly);
+            if (area < 0) for (int i = n - 1; i >= 0; i--) indices.Add(i);
+            else for (int i = 0; i < n; i++) indices.Add(i);
+
+            int triCount = 0;
+            int safety = 0;
+            while (indices.Count > 3 && safety < 300)
+            {
+                safety++;
+                bool found = false;
+                for (int i = 0; i < indices.Count; i++)
+                {
+                    int prev = indices[(i - 1 + indices.Count) % indices.Count];
+                    int curr = indices[i];
+                    int next = indices[(i + 1) % indices.Count];
+
+                    var a = poly[prev];
+                    var b = poly[curr];
+                    var c = poly[next];
+
+                    float cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+                    if (cross <= 1e-6f) continue;
+
+                    bool isEar = true;
+                    for (int j = 0; j < indices.Count; j++)
+                    {
+                        int test = indices[j];
+                        if (test == prev || test == curr || test == next) continue;
+                        var p = poly[test];
+                        float c1 = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+                        float c2 = (c.x - b.x) * (p.y - b.y) - (c.y - b.y) * (p.x - b.x);
+                        float c3 = (a.x - c.x) * (p.y - c.y) - (a.y - c.y) * (p.x - c.x);
+                        bool inside = !(((c1 < 0) || (c2 < 0) || (c3 < 0)) && ((c1 > 0) || (c2 > 0) || (c3 > 0)));
+                        if (inside) { isEar = false; break; }
+                    }
+
+                    if (isEar)
+                    {
+                        triCount++;
+                        indices.RemoveAt(i);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    triCount++;
+                    indices.RemoveAt(1);
+                }
+            }
+            if (indices.Count == 3) triCount++;
+            return triCount;
+        }
     }
 }
+

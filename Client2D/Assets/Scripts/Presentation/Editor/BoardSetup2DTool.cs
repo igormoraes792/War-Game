@@ -26,6 +26,34 @@ namespace War2D.Presentation.Editor
         static BoardSetup2DTool()
         {
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
+            EditorApplication.delayCall += EnsureValidBoardInScene;
+        }
+
+        private static void EnsureValidBoardInScene()
+        {
+            var existingBoard = Object.FindAnyObjectByType<Board2DView>();
+            if (existingBoard == null)
+            {
+                Generate2DBoardScene();
+                return;
+            }
+
+            var ocean = GameObject.Find("Oceano_Mapa2D");
+            if (ocean != null)
+            {
+                var rend = ocean.GetComponent<MeshRenderer>();
+                if (rend != null)
+                {
+                    var mat = rend.sharedMaterial;
+                    bool isPink = mat == null || mat.shader == null || !mat.shader.isSupported ||
+                        (mat.shader.name.StartsWith("Universal Render Pipeline") && UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline == null);
+
+                    if (isPink)
+                    {
+                        Generate2DBoardScene();
+                    }
+                }
+            }
         }
 
         private static void OnPlayModeChanged(PlayModeStateChange state)
@@ -150,7 +178,7 @@ namespace War2D.Presentation.Editor
             var graphic = bgObj.AddComponent<MapBoard2DGraphic>();
             var tex = graphic.GenerateMapTexture();
 
-            var unlitShader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Texture") ?? Shader.Find("Sprites/Default");
+            var unlitShader = ShaderUtils2D.GetTextureShader();
             var mat = new Material(unlitShader)
             {
                 name = "Mat_Ocean_2D",
@@ -173,7 +201,7 @@ namespace War2D.Presentation.Editor
             var views = new List<Territory2DView>();
             var defs = ClassicMapData.GetAllDefinitions();
 
-            var safeShader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Color");
+            var safeShader = ShaderUtils2D.GetColorShader();
             var defaultTerritoryMat = new Material(safeShader)
             {
                 name = "Territorio2D_Base_Mat",
@@ -183,9 +211,12 @@ namespace War2D.Presentation.Editor
 
             var sdfFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
 
-            // Materiais das fichas militares
+            // Materiais das fichas militares circulares
             var rimMat = new Material(safeShader) { name = "Ficha2D_Rim_Mat", color = Color.white };
             var badgeMat = new Material(safeShader) { name = "Ficha2D_Core_Mat", color = new Color(0.08f, 0.11f, 0.16f, 1f) };
+
+            var rimCircleMesh = Territory2DMeshBuilder.CreateCircleMesh(0.68f);
+            var badgeCircleMesh = Territory2DMeshBuilder.CreateCircleMesh(0.55f);
 
             foreach (var def in defs)
             {
@@ -234,31 +265,31 @@ namespace War2D.Presentation.Editor
 
                 var centroid = Territory2DMeshBuilder.GetPolygonCentroid(poly);
 
-                // 4. Ficha Militar Clássica de Tropa (Token 2D em Z = -0.05f)
+                // 4. Ficha Militar Clássica de Tropa (Token Circular 2D em Z = -0.05f)
                 var tokenRoot = new GameObject("Token_Root");
                 tokenRoot.transform.SetParent(terrObj.transform, false);
                 tokenRoot.transform.localPosition = new Vector3(centroid.x, centroid.y + 0.35f, -0.06f);
 
-                // 4.1 Aro exterior (cor do jogador)
-                var rimObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                rimObj.name = "Token_Rim";
+                // 4.1 Aro exterior circular (cor do jogador)
+                var rimObj = new GameObject("Token_Rim");
                 rimObj.transform.SetParent(tokenRoot.transform, false);
-                rimObj.transform.localScale = new Vector3(1.35f, 1.35f, 1f);
-                var rimCol = rimObj.GetComponent<Collider>();
-                if (rimCol != null) Object.DestroyImmediate(rimCol);
-                var rimRend = rimObj.GetComponent<MeshRenderer>();
-                if (rimRend != null) rimRend.sharedMaterial = rimMat;
+                var rimMf = rimObj.AddComponent<MeshFilter>();
+                rimMf.sharedMesh = rimCircleMesh;
+                var rimRend = rimObj.AddComponent<MeshRenderer>();
+                rimRend.sharedMaterial = rimMat;
+                rimRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                rimRend.receiveShadows = false;
 
-                // 4.2 Núcleo central escuro (para contraste absoluto)
-                var badgeObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                badgeObj.name = "Token_Badge";
+                // 4.2 Núcleo central circular escuro (para contraste absoluto)
+                var badgeObj = new GameObject("Token_Badge");
                 badgeObj.transform.SetParent(tokenRoot.transform, false);
                 badgeObj.transform.localPosition = new Vector3(0f, 0f, -0.01f);
-                badgeObj.transform.localScale = new Vector3(1.10f, 1.10f, 1f);
-                var badgeCol = badgeObj.GetComponent<Collider>();
-                if (badgeCol != null) Object.DestroyImmediate(badgeCol);
-                var badgeRend = badgeObj.GetComponent<MeshRenderer>();
-                if (badgeRend != null) badgeRend.sharedMaterial = badgeMat;
+                var badgeMf = badgeObj.AddComponent<MeshFilter>();
+                badgeMf.sharedMesh = badgeCircleMesh;
+                var badgeRend = badgeObj.AddComponent<MeshRenderer>();
+                badgeRend.sharedMaterial = badgeMat;
+                badgeRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                badgeRend.receiveShadows = false;
 
                 // 4.3 Contador de tropas (TextMeshPro SDF Branco Puro)
                 var countTextObj = new GameObject("Text_Count");
@@ -379,21 +410,23 @@ namespace War2D.Presentation.Editor
         {
             return new Dictionary<string, Vector2>(System.StringComparer.OrdinalIgnoreCase)
             {
-                // América do Sul (4)
+                // América do Sul (5)
                 [TerritoryIds.Venezuela] = new Vector2(-13.02f, -1.97f),
                 [TerritoryIds.Peru] = new Vector2(-13.20f, -5.40f),
                 [TerritoryIds.Brasil] = new Vector2(-10.09f, -4.75f),
-                [TerritoryIds.Argentina] = new Vector2(-12.38f, -9.72f),
-                // América do Norte (9)
+                [TerritoryIds.Argentina] = new Vector2(-12.38f, -10.40f),
+                [TerritoryIds.Uruguai] = new Vector2(-10.20f, -8.70f),
+
+                // América do Norte (8)
                 [TerritoryIds.Alasca] = new Vector2(-21.66f, 9.99f),
-                [TerritoryIds.Mackenzie] = new Vector2(-16.66f, 10.34f),
+                [TerritoryIds.Mackenzie] = new Vector2(-17.20f, 9.00f),
                 [TerritoryIds.Groenlandia] = new Vector2(-7.91f, 11.69f),
-                [TerritoryIds.Vancouver] = new Vector2(-17.58f, 7.86f),
                 [TerritoryIds.Ottawa] = new Vector2(-14.18f, 7.13f),
                 [TerritoryIds.Labrador] = new Vector2(-10.97f, 7.22f),
                 [TerritoryIds.California] = new Vector2(-17.27f, 4.64f),
                 [TerritoryIds.NovaYork] = new Vector2(-13.73f, 3.92f),
                 [TerritoryIds.Mexico] = new Vector2(-16.91f, 0.96f),
+
                 // Europa (7)
                 [TerritoryIds.Islandia] = new Vector2(-3.75f, 8.82f),
                 [TerritoryIds.Inglaterra] = new Vector2(-4.34f, 5.55f),
@@ -401,32 +434,33 @@ namespace War2D.Presentation.Editor
                 [TerritoryIds.Alemanha] = new Vector2(-0.07f, 4.81f),
                 [TerritoryIds.Suecia] = new Vector2(0.42f, 8.98f),
                 [TerritoryIds.Polonia] = new Vector2(0.36f, 2.14f),
-                [TerritoryIds.Moscou] = new Vector2(4.68f, 6.81f),
+                [TerritoryIds.RussiaEuropeia] = new Vector2(4.68f, 6.81f),
+
                 // África (6)
-                [TerritoryIds.Nigeria] = new Vector2(-1.63f, -3.62f),
+                [TerritoryIds.Argelia] = new Vector2(-1.63f, -3.62f),
                 [TerritoryIds.Egito] = new Vector2(1.82f, -2.22f),
                 [TerritoryIds.Sudao] = new Vector2(4.23f, -5.91f),
                 [TerritoryIds.Congo] = new Vector2(1.93f, -7.31f),
                 [TerritoryIds.AfricaDoSul] = new Vector2(2.31f, -10.93f),
                 [TerritoryIds.Madagascar] = new Vector2(6.65f, -11.26f),
-                // Ásia (12)
-                [TerritoryIds.OrienteMedio] = new Vector2(5.99f, -0.87f),
-                [TerritoryIds.Aral] = new Vector2(8.44f, 3.84f),
-                [TerritoryIds.Omsk] = new Vector2(9.45f, 7.81f),
-                [TerritoryIds.Dudinka] = new Vector2(11.95f, 9.86f),
-                [TerritoryIds.Siberia] = new Vector2(15.68f, 10.98f),
-                [TerritoryIds.Tchita] = new Vector2(15.10f, 7.22f),
-                [TerritoryIds.Mongolia] = new Vector2(15.85f, 4.55f),
+
+                // Ásia (9)
+                [TerritoryIds.RussiaAsiatica] = new Vector2(14.50f, 8.80f),
+                [TerritoryIds.Cazaquistao] = new Vector2(8.44f, 3.84f),
+                [TerritoryIds.ArabiaSaudita] = new Vector2(5.20f, -2.60f),
+                [TerritoryIds.Ira] = new Vector2(7.30f, 0.40f),
                 [TerritoryIds.China] = new Vector2(14.26f, 1.86f),
                 [TerritoryIds.India] = new Vector2(11.18f, -0.79f),
-                [TerritoryIds.Vietna] = new Vector2(15.36f, -2.05f),
-                [TerritoryIds.Vladivostok] = new Vector2(18.96f, 9.49f),
+                [TerritoryIds.Mongolia] = new Vector2(15.20f, 5.20f),
                 [TerritoryIds.Japao] = new Vector2(20.50f, 4.50f),
-                // Oceania (4)
-                [TerritoryIds.Sumatra] = new Vector2(14.68f, -7.02f),
-                [TerritoryIds.Borneo] = new Vector2(16.41f, -6.40f),
-                [TerritoryIds.NovaGuine] = new Vector2(20.34f, -5.71f),
-                [TerritoryIds.Australia] = new Vector2(20.25f, -10.79f)
+                [TerritoryIds.Vietna] = new Vector2(15.36f, -2.05f),
+
+                // Oceania (5)
+                [TerritoryIds.Australia] = new Vector2(19.80f, -10.20f),
+                [TerritoryIds.NovaGuine] = new Vector2(19.80f, -5.50f),
+                [TerritoryIds.IlhasSalomao] = new Vector2(22.60f, -5.80f),
+                [TerritoryIds.Fiji] = new Vector2(24.50f, -8.20f),
+                [TerritoryIds.NovaZelandia] = new Vector2(23.20f, -12.50f)
             };
         }
 

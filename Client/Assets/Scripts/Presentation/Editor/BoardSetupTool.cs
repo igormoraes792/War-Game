@@ -160,51 +160,36 @@ namespace War.Presentation.Editor
 
         private static GameObject CreateWoodTable(Transform parent)
         {
-            var tableRoot = new GameObject("Mesa_Madeira_Militar");
+            var tableRoot = new GameObject("Quadro_Canvas_Arte");
             tableRoot.transform.SetParent(parent, false);
 
-            var table = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            table.name = "Mesa_Base";
-            table.transform.SetParent(tableRoot.transform, false);
-            table.transform.localPosition = new Vector3(0f, -0.6f, 0f);
-            table.transform.localScale = new Vector3(56f, 1.2f, 36f);
+            var canvasBlock = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            canvasBlock.name = "Canvas_Chassi_Bloco";
+            canvasBlock.transform.SetParent(tableRoot.transform, false);
+            canvasBlock.transform.localPosition = new Vector3(0f, -0.6f, 0f);
+            canvasBlock.transform.localScale = new Vector3(60.0f, 1.2f, 38.0f);
 
-            var woodShader = GetSafeLitShader();
-            var mat = new Material(woodShader)
+            var litShader = GetSafeLitShader();
+            // Laterais da tela em azul celeste de galeria (#8EBDE0 / #7CAFD7) com acabamento fosco suave
+            var canvasSideMat = new Material(litShader)
             {
-                name = "Mesa_Madeira_Mat",
-                color = new Color(0.20f, 0.13f, 0.08f, 1f), // Mogno escuro acetinado
+                name = "Canvas_Borda_Celeste_Mat",
+                color = new Color(0.29f, 0.54f, 0.74f, 1f),
                 enableInstancing = true
             };
-            if (mat.HasProperty("_Smoothness"))
+            if (canvasSideMat.HasProperty("_BaseColor")) canvasSideMat.SetColor("_BaseColor", new Color(0.29f, 0.54f, 0.74f, 1f));
+            if (canvasSideMat.HasProperty("_Smoothness"))
             {
-                mat.SetFloat("_Smoothness", 0.45f);
+                canvasSideMat.SetFloat("_Smoothness", 0.08f);
             }
 
-            var renderer = table.GetComponent<MeshRenderer>();
+            var renderer = canvasBlock.GetComponent<MeshRenderer>();
             if (renderer != null)
             {
-                renderer.sharedMaterial = mat;
-                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.sharedMaterial = canvasSideMat;
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
                 renderer.receiveShadows = true;
             }
-
-            // Moldura elevada com acabamento biselado
-            var rimMat = new Material(woodShader)
-            {
-                name = "Moldura_Bisel_Mat",
-                color = new Color(0.14f, 0.09f, 0.05f, 1f),
-                enableInstancing = true
-            };
-            if (rimMat.HasProperty("_Smoothness"))
-            {
-                rimMat.SetFloat("_Smoothness", 0.55f);
-            }
-
-            CreateRimPart("Moldura_Norte", tableRoot.transform, new Vector3(0f, 0.06f, 16.5f), new Vector3(54.4f, 0.22f, 1.2f), rimMat);
-            CreateRimPart("Moldura_Sul", tableRoot.transform, new Vector3(0f, 0.06f, -16.5f), new Vector3(54.4f, 0.22f, 1.2f), rimMat);
-            CreateRimPart("Moldura_Oeste", tableRoot.transform, new Vector3(-26.5f, 0.06f, 0f), new Vector3(1.2f, 0.22f, 34.2f), rimMat);
-            CreateRimPart("Moldura_Leste", tableRoot.transform, new Vector3(26.5f, 0.06f, 0f), new Vector3(1.2f, 0.22f, 34.2f), rimMat);
 
             return tableRoot;
         }
@@ -234,7 +219,7 @@ namespace War.Presentation.Editor
             surface.transform.SetParent(parent, false);
             surface.transform.localPosition = new Vector3(0f, 0.02f, 0f);
             surface.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            surface.transform.localScale = new Vector3(52f, 32f, 1f);
+            surface.transform.localScale = new Vector3(60.0f, 38.0f, 1f);
 
             var surfRenderer = surface.GetComponent<MeshRenderer>();
             if (surfRenderer != null)
@@ -272,7 +257,7 @@ namespace War.Presentation.Editor
             defaultTerritoryMat.EnableKeyword("_EMISSION");
             if (defaultTerritoryMat.HasProperty("_Smoothness"))
             {
-                defaultTerritoryMat.SetFloat("_Smoothness", 0.55f);
+                defaultTerritoryMat.SetFloat("_Smoothness", 0.12f);
             }
 
             // Material do pedestal de latão/bronze do pin tático
@@ -395,16 +380,6 @@ namespace War.Presentation.Editor
                 var armyCountRt = textObj.GetComponent<RectTransform>();
                 if (armyCountRt != null) armyCountRt.sizeDelta = new Vector2(2.5f, 2.5f);
 
-                // Fallback Legacy TextMesh caso necessário
-                var textMesh = textObj.AddComponent<TextMesh>();
-                textMesh.text = "1";
-                textMesh.fontSize = 72;
-                textMesh.characterSize = 0.28f;
-                textMesh.anchor = TextAnchor.MiddleCenter;
-                textMesh.alignment = TextAlignment.Center;
-                textMesh.color = Color.white;
-                textMesh.fontStyle = FontStyle.Bold;
-
                 // 3.5 Nome do País impresso com alta definição vetorial (TextMeshPro SDF)
                 // Posicionado com folga limpa abaixo do pin (gap de segurança) para nunca sobrepor o token militar
                 var nameTagRoot = new GameObject("NameTag_Root");
@@ -418,7 +393,7 @@ namespace War.Presentation.Editor
                 nameObj.transform.localRotation = Quaternion.identity;
 
                 var nameTmp = nameObj.AddComponent<TextMeshPro>();
-                nameTmp.text = def.Name.ToUpperInvariant();
+                nameTmp.text = def.GeopoliticalName.ToUpperInvariant();
                 nameTmp.fontSize = 4.2f;
                 nameTmp.fontStyle = FontStyles.Bold;
                 nameTmp.alignment = TextAlignmentOptions.Center;
@@ -427,20 +402,11 @@ namespace War.Presentation.Editor
                 nameTmp.outlineColor = Color.black;
                 nameTmp.textWrappingMode = TextWrappingModes.NoWrap;
                 nameTmp.enableAutoSizing = true;
-                nameTmp.fontSizeMin = 2.4f;
+                nameTmp.fontSizeMin = 2.2f;
                 nameTmp.fontSizeMax = 4.4f;
                 if (sdfFont != null) nameTmp.font = sdfFont;
                 var nameRt = nameObj.GetComponent<RectTransform>();
-                if (nameRt != null) nameRt.sizeDelta = new Vector2(7.5f, 2.0f);
-
-                var nameTextMesh = nameObj.AddComponent<TextMesh>();
-                nameTextMesh.text = def.Name.ToUpperInvariant();
-                nameTextMesh.fontSize = 44;
-                nameTextMesh.characterSize = 0.18f;
-                nameTextMesh.anchor = TextAnchor.MiddleCenter;
-                nameTextMesh.alignment = TextAlignment.Center;
-                nameTextMesh.color = Color.white;
-                nameTextMesh.fontStyle = FontStyle.Bold;
+                if (nameRt != null) nameRt.sizeDelta = new Vector2(8.5f, 2.0f);
 
                 // Serialização dos campos no TerritoryView
                 var viewSo = new SerializedObject(terrView);
@@ -452,9 +418,7 @@ namespace War.Presentation.Editor
                 viewSo.FindProperty("pinRimRenderer").objectReferenceValue = rimRend;
                 viewSo.FindProperty("armySpawnPoint").objectReferenceValue = spawnPoint.transform;
                 viewSo.FindProperty("armyCountText").objectReferenceValue = armyCountTmp;
-                viewSo.FindProperty("armyCountLegacyText").objectReferenceValue = textMesh;
                 viewSo.FindProperty("territoryNameText").objectReferenceValue = nameTmp;
-                viewSo.FindProperty("territoryNameLegacyText").objectReferenceValue = nameTextMesh;
                 viewSo.ApplyModifiedProperties();
 
                 views.Add(terrView);
@@ -465,7 +429,7 @@ namespace War.Presentation.Editor
 
         private static GameObject SetupTacticalCamera(Transform parent)
         {
-            var cam = Camera.main;
+            var cam = Camera.main ?? Object.FindAnyObjectByType<Camera>();
             GameObject cameraObj;
 
             if (cam == null)
@@ -480,13 +444,21 @@ namespace War.Presentation.Editor
                 cameraObj = cam.gameObject;
             }
 
-            cameraObj.transform.SetParent(parent, false);
+            cameraObj.SetActive(true);
+            cam.enabled = true;
+            cam.targetDisplay = 0;
+            cam.nearClipPlane = 0.5f;
+            cam.farClipPlane = 250f;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.12f, 0.16f, 0.22f, 1f);
 
-            if (cam != null)
-            {
-                cam.nearClipPlane = 0.5f;
-                cam.farClipPlane = 200f;
-            }
+            cameraObj.transform.SetParent(parent, false);
+            var defaultPitch = 50f;
+            var defaultYaw = 0f;
+            var defaultDistance = 35f;
+            var rot = Quaternion.Euler(defaultPitch, defaultYaw, 0f);
+            cameraObj.transform.position = rot * new Vector3(0f, 0f, -defaultDistance);
+            cameraObj.transform.LookAt(Vector3.zero);
 
             var controller = cameraObj.GetComponent<TacticalCameraController>();
             if (controller == null)
@@ -514,15 +486,19 @@ namespace War.Presentation.Editor
             }
 
             lightObj.transform.SetParent(parent, false);
-            lightObj.transform.rotation = Quaternion.Euler(50f, -35f, 0f);
+            lightObj.transform.rotation = Quaternion.Euler(58f, -28f, 0f);
 
-            lightComponent.color = new Color(1f, 0.97f, 0.92f);
-            lightComponent.intensity = 1.25f;
+            lightComponent.color = new Color(1.0f, 0.99f, 0.97f); // Luz difusa suave de estúdio/galeria
+            lightComponent.intensity = 1.0f;
             lightComponent.shadows = LightShadows.Soft;
-            lightComponent.shadowResolution = UnityEngine.Rendering.LightShadowResolution.Medium;
+            lightComponent.shadowResolution = UnityEngine.Rendering.LightShadowResolution.High;
             lightComponent.shadowNearPlane = 0.5f;
-            lightComponent.shadowBias = 0.05f;
-            lightComponent.shadowNormalBias = 0.4f;
+            lightComponent.shadowBias = 0.04f;
+            lightComponent.shadowNormalBias = 0.35f;
+
+            // Iluminação de preenchimento ambiente suave (RenderSettings)
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.38f, 0.44f, 0.52f, 1f); // Tom ambiente balanceado (evita queima de brancos)
         }
 
         /// <summary>
@@ -533,21 +509,23 @@ namespace War.Presentation.Editor
         {
             return new Dictionary<string, Vector2>(System.StringComparer.OrdinalIgnoreCase)
             {
-                // América do Sul (4)
+                // América do Sul (5)
                 [TerritoryIds.Venezuela] = new Vector2(-13.02f, -1.97f),
                 [TerritoryIds.Peru] = new Vector2(-13.20f, -5.40f),
                 [TerritoryIds.Brasil] = new Vector2(-10.09f, -4.75f),
-                [TerritoryIds.Argentina] = new Vector2(-12.38f, -9.72f),
-                // América do Norte (9)
+                [TerritoryIds.Argentina] = new Vector2(-12.38f, -10.40f),
+                [TerritoryIds.Uruguai] = new Vector2(-10.20f, -8.70f),
+
+                // América do Norte (8)
                 [TerritoryIds.Alasca] = new Vector2(-21.66f, 9.99f),
-                [TerritoryIds.Mackenzie] = new Vector2(-16.66f, 10.34f),
+                [TerritoryIds.Mackenzie] = new Vector2(-17.20f, 9.00f),
                 [TerritoryIds.Groenlandia] = new Vector2(-7.91f, 11.69f),
-                [TerritoryIds.Vancouver] = new Vector2(-17.58f, 7.86f),
                 [TerritoryIds.Ottawa] = new Vector2(-14.18f, 7.13f),
                 [TerritoryIds.Labrador] = new Vector2(-10.97f, 7.22f),
                 [TerritoryIds.California] = new Vector2(-17.27f, 4.64f),
                 [TerritoryIds.NovaYork] = new Vector2(-13.73f, 3.92f),
                 [TerritoryIds.Mexico] = new Vector2(-16.91f, 0.96f),
+
                 // Europa (7)
                 [TerritoryIds.Islandia] = new Vector2(-3.75f, 8.82f),
                 [TerritoryIds.Inglaterra] = new Vector2(-4.34f, 5.55f),
@@ -555,32 +533,33 @@ namespace War.Presentation.Editor
                 [TerritoryIds.Alemanha] = new Vector2(-0.07f, 4.81f),
                 [TerritoryIds.Suecia] = new Vector2(0.42f, 8.98f),
                 [TerritoryIds.Polonia] = new Vector2(0.36f, 2.14f),
-                [TerritoryIds.Moscou] = new Vector2(4.68f, 6.81f),
+                [TerritoryIds.RussiaEuropeia] = new Vector2(4.68f, 6.81f),
+
                 // África (6)
-                [TerritoryIds.Nigeria] = new Vector2(-1.63f, -3.62f),
+                [TerritoryIds.Argelia] = new Vector2(-1.63f, -3.62f),
                 [TerritoryIds.Egito] = new Vector2(1.82f, -2.22f),
                 [TerritoryIds.Sudao] = new Vector2(4.23f, -5.91f),
                 [TerritoryIds.Congo] = new Vector2(1.93f, -7.31f),
                 [TerritoryIds.AfricaDoSul] = new Vector2(2.31f, -10.93f),
                 [TerritoryIds.Madagascar] = new Vector2(6.65f, -11.26f),
-                // Ásia (12)
-                [TerritoryIds.OrienteMedio] = new Vector2(5.99f, -0.87f),
-                [TerritoryIds.Aral] = new Vector2(8.44f, 3.84f),
-                [TerritoryIds.Omsk] = new Vector2(9.45f, 7.81f),
-                [TerritoryIds.Dudinka] = new Vector2(11.95f, 9.86f),
-                [TerritoryIds.Siberia] = new Vector2(15.68f, 10.98f),
-                [TerritoryIds.Tchita] = new Vector2(15.10f, 7.22f),
-                [TerritoryIds.Mongolia] = new Vector2(15.85f, 4.55f),
+
+                // Ásia (9)
+                [TerritoryIds.RussiaAsiatica] = new Vector2(14.50f, 8.80f),
+                [TerritoryIds.Cazaquistao] = new Vector2(8.44f, 3.84f),
+                [TerritoryIds.ArabiaSaudita] = new Vector2(5.20f, -2.60f),
+                [TerritoryIds.Ira] = new Vector2(7.30f, 0.40f),
                 [TerritoryIds.China] = new Vector2(14.26f, 1.86f),
                 [TerritoryIds.India] = new Vector2(11.18f, -0.79f),
-                [TerritoryIds.Vietna] = new Vector2(15.36f, -2.05f),
-                [TerritoryIds.Vladivostok] = new Vector2(18.96f, 9.49f),
+                [TerritoryIds.Mongolia] = new Vector2(15.20f, 5.20f),
                 [TerritoryIds.Japao] = new Vector2(20.50f, 4.50f),
-                // Oceania (4)
-                [TerritoryIds.Sumatra] = new Vector2(14.68f, -7.02f),
-                [TerritoryIds.Borneo] = new Vector2(16.41f, -6.40f),
-                [TerritoryIds.NovaGuine] = new Vector2(20.34f, -5.71f),
-                [TerritoryIds.Australia] = new Vector2(20.25f, -10.79f)
+                [TerritoryIds.Vietna] = new Vector2(15.36f, -2.05f),
+
+                // Oceania (5)
+                [TerritoryIds.Australia] = new Vector2(19.80f, -10.20f),
+                [TerritoryIds.NovaGuine] = new Vector2(19.80f, -5.50f),
+                [TerritoryIds.IlhasSalomao] = new Vector2(22.60f, -5.80f),
+                [TerritoryIds.Fiji] = new Vector2(24.50f, -8.20f),
+                [TerritoryIds.NovaZelandia] = new Vector2(23.20f, -12.50f)
             };
         }
 

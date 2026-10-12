@@ -62,6 +62,8 @@ namespace War.Presentation.Game
 
         private void Awake()
         {
+            EnsureMainCamera();
+
             if (boardView == null)
             {
                 boardView = FindFirstObjectByType<BoardView>();
@@ -70,6 +72,31 @@ namespace War.Presentation.Game
             if (deployDialog == null)
             {
                 deployDialog = FindFirstObjectByType<DeployArmiesDialogUI>();
+            }
+        }
+
+        private static void EnsureMainCamera()
+        {
+            var cam = Camera.main ?? FindAnyObjectByType<Camera>();
+            if (cam == null)
+            {
+                var camObj = new GameObject("TacticalCamera");
+                camObj.tag = "MainCamera";
+                cam = camObj.AddComponent<Camera>();
+                camObj.AddComponent<AudioListener>();
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = new Color(0.12f, 0.16f, 0.22f, 1f);
+                camObj.AddComponent<War.Presentation.CameraControl.TacticalCameraController>();
+            }
+            else
+            {
+                cam.enabled = true;
+                cam.gameObject.SetActive(true);
+                cam.targetDisplay = 0;
+                if (cam.GetComponent<War.Presentation.CameraControl.TacticalCameraController>() == null)
+                {
+                    cam.gameObject.AddComponent<War.Presentation.CameraControl.TacticalCameraController>();
+                }
             }
         }
 
@@ -157,13 +184,14 @@ namespace War.Presentation.Game
         {
             return color switch
             {
-                PlayerColor.Blue => new Color(0.00f, 0.60f, 0.66f, 1f),      // Ciano / Teal Tático (como na referência)
-                PlayerColor.Yellow => new Color(0.78f, 0.62f, 0.08f, 1f),    // Mostarda / Ouro Âmbar (como na referência)
-                PlayerColor.Black => new Color(0.28f, 0.12f, 0.38f, 1f),     // Roxo Imperial / Violeta Escuro (como na referência)
-                PlayerColor.Red => new Color(0.74f, 0.16f, 0.22f, 1f),       // Carmim / Rubi Militar
-                PlayerColor.Green => new Color(0.18f, 0.52f, 0.30f, 1f),     // Verde Esmeralda Tático
-                PlayerColor.White => new Color(0.86f, 0.89f, 0.92f, 1f),     // Titânio / Branco Gélido
-                _ => new Color(0.45f, 0.48f, 0.55f, 1f)
+                // Paleta artística elegante extraída diretamente da referência (Fine Art Canvas Map):
+                PlayerColor.Yellow => new Color(0.894f, 0.690f, 0.282f, 1f), // #E4B048 - Mostarda Dourado / Âmbar Quente (ex: Rússia/Eurásia na tela)
+                PlayerColor.Red => new Color(0.784f, 0.329f, 0.329f, 1f),    // #C85454 - Terracota / Coral Queimado (ex: China/América do Sul na tela)
+                PlayerColor.Green => new Color(0.482f, 0.635f, 0.435f, 1f),  // #7BA26F - Verde Salvia / Oliva Suave (ex: EUA/Austrália na tela)
+                PlayerColor.Blue => new Color(0.298f, 0.580f, 0.655f, 1f),   // #4C94A7 - Azul Petróleo / Teal Suave (ex: Canadá Central na tela)
+                PlayerColor.Black => new Color(0.337f, 0.388f, 0.435f, 1f),  // #56636F - Ardósia / Grafite Suave (ex: Canadá Norte na tela)
+                PlayerColor.White => new Color(0.859f, 0.722f, 0.490f, 1f),  // #DBB87D - Areia Dourada / Camelo Suave (ex: Saara/Groenlândia na tela)
+                _ => new Color(0.65f, 0.68f, 0.72f, 1f)
             };
         }
 

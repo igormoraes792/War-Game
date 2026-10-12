@@ -16,21 +16,21 @@ namespace War.Presentation.Board
     public class ConnectionLinesRenderer : MonoBehaviour
     {
         [Header("Estilo das Conexões Terrestres")]
-        [SerializeField] private Color terrestrialColor = new Color(0.70f, 0.76f, 0.84f, 0.45f);
-        [SerializeField] private float terrestrialWidth = 0.12f;
+        [SerializeField] private Color terrestrialColor = new Color(0.40f, 0.50f, 0.60f, 0.38f);
+        [SerializeField] private float terrestrialWidth = 0.08f;
 
         [Header("Estilo das Passagens Marítimas")]
-        [SerializeField] private Color seaRouteColor = new Color(0.25f, 0.75f, 0.95f, 0.75f);
-        [SerializeField] private float seaRouteWidth = 0.15f;
+        [SerializeField] private Color seaRouteColor = new Color(0.25f, 0.55f, 0.78f, 0.75f);
+        [SerializeField] private float seaRouteWidth = 0.11f;
         [SerializeField] private float seaDottedTileSize = 1.2f;
 
         [Header("Cores de Destaque")]
-        [SerializeField] private Color highlightAllyColor = new Color(1.0f, 0.85f, 0.20f, 0.95f);
-        [SerializeField] private Color highlightEnemyColor = new Color(1.0f, 0.25f, 0.20f, 0.95f);
+        [SerializeField] private Color highlightAllyColor = new Color(0.92f, 0.75f, 0.25f, 0.95f);
+        [SerializeField] private Color highlightEnemyColor = new Color(0.85f, 0.28f, 0.25f, 0.95f);
         [SerializeField] private float highlightWidthMultiplier = 1.5f;
 
         [Header("Altura Y sobre a mesa")]
-        [SerializeField] private float linesHeightY = 0.35f;
+        [SerializeField] private float linesHeightY = 0.20f;
 
         // Materiais cacheados
         private Material? _terrestrialMaterial;
@@ -181,7 +181,7 @@ namespace War.Presentation.Board
         {
             // Segmento A: Alasca -> Borda Oeste (-27f, Z)
             var alascaPos = string.Equals(idA, TerritoryIds.Alasca, StringComparison.OrdinalIgnoreCase) ? posA : posB;
-            var vladPos = string.Equals(idA, TerritoryIds.Vladivostok, StringComparison.OrdinalIgnoreCase) ? posA : posB;
+            var vladPos = string.Equals(idA, TerritoryIds.RussiaAsiatica, StringComparison.OrdinalIgnoreCase) ? posA : posB;
 
             var lineObj = new GameObject($"Line_TransPacific_{idA}_{idB}");
             lineObj.transform.SetParent(transform, false);
@@ -359,10 +359,11 @@ namespace War.Presentation.Board
                 TerritoryIds.Inglaterra,
                 TerritoryIds.Madagascar,
                 TerritoryIds.Japao,
-                TerritoryIds.Sumatra,
-                TerritoryIds.Borneo,
                 TerritoryIds.NovaGuine,
-                TerritoryIds.Australia
+                TerritoryIds.Australia,
+                TerritoryIds.NovaZelandia,
+                TerritoryIds.IlhasSalomao,
+                TerritoryIds.Fiji
             };
 
             return islands.Contains(idA) || islands.Contains(idB);
@@ -371,9 +372,9 @@ namespace War.Presentation.Board
         private static bool IsTransPacificConnection(string idA, string idB)
         {
             return (string.Equals(idA, TerritoryIds.Alasca, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(idB, TerritoryIds.Vladivostok, StringComparison.OrdinalIgnoreCase)) ||
+                    string.Equals(idB, TerritoryIds.RussiaAsiatica, StringComparison.OrdinalIgnoreCase)) ||
                    (string.Equals(idB, TerritoryIds.Alasca, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(idA, TerritoryIds.Vladivostok, StringComparison.OrdinalIgnoreCase));
+                    string.Equals(idA, TerritoryIds.RussiaAsiatica, StringComparison.OrdinalIgnoreCase));
         }
 
         private static string MakePairKey(string idA, string idB)

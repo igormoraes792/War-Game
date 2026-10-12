@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mapa 3D do Mundo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #06080b;
+      color: #edf7f8;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 20% 10%, rgba(72, 137, 143, 0.18), transparent 28%),
+        radial-gradient(circle at 80% 12%, rgba(230, 185, 88, 0.12), transparent 24%),
+        linear-gradient(180deg, #111923 0%, #06080b 72%);
+    }
+
+    .scene {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      padding: clamp(12px, 2.5vw, 34px);
+      perspective: 1400px;
+      isolation: isolate;
+    }
+
+    .map-wrap {
+      position: relative;
+      width: min(96vw, 1540px);
+      aspect-ratio: 16 / 9;
+      border: 1px solid rgba(218, 235, 230, 0.2);
+      border-radius: 8px;
+      transform: rotateX(48deg) rotateZ(-0.6deg);
+      transform-style: preserve-3d;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 30%),
+        radial-gradient(circle at 48% 40%, rgba(36, 87, 105, 0.7), rgba(7, 21, 32, 0.98) 64%);
+      box-shadow:
+        0 46px 86px rgba(0, 0, 0, 0.55),
+        0 16px 34px rgba(0, 0, 0, 0.38),
+        inset 0 0 0 9px rgba(38, 25, 13, 0.68),
+        inset 0 0 0 12px rgba(226, 186, 100, 0.23);
+    }
+
+    .map-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 20px;
+      border-radius: 5px;
+      background:
+        repeating-linear-gradient(0deg, rgba(195, 236, 240, 0.07) 0 1px, transparent 1px 45px),
+        repeating-linear-gradient(90deg, rgba(195, 236, 240, 0.07) 0 1px, transparent 1px 60px),
+        radial-gradient(circle at 50% 45%, rgba(48, 123, 145, 0.24), transparent 46%),
+        linear-gradient(180deg, rgba(4, 22, 35, 0.96), rgba(4, 13, 22, 0.98));
+      box-shadow: inset 0 0 72px rgba(0, 0, 0, 0.64);
+    }
+
+    svg {
+      position: absolute;
+      inset: 28px;
+      width: calc(100% - 56px);
+      height: calc(100% - 56px);
+      overflow: visible;
+      transform: translateZ(28px);
+      filter: drop-shadow(0 24px 28px rgba(0, 0, 0, 0.45));
+    }
+
+    .graticule {
+      fill: none;
+      stroke: rgba(180, 225, 234, 0.16);
+      stroke-width: 0.45;
+      pointer-events: none;
+    }
+
+    .sphere {
+      fill: url(#ocean);
+      stroke: rgba(222, 239, 236, 0.12);
+      stroke-width: 0.7;
+    }
+
+    .country-depth {
+      fill: rgba(1, 4, 7, 0.48);
+      stroke: none;
+      pointer-events: none;
+      transform: translate(0.85px, 1.35px);
+    }
+
+    .country {
+      cursor: pointer;
+      stroke: rgba(246, 252, 249, 0.48);
+      stroke-width: 0.28;
+      transition: opacity 150ms ease, stroke-width 150ms ease, filter 150ms ease;
+      filter: url(#countryLighting);
+    }
+
+    .country:hover,
+    .country.active {
+      opacity: 1;
+      stroke: #ffe6a4;
+      stroke-width: 0.74;
+      filter: url(#hoverLighting);
+    }
+
+    .borders {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.23);
+      stroke-width: 0.25;
+      pointer-events: none;
+    }
+
+    .coast {
+      fill: none;
+      stroke: rgba(166, 226, 232, 0.32);
+      stroke-width: 0.48;
+      pointer-events: none;
+    }
+
+    .hud {
+      position: absolute;
+      left: clamp(14px, 3vw, 44px);
+      right: clamp(14px, 3vw, 44px);
+      bottom: clamp(14px, 3vw, 34px);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      pointer-events: none;
+    }
+
+    .panel {
+      border: 1px solid rgba(190, 226, 229, 0.17);
+      border-radius: 8px;
+      background: rgba(5, 10, 15, 0.76);
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.32);
+      backdrop-filter: blur(14px);
+    }
+
+    .title {
+      max-width: min(540px, 48vw);
+      padding: 16px 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(22px, 3.1vw, 44px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: #a9bec3;
+      font-size: clamp(12px, 1.35vw, 15px);
+    }
+
+    .info {
+      min-width: min(370px, 44vw);
+      padding: 14px 16px;
+      text-align: right;
+    }
+
+    .country-name {
+      color: #fff3c1;
+      font-size: clamp(18px, 2vw, 28px);
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .meta {
+      margin-top: 6px;
+      color: #b8cdd2;
+      font-size: 13px;
+    }
+
+    .loading {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #dbecef;
+      font-weight: 700;
+      transform: translateZ(60px);
+      pointer-events: none;
+    }
+
+    .error {
+      color: #ffd4c7;
+      text-align: center;
+      max-width: 560px;
+      padding: 18px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 760px) {
+      .scene {
+        align-items: start;
+        padding-top: 86px;
+      }
+
+      .map-wrap {
+        width: 126vw;
+        transform: rotateX(50deg) rotateZ(-0.6deg) translateX(-5vw);
+      }
+
+      .hud {
+        top: 12px;
+        bottom: auto;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .title,
+      .info {
+        width: 100%;
+        max-width: none;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="scene">
+    <section class="map-wrap" aria-label="Mapa 3D plano do mundo com fronteiras reais">
+      <svg id="map" role="img" aria-label="Mapa-múndi com países e fronteiras corretas"></svg>
+      <div id="loading" class="loading">Carregando fronteiras reais...</div>
+    </section>
+
+    <aside class="hud">
+      <div class="panel title">
+        <h1>Mapa 3D do Mundo</h1>
+        <div class="subtitle">Fronteiras reais entre países, com destaque suave ao passar o mouse.</div>
+      </div>
+      <div class="panel info" aria-live="polite">
+        <div id="countryName" class="country-name">Passe o mouse sobre um país</div>
+        <div id="countryMeta" class="meta">Dados cartográficos Natural Earth</div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script>
+    const svg = d3.select("#map");
+    const loading = document.getElementById("loading");
+    const countryName = document.getElementById("countryName");
+    const countryMeta = document.getElementById("countryMeta");
+    const width = 1000;
+    const height = 540;
+
+    svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+    const defs = svg.append("defs");
+
+    const ocean = defs.append("radialGradient")
+      .attr("id", "ocean")
+      .attr("cx", "50%")
+      .attr("cy", "45%")
+      .attr("r", "72%");
+    ocean.append("stop").attr("offset", "0%").attr("stop-color", "#1d5f73");
+    ocean.append("stop").attr("offset", "58%").attr("stop-color", "#0d3347");
+    ocean.append("stop").attr("offset", "100%").attr("stop-color", "#061422");
+
+    const countryLighting = defs.append("filter")
+      .attr("id", "countryLighting")
+      .attr("x", "-12%")
+      .attr("y", "-12%")
+      .attr("width", "124%")
+      .attr("height", "135%");
+    countryLighting.append("feDropShadow")
+      .attr("dx", 0)
+      .attr("dy", 1.2)
+      .attr("stdDeviation", 0.65)
+      .attr("flood-color", "#000")
+      .attr("flood-opacity", 0.36);
+    countryLighting.append("feSpecularLighting")
+      .attr("result", "spec")
+      .attr("surfaceScale", 2.2)
+      .attr("specularConstant", 0.45)
+      .attr("specularExponent", 18)
+      .attr("lighting-color", "#fff")
+      .append("fePointLight")
+      .attr("x", -220)
+      .attr("y", -180)
+      .attr("z", 170);
+    countryLighting.append("feComposite")
+      .attr("in", "spec")
+      .attr("in2", "SourceAlpha")
+      .attr("operator", "in")
+      .attr("result", "specOut");
+    countryLighting.append("feComposite")
+      .attr("in", "SourceGraphic")
+      .attr("in2", "specOut")
+      .attr("operator", "arithmetic")
+      .attr("k1", 0)
+      .attr("k2", 1)
+      .attr("k3", 0.35)
+      .attr("k4", 0);
+
+    const hoverLighting = defs.append("filter")
+      .attr("id", "hoverLighting")
+      .attr("x", "-18%")
+      .attr("y", "-18%")
+      .attr("width", "136%")
+      .attr("height", "146%");
+    hoverLighting.append("feDropShadow")
+      .attr("dx", 0)
+      .attr("dy", 2)
+      .attr("stdDeviation", 1.1)
+      .attr("flood-color", "#000")
+      .attr("flood-opacity", 0.44);
+    hoverLighting.append("feDropShadow")
+      .attr("dx", 0)
+      .attr("dy", 0)
+      .attr("stdDeviation", 1.6)
+      .attr("flood-color", "#ffe19a")
+      .attr("flood-opacity", 0.58);
+    hoverLighting.append("feSpecularLighting")
+      .attr("result", "spec")
+      .attr("surfaceScale", 3)
+      .attr("specularConstant", 0.8)
+      .attr("specularExponent", 24)
+      .attr("lighting-color", "#fff")
+      .append("fePointLight")
+      .attr("x", -250)
+      .attr("y", -220)
+      .attr("z", 240);
+    hoverLighting.append("feComposite")
+      .attr("in", "spec")
+      .attr("in2", "SourceAlpha")
+      .attr("operator", "in")
+      .attr("result", "specOut");
+    hoverLighting.append("feComposite")
+      .attr("in", "SourceGraphic")
+      .attr("in2", "specOut")
+      .attr("operator", "arithmetic")
+      .attr("k1", 0)
+      .attr("k2", 1)
+      .attr("k3", 0.42)
+      .attr("k4", 0);
+
+    const projection = d3.geoNaturalEarth1()
+      .fitExtent([[24, 22], [width - 24, height - 24]], { type: "Sphere" });
+    const path = d3.geoPath(projection);
+    const color = d3.scaleOrdinal()
+      .range(["#6c7f64", "#9a7b48", "#607c94", "#8a6846", "#7b745f", "#46877f", "#85677f", "#5e8870"]);
+
+    svg.append("path")
+      .datum({ type: "Sphere" })
+      .attr("class", "sphere")
+      .attr("d", path);
+
+    svg.append("path")
+      .datum(d3.geoGraticule10())
+      .attr("class", "graticule")
+      .attr("d", path);
+
+    async function draw() {
+      try {
+        const world = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json");
+        const countries = topojson.feature(world, world.objects.countries);
+        const borders = topojson.mesh(world, world.objects.countries, (a, b) => a !== b);
+        const coast = topojson.mesh(world, world.objects.land);
+
+        const countriesLayer = svg.append("g");
+        const depthLayer = svg.insert("g", ".graticule");
+
+        depthLayer.selectAll("path")
+          .data(countries.features)
+          .join("path")
+          .attr("class", "country-depth")
+          .attr("d", path);
+
+        countriesLayer.selectAll("path")
+          .data(countries.features)
+          .join("path")
+          .attr("class", "country")
+          .attr("d", path)
+          .attr("fill", (d, i) => color(regionKey(d, i)))
+          .attr("data-name", countryLabel)
+          .on("mouseenter", function(event, d) {
+            d3.select(this).classed("active", true).raise();
+            countryName.textContent = countryLabel(d);
+            countryMeta.textContent = "Fronteira real de país";
+          })
+          .on("mouseleave", function() {
+            d3.select(this).classed("active", false);
+            countryName.textContent = "Passe o mouse sobre um país";
+            countryMeta.textContent = "Dados cartográficos Natural Earth";
+          });
+
+        svg.append("path")
+          .datum(borders)
+          .attr("class", "borders")
+          .attr("d", path);
+
+        svg.append("path")
+          .datum(coast)
+          .attr("class", "coast")
+          .attr("d", path);
+
+        loading.remove();
+      } catch (error) {
+        loading.innerHTML = `<div class="error">Nao foi possivel carregar o dataset de fronteiras. Verifique sua conexao com a internet e reabra este HTML.</div>`;
+        console.error(error);
+      }
+    }
+
+    function countryLabel(d) {
+      return d.properties && (d.properties.name || d.properties.NAME) || `Pais ${d.id || ""}`.trim();
+    }
+
+    function regionKey(d, i) {
+      const centroid = d3.geoCentroid(d);
+      const lon = centroid[0];
+      const lat = centroid[1];
+      if (lat < -12 && lon > 105) return "Oceania";
+      if (lon < -30 && lat > 8) return "America Norte";
+      if (lon < -30) return "America Sul";
+      if (lon > -20 && lon < 55 && lat > 35) return "Europa";
+      if (lon > -20 && lon < 55) return "Africa";
+      if (lon >= 55) return "Asia";
+      return `Outro ${i % 3}`;
+    }
+
+    draw();
+  </script>
+</body>
+</html>

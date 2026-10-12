@@ -13,8 +13,8 @@ namespace War.Presentation.Board
     /// </summary>
     public static class TerritoryMeshBuilder
     {
-        public const float DefaultExtrusionHeight = 0.28f;
-        public const float PolygonInsetAmount = 0.065f;
+        public const float DefaultExtrusionHeight = 0.16f;
+        public const float PolygonInsetAmount = 0.045f;
 
         private static readonly Dictionary<string, Vector2[]> TerritoryPolygons = new(StringComparer.OrdinalIgnoreCase);
 
@@ -434,7 +434,14 @@ namespace War.Presentation.Board
                 new(1.36f, 1.83f)
             };
 
-            // América do Norte (9)
+            TerritoryPolygons[TerritoryIds.Uruguai] = new Vector2[]
+            {
+                new(0.95f, 0.70f), new(0.35f, 0.85f), new(-0.70f, 0.40f),
+                new(-0.85f, -0.45f), new(-0.20f, -0.90f), new(0.65f, -0.65f),
+                new(1.05f, 0.10f)
+            };
+
+            // América do Norte (8)
             TerritoryPolygons[TerritoryIds.Alasca] = new Vector2[]
             {
                 new(1.93f, -2.30f), new(1.49f, -1.38f), new(0.42f, -0.84f),
@@ -449,14 +456,20 @@ namespace War.Presentation.Board
 
             TerritoryPolygons[TerritoryIds.Mackenzie] = new Vector2[]
             {
-                new(2.38f, -1.12f), new(3.28f, -0.43f), new(3.21f, -0.05f),
-                new(3.55f, -0.24f), new(4.40f, 0.36f), new(4.22f, 0.80f),
-                new(3.67f, 0.59f), new(3.21f, 0.95f), new(3.15f, 1.55f),
-                new(3.50f, 2.08f), new(2.80f, 1.44f), new(2.87f, 0.86f),
-                new(2.32f, 0.99f), new(2.32f, 0.67f), new(0.40f, 0.48f),
-                new(-0.87f, 1.20f), new(-2.35f, 0.84f), new(-3.57f, 0.98f),
-                new(-3.67f, -0.95f)
+                // Fronteira sul com a Califórnia (paralelo 49 até costa do Pacífico)
+                new(-1.88f, -2.62f), new(0.00f, -2.63f), new(1.41f, -2.66f),
+                // Fronteira leste com Ottawa e Baía de Hudson
+                new(1.60f, -1.00f), new(2.72f, -0.50f), new(2.92f, 0.21f),
+                new(3.80f, 1.20f),
+                // Litoral ártico norte (Mar de Beaufort / Nunavut)
+                new(3.70f, 2.20f), new(1.20f, 2.80f), new(-1.30f, 2.80f),
+                // Fronteira oeste com o Alasca (Yukon)
+                new(-3.05f, 2.33f), new(-3.13f, 0.42f), new(-2.61f, 0.35f),
+                new(-2.11f, -0.83f),
+                // Litoral oeste da Colúmbia Britânica até a Califórnia
+                new(-2.50f, -1.40f)
             };
+
 
             TerritoryPolygons[TerritoryIds.Groenlandia] = new Vector2[]
             {
@@ -471,15 +484,6 @@ namespace War.Presentation.Board
                 new(2.67f, 0.10f), new(2.41f, -0.27f), new(2.06f, -0.19f),
                 new(2.48f, -0.75f), new(2.20f, -0.94f), new(1.94f, -0.64f),
                 new(2.06f, -1.08f)
-            };
-
-            TerritoryPolygons[TerritoryIds.Vancouver] = new Vector2[]
-            {
-                new(-2.23f, 1.48f), new(-2.05f, 1.12f), new(-2.04f, 0.63f),
-                new(-1.75f, 0.42f), new(-1.73f, 0.31f), new(-1.74f, 0.15f),
-                new(-1.91f, 0.09f), new(-1.99f, -0.12f), new(-2.15f, -0.17f),
-                new(-1.69f, -0.92f), new(-1.66f, -1.29f), new(-1.47f, -1.54f),
-                new(1.78f, -1.53f), new(2.05f, 1.38f)
             };
 
             TerritoryPolygons[TerritoryIds.Ottawa] = new Vector2[]
@@ -600,7 +604,7 @@ namespace War.Presentation.Board
                 new(0.67f, 0.89f)
             };
 
-            TerritoryPolygons[TerritoryIds.Moscou] = new Vector2[]
+            TerritoryPolygons[TerritoryIds.RussiaEuropeia] = new Vector2[]
             {
                 new(-2.41f, 4.14f), new(-2.30f, 1.15f), new(-3.21f, 1.02f),
                 new(-2.89f, 0.31f), new(-3.32f, 0.51f), new(-3.56f, -0.02f),
@@ -620,7 +624,7 @@ namespace War.Presentation.Board
             };
 
             // África (6)
-            TerritoryPolygons[TerritoryIds.Nigeria] = new Vector2[]
+            TerritoryPolygons[TerritoryIds.Argelia] = new Vector2[]
             {
                 new(1.57f, 2.70f), new(0.76f, 3.56f), new(-2.20f, 2.87f),
                 new(-3.19f, 0.78f), new(-3.27f, -0.81f), new(-1.65f, -2.55f),
@@ -679,22 +683,22 @@ namespace War.Presentation.Board
                 new(-0.89f, -1.54f), new(-0.09f, -1.50f)
             };
 
-            // Ásia (12)
-            TerritoryPolygons[TerritoryIds.OrienteMedio] = new Vector2[]
+            // Ásia (9)
+            TerritoryPolygons[TerritoryIds.ArabiaSaudita] = new Vector2[]
             {
-                new(1.92f, 2.59f), new(0.93f, 2.24f), new(0.17f, 2.60f),
-                new(-0.78f, 2.23f), new(-1.07f, 2.49f), new(-1.53f, 2.32f),
-                new(-2.68f, 2.60f), new(-3.42f, 2.36f), new(-3.86f, 2.58f),
-                new(-4.25f, 2.21f), new(-4.24f, 1.61f), new(-3.47f, 0.72f),
-                new(-3.22f, 0.96f), new(-2.02f, 0.93f), new(-1.87f, -1.24f),
-                new(-0.32f, -2.86f), new(0.06f, -3.72f), new(1.31f, -3.50f),
-                new(2.14f, -2.98f), new(2.73f, -1.53f), new(2.06f, -0.83f),
-                new(1.41f, -0.99f), new(0.73f, 0.12f), new(1.19f, 0.29f),
-                new(1.61f, -0.60f), new(2.07f, -0.31f), new(2.44f, -0.64f),
-                new(3.15f, -0.15f), new(2.56f, 1.46f), new(2.63f, 2.09f)
+                new(-1.20f, 1.40f), new(0.40f, 1.60f), new(1.50f, 0.80f),
+                new(1.60f, -0.50f), new(1.10f, -1.50f), new(-0.20f, -1.60f),
+                new(-1.10f, -0.80f), new(-1.40f, 0.50f)
             };
 
-            TerritoryPolygons[TerritoryIds.Aral] = new Vector2[]
+            TerritoryPolygons[TerritoryIds.Ira] = new Vector2[]
+            {
+                new(-1.50f, 1.10f), new(0.10f, 1.40f), new(1.40f, 0.90f),
+                new(1.60f, -0.20f), new(1.20f, -1.20f), new(-0.30f, -1.30f),
+                new(-1.30f, -0.50f)
+            };
+
+            TerritoryPolygons[TerritoryIds.Cazaquistao] = new Vector2[]
             {
                 new(2.64f, -0.15f), new(2.20f, 1.02f), new(1.23f, 1.19f),
                 new(-0.14f, 2.42f), new(-0.89f, 1.96f), new(-1.38f, 2.11f),
@@ -704,53 +708,26 @@ namespace War.Presentation.Board
                 new(1.17f, -1.88f), new(2.09f, -1.86f), new(1.86f, -0.91f)
             };
 
-            TerritoryPolygons[TerritoryIds.Omsk] = new Vector2[]
+            TerritoryPolygons[TerritoryIds.RussiaAsiatica] = new Vector2[]
             {
-                new(-1.29f, -1.54f), new(-1.20f, -0.71f), new(-1.67f, -0.32f),
-                new(-1.73f, 1.41f), new(-1.38f, 2.48f), new(-1.70f, 3.40f),
-                new(-1.56f, 4.30f), new(-0.90f, 4.01f), new(-1.10f, 3.67f),
-                new(-0.68f, 2.96f), new(-0.10f, 2.97f), new(0.58f, 1.96f),
-                new(0.63f, 1.38f), new(1.25f, 0.80f), new(1.60f, -0.16f),
-                new(1.15f, -1.00f), new(1.62f, -1.04f), new(1.58f, -1.39f),
-                new(2.22f, -1.86f), new(2.33f, -2.38f), new(1.54f, -3.39f),
-                new(1.19f, -2.95f), new(0.22f, -2.79f)
+                // Fronteira oeste com a Rússia Europeia (Montes Urais de norte a sul)
+                new(-6.55f, 2.03f), new(-6.73f, -1.31f), new(-6.30f, -1.61f),
+                new(-6.32f, -2.46f), new(-6.97f, -3.00f), new(-7.46f, -2.85f),
+                // Fronteira sudoeste com o Cazaquistão (Petropavlovsk, Omsk, Pavlodar, Altai)
+                new(-6.20f, -2.54f), new(-4.83f, -3.20f), new(-3.42f, -3.60f),
+                new(-2.50f, -3.00f),
+                // Fronteira sul com a Mongólia e Norte da China (Montes Sayans, Baikal, Selenga, Amur)
+                new(-2.09f, -2.41f), new(-0.27f, -2.45f), new(0.44f, -2.15f),
+                new(0.94f, -1.30f), new(1.52f, -1.25f), new(3.35f, -3.20f),
+                new(4.00f, -4.00f),
+                // Litoral do Pacífico (Vladivostok, Mar de Okhotsk, Península de Kamchatka, Chukotka)
+                new(5.30f, -3.30f), new(6.00f, -1.60f), new(7.30f, 0.00f),
+                new(8.30f, 1.70f), new(7.70f, 2.80f),
+                // Litoral ártico setentrional (Estreito de Bering, Laptev, Taymyr, Kara, Urais)
+                new(6.00f, 3.40f), new(4.00f, 3.60f), new(1.50f, 3.70f),
+                new(-1.00f, 3.50f), new(-3.50f, 3.30f), new(-5.50f, 2.70f)
             };
 
-            TerritoryPolygons[TerritoryIds.Dudinka] = new Vector2[]
-            {
-                new(-2.57f, 0.76f), new(-2.40f, 0.96f), new(-3.01f, 1.07f),
-                new(-3.20f, 1.74f), new(-2.38f, 1.56f), new(-2.66f, 2.32f),
-                new(-1.98f, 2.08f), new(-2.55f, 2.47f), new(-1.28f, 3.28f),
-                new(0.12f, 3.65f), new(0.49f, 3.30f), new(0.82f, 3.38f),
-                new(1.04f, 3.14f), new(0.28f, 2.27f), new(1.08f, 2.72f),
-                new(2.33f, 2.60f), new(2.56f, 2.06f), new(2.40f, 1.11f),
-                new(1.72f, 1.12f), new(1.42f, 0.81f), new(1.92f, 0.45f),
-                new(2.19f, -0.50f), new(2.16f, -2.39f), new(1.22f, -2.37f),
-                new(0.65f, -2.85f), new(0.69f, -3.73f), new(1.15f, -4.21f),
-                new(1.12f, -5.35f), new(0.62f, -5.22f), new(0.43f, -4.58f),
-                new(-0.18f, -4.50f), new(-0.88f, -3.09f), new(-1.36f, -3.05f),
-                new(-0.91f, -2.21f)
-            };
-
-            TerritoryPolygons[TerritoryIds.Siberia] = new Vector2[]
-            {
-                new(2.26f, 1.04f), new(1.64f, 1.56f), new(-0.15f, 1.11f),
-                new(-1.02f, 1.82f), new(-1.40f, 1.49f), new(-1.17f, 0.95f),
-                new(-1.34f, -0.01f), new(-2.31f, -0.22f), new(-1.82f, -0.67f),
-                new(-1.44f, -2.14f), new(-0.80f, -1.56f), new(0.34f, -1.55f),
-                new(1.02f, -0.61f), new(2.06f, -0.76f), new(2.16f, -0.29f),
-                new(1.79f, -0.14f), new(1.76f, 0.32f)
-            };
-
-            TerritoryPolygons[TerritoryIds.Tchita] = new Vector2[]
-            {
-                new(2.67f, -1.29f), new(2.19f, -1.18f), new(1.52f, -0.33f),
-                new(0.87f, -0.61f), new(0.74f, -1.60f), new(0.50f, -1.31f),
-                new(-0.21f, -1.61f), new(-2.10f, -1.41f), new(-2.46f, -1.09f),
-                new(-2.49f, -0.21f), new(-1.93f, 0.27f), new(-0.99f, 0.25f),
-                new(-0.98f, 1.36f), new(-0.21f, 2.21f), new(0.93f, 2.21f),
-                new(1.03f, 0.89f), new(1.74f, 0.05f), new(2.66f, -0.04f)
-            };
 
             TerritoryPolygons[TerritoryIds.Mongolia] = new Vector2[]
             {
@@ -795,21 +772,6 @@ namespace War.Presentation.Board
                 new(-1.02f, 1.97f), new(-0.16f, 1.21f), new(0.78f, 1.56f)
             };
 
-            TerritoryPolygons[TerritoryIds.Vladivostok] = new Vector2[]
-            {
-                new(-0.45f, -4.64f), new(-0.13f, -4.08f), new(-0.09f, -2.81f),
-                new(-0.37f, -1.82f), new(-1.48f, -1.40f), new(-1.26f, -0.75f),
-                new(-0.48f, -0.38f), new(0.50f, -0.42f), new(0.43f, 0.27f),
-                new(0.98f, -0.39f), new(0.92f, -1.61f), new(1.51f, -2.34f),
-                new(1.76f, -1.38f), new(1.53f, -0.15f), new(2.06f, -0.16f),
-                new(2.90f, 0.73f), new(2.55f, 1.17f), new(3.53f, 0.89f),
-                new(3.85f, 1.12f), new(3.69f, 1.57f), new(3.05f, 1.66f),
-                new(1.67f, 2.56f), new(1.15f, 2.67f), new(0.64f, 2.38f),
-                new(-0.83f, 2.63f), new(-1.50f, 1.95f), new(-1.21f, 0.73f),
-                new(-2.26f, 0.87f), new(-2.93f, -0.06f), new(-2.83f, -1.38f),
-                new(-2.12f, -2.22f), new(-1.20f, -2.31f), new(-1.31f, -3.91f)
-            };
-
             TerritoryPolygons[TerritoryIds.Japao] = new Vector2[]
             {
                 new(-1.25f, -2.40f), new(-1.56f, -2.02f), new(0.02f, 0.11f),
@@ -820,26 +782,7 @@ namespace War.Presentation.Board
                 new(-0.72f, -1.40f), new(-0.59f, -1.83f)
             };
 
-            // Oceania (4)
-            TerritoryPolygons[TerritoryIds.Sumatra] = new Vector2[]
-            {
-                new(0.37f, 0.42f), new(0.42f, 0.53f), new(0.50f, -0.14f),
-                new(1.19f, -0.88f), new(0.82f, -1.39f), new(0.19f, -0.97f),
-                new(-0.21f, -0.30f), new(-0.48f, -0.18f), new(-0.73f, 0.49f),
-                new(-1.30f, 1.01f), new(-1.33f, 1.40f), new(-0.77f, 1.30f),
-                new(-0.47f, 0.92f), new(-0.24f, 0.94f), new(-0.15f, 0.65f),
-                new(0.05f, 0.73f)
-            };
-
-            TerritoryPolygons[TerritoryIds.Borneo] = new Vector2[]
-            {
-                new(0.24f, -1.23f), new(0.55f, -0.76f), new(0.40f, -0.39f),
-                new(0.81f, -0.04f), new(0.69f, 0.59f), new(0.93f, 0.90f),
-                new(0.88f, 1.20f), new(0.31f, 1.47f), new(-0.15f, 0.69f),
-                new(-1.01f, 0.17f), new(-1.07f, -0.16f), new(-0.78f, -0.66f),
-                new(-0.84f, -0.86f), new(-0.20f, -1.22f)
-            };
-
+            // Oceania (5)
             TerritoryPolygons[TerritoryIds.NovaGuine] = new Vector2[]
             {
                 new(-0.86f, 0.57f), new(-0.72f, 1.08f), new(-0.26f, 1.17f),
@@ -862,6 +805,27 @@ namespace War.Presentation.Board
                 new(-2.28f, -1.89f), new(-1.60f, -1.94f), new(-1.49f, -1.60f),
                 new(-0.77f, -1.35f), new(-0.13f, -1.43f), new(0.23f, -2.01f),
                 new(0.67f, -1.47f), new(0.46f, -2.16f), new(0.75f, -2.01f)
+            };
+
+            TerritoryPolygons[TerritoryIds.NovaZelandia] = new Vector2[]
+            {
+                new(0.80f, 2.10f), new(1.10f, 1.40f), new(0.60f, 0.20f),
+                new(0.10f, -0.80f), new(-0.50f, -2.00f), new(-0.90f, -1.70f),
+                new(-0.30f, 0.10f), new(0.20f, 1.80f)
+            };
+
+            TerritoryPolygons[TerritoryIds.IlhasSalomao] = new Vector2[]
+            {
+                new(1.20f, 0.80f), new(0.80f, 0.90f), new(-0.20f, 0.40f),
+                new(-1.10f, -0.20f), new(-0.90f, -0.60f), new(0.10f, -0.30f),
+                new(1.10f, 0.30f)
+            };
+
+            TerritoryPolygons[TerritoryIds.Fiji] = new Vector2[]
+            {
+                new(0.60f, 0.80f), new(0.90f, 0.20f), new(0.70f, -0.60f),
+                new(-0.10f, -0.80f), new(-0.80f, -0.20f), new(-0.60f, 0.60f),
+                new(0.10f, 0.90f)
             };
 
         }

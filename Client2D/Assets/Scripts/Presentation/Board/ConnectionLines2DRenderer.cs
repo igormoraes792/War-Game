@@ -47,7 +47,7 @@ namespace War2D.Presentation.Board
             var defs = ClassicMapData.GetAllDefinitions();
             var processed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            var lineShader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color");
+            var lineShader = ShaderUtils2D.GetColorShader();
             var sharedMat = new Material(lineShader) { name = "War2D_Line_Mat" };
 
             foreach (var def in defs)
@@ -63,8 +63,8 @@ namespace War2D.Presentation.Board
                     if (processed.Contains(key)) continue;
                     processed.Add(key);
 
-                    bool isTransPacific = (idA == TerritoryIds.Alasca && idB == TerritoryIds.Vladivostok) ||
-                                          (idA == TerritoryIds.Vladivostok && idB == TerritoryIds.Alasca);
+                    bool isTransPacific = (idA == TerritoryIds.Alasca && idB == TerritoryIds.RussiaAsiatica) ||
+                                          (idA == TerritoryIds.RussiaAsiatica && idB == TerritoryIds.Alasca);
 
                     if (isTransPacific)
                     {
@@ -112,7 +112,7 @@ namespace War2D.Presentation.Board
         private void CreateTransPacificLines(string idA, Vector2 posA, string idB, Vector2 posB, Material mat)
         {
             Vector2 alascaPos = idA == TerritoryIds.Alasca ? posA : posB;
-            Vector2 vladiPos = idA == TerritoryIds.Vladivostok ? posA : posB;
+            Vector2 vladiPos = idA == TerritoryIds.RussiaAsiatica ? posA : posB;
 
             // Alasca para margem esquerda do mapa
             var lineA = new GameObject("Line2D_Pacific_Alasca").AddComponent<LineRenderer>();
@@ -185,16 +185,18 @@ namespace War2D.Presentation.Board
 
         private static bool IsSeaRoute(string a, string b)
         {
-            return (a == TerritoryIds.Brasil && b == TerritoryIds.Nigeria) ||
-                   (a == TerritoryIds.Nigeria && b == TerritoryIds.Brasil) ||
+            return (a == TerritoryIds.Brasil && b == TerritoryIds.Argelia) ||
+                   (a == TerritoryIds.Argelia && b == TerritoryIds.Brasil) ||
                    (a == TerritoryIds.Groenlandia && b == TerritoryIds.Islandia) ||
                    (a == TerritoryIds.Islandia && b == TerritoryIds.Groenlandia) ||
                    (a == TerritoryIds.Inglaterra && b == TerritoryIds.Islandia) ||
                    (a == TerritoryIds.Islandia && b == TerritoryIds.Inglaterra) ||
                    (a == TerritoryIds.Madagascar && (b == TerritoryIds.Sudao || b == TerritoryIds.AfricaDoSul)) ||
                    ((a == TerritoryIds.Sudao || a == TerritoryIds.AfricaDoSul) && b == TerritoryIds.Madagascar) ||
-                   (a == TerritoryIds.Australia && (b == TerritoryIds.NovaGuine || b == TerritoryIds.Borneo)) ||
-                   ((a == TerritoryIds.NovaGuine || a == TerritoryIds.Borneo) && b == TerritoryIds.Australia);
+                   (a == TerritoryIds.Australia && (b == TerritoryIds.NovaGuine || b == TerritoryIds.NovaZelandia || b == TerritoryIds.Vietna)) ||
+                   ((b == TerritoryIds.NovaGuine || b == TerritoryIds.NovaZelandia || b == TerritoryIds.Vietna) && a == TerritoryIds.Australia) ||
+                   (a == TerritoryIds.Alasca && b == TerritoryIds.RussiaAsiatica) ||
+                   (b == TerritoryIds.Alasca && a == TerritoryIds.RussiaAsiatica);
         }
 
         private void ClearLines()
@@ -208,3 +210,4 @@ namespace War2D.Presentation.Board
         }
     }
 }
+

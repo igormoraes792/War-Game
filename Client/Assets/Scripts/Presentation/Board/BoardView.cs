@@ -71,11 +71,8 @@ namespace War.Presentation.Board
             UnbindViewEvents();
             _viewsById.Clear();
 
-            // Se não foi configurado manualmente no Inspector, procura nos filhos
-            if (registeredTerritories == null || registeredTerritories.Count == 0)
-            {
-                registeredTerritories = new List<TerritoryView>(GetComponentsInChildren<TerritoryView>(true));
-            }
+            // Garante indexação completa de todos os territórios presentes na hierarquia
+            registeredTerritories = new List<TerritoryView>(GetComponentsInChildren<TerritoryView>(true));
 
             foreach (var view in registeredTerritories)
             {
@@ -232,17 +229,36 @@ namespace War.Presentation.Board
         }
 
         /// <summary>
-        /// Destaca visualmente todos os territórios pertencentes a um continente específico.
+        /// Destaca visualmente todos os territórios pertencentes a um continente específico,
+        /// escurecendo o restante do mundo para criar contraste imediato de foco.
         /// </summary>
         public void HighlightContinent(ContinentType continent, bool highlight)
         {
-            var territoryDefs = ClassicMapData.GetTerritoriesByContinent(continent);
-            var ids = new List<string>();
-            foreach (var def in territoryDefs)
+            var continentTerritories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var def in ClassicMapData.GetTerritoriesByContinent(continent))
             {
-                ids.Add(def.Id);
+                continentTerritories.Add(def.Id);
             }
-            HighlightTerritories(ids, highlight);
+
+            foreach (var (id, view) in _viewsById)
+            {
+                if (continentTerritories.Contains(id))
+                {
+                    view.SetHighlighted(highlight);
+                    view.SetDimmed(false);
+                }
+                else
+                {
+                    if (highlight)
+                    {
+                        view.SetDimmed(true);
+                    }
+                    else
+                    {
+                        view.SetDimmed(!string.IsNullOrEmpty(_selectedTerritoryId) && !view.IsSelected);
+                    }
+                }
+            }
         }
 
         /// <summary>

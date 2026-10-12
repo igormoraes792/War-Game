@@ -75,7 +75,7 @@ namespace War.Presentation.UI
 
             if (presenter == null)
             {
-                presenter = FindFirstObjectByType<GamePresenter>();
+                presenter = FindAnyObjectByType<GamePresenter>();
             }
         }
 
@@ -135,6 +135,7 @@ namespace War.Presentation.UI
 
             ShowCombat(result, attacker, defender, attackerColor, defenderColor);
         }
+
 
         /// <summary>
         /// Apresenta o resultado do combate com todos os detalhes visuais.
