@@ -448,12 +448,11 @@ namespace War.Tests
                 (0.98f, 0.05f), (2.22f, 0.01f), (2.02f, -0.70f),
                 (2.52f, -1.23f), (3.82f, -1.39f), (4.12f, -1.51f),
                 (4.66f, -1.15f), (4.50f, -0.54f), (4.86f, -0.16f),
-                (4.76f, 0.23f), (4.90f, 1.00f), (4.10f, 2.00f),
-                (3.00f, 1.10f), (2.30f, 2.40f), (1.50f, 1.60f),
-                (0.50f, 2.90f), (-0.50f, 1.80f), (-1.50f, 2.80f),
-                (-2.30f, 2.00f), (-3.00f, 2.70f), (-3.75f, 2.13f),
-                (-3.83f, 0.22f), (-3.31f, 0.15f), (-2.81f, -1.03f),
-                (-3.20f, -1.60f), (-3.00f, -2.30f)
+                (4.76f, 0.23f), (4.40f, 1.00f), (3.40f, 1.80f),
+                (2.40f, 1.30f), (1.40f, 2.60f), (0.40f, 1.70f),
+                (-0.60f, 2.70f), (-1.70f, 1.80f), (-2.70f, 2.50f),
+                (-3.75f, 2.13f), (-3.83f, 0.22f), (-3.31f, 0.15f),
+                (-2.81f, -1.03f), (-3.20f, -1.60f), (-3.00f, -2.30f)
             };
 
             var russiaAsiatica = new (float x, float y)[]
@@ -465,41 +464,43 @@ namespace War.Tests
                 (0.44f, -2.15f), (0.94f, -1.30f), (1.52f, -1.25f),
                 (3.35f, -3.20f), (4.00f, -4.00f), (5.30f, -3.30f),
                 (6.00f, -1.60f), (7.30f, 0.00f), (8.30f, 1.70f),
-                (7.70f, 2.80f), (7.10f, 3.60f), (6.20f, 3.00f),
-                (5.30f, 3.80f), (4.50f, 3.10f), (3.70f, 3.90f),
-                (3.00f, 3.40f), (2.30f, 4.20f), (1.50f, 3.50f),
-                (0.80f, 4.40f), (0.00f, 4.60f), (-0.80f, 4.00f),
-                (-1.50f, 3.30f), (-2.20f, 4.10f), (-2.70f, 3.10f),
-                (-3.50f, 4.00f), (-4.50f, 3.00f), (-5.50f, 3.40f),
-                (-6.00f, 2.70f)
+                (7.80f, 2.60f), (6.80f, 3.40f), (5.60f, 3.20f),
+                (4.50f, 3.30f), (3.40f, 3.60f), (2.50f, 3.30f),
+                (1.60f, 3.00f), (0.80f, 3.80f), (0.00f, 4.60f),
+                (-1.00f, 3.90f), (-1.80f, 3.20f), (-2.80f, 3.60f),
+                (-3.60f, 2.80f), (-4.50f, 3.70f), (-5.60f, 2.90f)
             };
 
             var chile = new (float x, float y)[]
             {
-                (-0.62f, 2.80f), (0.60f, 2.20f), (0.70f, 1.50f),
-                (0.80f, -0.20f), (0.70f, -2.00f), (0.80f, -3.80f),
-                (0.90f, -4.80f), (0.60f, -5.20f), (0.10f, -5.00f),
-                (-0.50f, -3.80f), (-0.60f, -2.00f), (-0.70f, -0.20f),
-                (-0.70f, 1.50f)
+                (-1.30f, 3.80f), (-0.40f, 3.80f), (-0.10f, 2.40f),
+                (0.30f, 0.80f), (0.70f, -0.80f), (1.30f, -2.30f),
+                (1.80f, -3.80f), (1.40f, -3.80f), (0.50f, -2.60f),
+                (-0.10f, -1.10f), (-0.50f, 0.60f), (-0.90f, 2.20f)
             };
 
             var peru = new (float x, float y)[]
             {
-                (-1.52f, 2.09f), (-1.45f, 2.71f), (-0.42f, 2.09f),
-                (0.36f, 0.74f), (1.64f, 0.15f), (3.07f, -2.14f),
-                (2.17f, -2.49f), (2.31f, -1.93f), (0.59f, -1.30f),
-                (0.33f, -1.64f), (-0.30f, -1.40f), (-1.52f, -0.80f),
-                (-2.28f, 0.85f), (-2.58f, 2.09f)
+                (-1.00f, 2.60f), (-0.07f, 1.71f), (1.18f, 0.90f),
+                (0.76f, 0.32f), (1.79f, -0.08f), (1.51f, -0.31f),
+                (1.10f, -1.30f), (0.80f, -2.20f), (-0.10f, -2.20f),
+                (-0.70f, -1.20f), (-1.20f, 0.20f), (-1.40f, 1.60f)
             };
 
             var argentina = new (float x, float y)[]
             {
-                (-1.12f, 3.60f), (-0.49f, 3.36f), (-0.23f, 3.02f),
-                (0.58f, 2.90f), (1.50f, 2.40f), (2.26f, 2.18f),
-                (1.58f, 0.90f), (0.88f, -0.80f), (1.38f, -2.10f),
-                (0.88f, -3.40f), (-0.42f, -3.80f), (-1.12f, -3.80f),
-                (-0.82f, -3.40f), (-0.92f, -2.40f), (-1.02f, -0.60f),
-                (-0.92f, 1.20f), (-1.02f, 2.90f)
+                (-0.40f, -4.40f), (-0.90f, -2.90f), (-1.50f, -1.40f),
+                (-1.90f, 0.20f), (-2.30f, 1.80f), (-2.60f, 3.20f),
+                (-2.30f, 4.10f), (-1.89f, 5.09f), (-1.73f, 4.83f),
+                (-0.83f, 5.14f), (0.45f, 4.55f), (1.88f, 2.26f),
+                (1.36f, 1.58f), (1.50f, 1.00f), (2.00f, 0.60f),
+                (1.40f, -0.80f), (0.70f, -2.30f), (0.20f, -3.50f)
+            };
+
+            var uruguai = new (float x, float y)[]
+            {
+                (-0.44f, 0.48f), (0.10f, 0.25f), (0.40f, -0.27f),
+                (0.30f, -0.70f), (0.00f, -0.60f), (-0.30f, -0.10f)
             };
 
             float areaM = Math.Abs(ComputeArea(mackenzie));
@@ -510,6 +511,15 @@ namespace War.Tests
 
             float areaC = Math.Abs(ComputeArea(chile));
             Assert(areaC > 4f, $"Área do Chile deve ser positiva e substancial, obtido: {areaC}");
+
+            float areaP = Math.Abs(ComputeArea(peru));
+            Assert(areaP > 4f, $"Área do Peru deve ser positiva e substancial, obtido: {areaP}");
+
+            float areaA = Math.Abs(ComputeArea(argentina));
+            Assert(areaA > 10f, $"Área da Argentina deve ser positiva e substancial, obtido: {areaA}");
+
+            float areaU = Math.Abs(ComputeArea(uruguai));
+            Assert(areaU > 0.5f, $"Área do Uruguai deve ser positiva, obtido: {areaU}");
 
             int triM = EarClipCount(mackenzie);
             Assert(triM == mackenzie.Length - 2, $"Mackenzie deve triangular {mackenzie.Length - 2} triângulos, obtido: {triM}");
@@ -525,6 +535,9 @@ namespace War.Tests
 
             int triA = EarClipCount(argentina);
             Assert(triA == argentina.Length - 2, $"Argentina deve triangular {argentina.Length - 2} triângulos, obtido: {triA}");
+
+            int triU = EarClipCount(uruguai);
+            Assert(triU == uruguai.Length - 2, $"Uruguai deve triangular {uruguai.Length - 2} triângulos, obtido: {triU}");
         }
 
 

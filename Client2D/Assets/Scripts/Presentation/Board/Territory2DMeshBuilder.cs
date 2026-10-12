@@ -344,11 +344,10 @@ namespace War2D.Presentation.Board
 
             TerritoryPolygons[TerritoryIds.Peru] = new Vector2[]
             {
-                new(-1.52f, 2.09f), new(-1.45f, 2.71f), new(-0.42f, 2.09f),
-                new(0.36f, 0.74f), new(1.64f, 0.15f), new(3.07f, -2.14f),
-                new(2.17f, -2.49f), new(2.31f, -1.93f), new(0.59f, -1.30f),
-                new(0.33f, -1.64f), new(-0.30f, -1.40f), new(-1.52f, -0.80f),
-                new(-2.28f, 0.85f), new(-2.58f, 2.09f)
+                new(-1.00f, 2.60f), new(-0.07f, 1.71f), new(1.18f, 0.90f),
+                new(0.76f, 0.32f), new(1.79f, -0.08f), new(1.51f, -0.31f),
+                new(1.10f, -1.30f), new(0.80f, -2.20f), new(-0.10f, -2.20f),
+                new(-0.70f, -1.20f), new(-1.20f, 0.20f), new(-1.40f, 1.60f)
             };
 
             TerritoryPolygons[TerritoryIds.Brasil] = new Vector2[]
@@ -367,29 +366,26 @@ namespace War2D.Presentation.Board
 
             TerritoryPolygons[TerritoryIds.Chile] = new Vector2[]
             {
-                new(-0.62f, 2.80f), new(0.60f, 2.20f), new(0.70f, 1.50f),
-                new(0.80f, -0.20f), new(0.70f, -2.00f), new(0.80f, -3.80f),
-                new(0.90f, -4.80f), new(0.60f, -5.20f), new(0.10f, -5.00f),
-                new(-0.50f, -3.80f), new(-0.60f, -2.00f), new(-0.70f, -0.20f),
-                new(-0.70f, 1.50f)
+                new(-1.30f, 3.80f), new(-0.40f, 3.80f), new(-0.10f, 2.40f),
+                new(0.30f, 0.80f), new(0.70f, -0.80f), new(1.30f, -2.30f),
+                new(1.80f, -3.80f), new(1.40f, -3.80f), new(0.50f, -2.60f),
+                new(-0.10f, -1.10f), new(-0.50f, 0.60f), new(-0.90f, 2.20f)
             };
 
             TerritoryPolygons[TerritoryIds.Argentina] = new Vector2[]
             {
-                new(-1.12f, 3.60f), new(-0.49f, 3.36f), new(-0.23f, 3.02f),
-                new(0.58f, 2.90f), new(1.50f, 2.40f), new(2.26f, 2.18f),
-                new(1.58f, 0.90f), new(0.88f, -0.80f), new(1.38f, -2.10f),
-                new(0.88f, -3.40f), new(-0.42f, -3.80f), new(-1.12f, -3.80f),
-                new(-0.82f, -3.40f), new(-0.92f, -2.40f), new(-1.02f, -0.60f),
-                new(-0.92f, 1.20f), new(-1.02f, 2.90f)
+                new(-0.40f, -4.40f), new(-0.90f, -2.90f), new(-1.50f, -1.40f),
+                new(-1.90f, 0.20f), new(-2.30f, 1.80f), new(-2.60f, 3.20f),
+                new(-2.30f, 4.10f), new(-1.89f, 5.09f), new(-1.73f, 4.83f),
+                new(-0.83f, 5.14f), new(0.45f, 4.55f), new(1.88f, 2.26f),
+                new(1.36f, 1.58f), new(1.50f, 1.00f), new(2.00f, 0.60f),
+                new(1.40f, -0.80f), new(0.70f, -2.30f), new(0.20f, -3.50f)
             };
-
 
             TerritoryPolygons[TerritoryIds.Uruguai] = new Vector2[]
             {
-                new(0.95f, 0.70f), new(0.35f, 0.85f), new(-0.70f, 0.40f),
-                new(-0.85f, -0.45f), new(-0.20f, -0.90f), new(0.65f, -0.65f),
-                new(1.05f, 0.10f)
+                new(-0.44f, 0.48f), new(0.10f, 0.25f), new(0.40f, -0.27f),
+                new(0.30f, -0.70f), new(0.00f, -0.60f), new(-0.30f, -0.10f)
             };
 
             // América do Norte (8)
@@ -415,11 +411,10 @@ namespace War2D.Presentation.Board
                 // Encaixe contíguo com o noroeste de Labrador (preenchendo o vazio acima de Ottawa)
                 new(4.12f, -1.51f), new(4.66f, -1.15f), new(4.50f, -0.54f),
                 new(4.86f, -0.16f), new(4.76f, 0.23f),
-                // Litoral ártico setentrional detalhado e recortado (Foxe, Boothia, Victoria, Beaufort)
-                new(4.90f, 1.00f), new(4.10f, 2.00f), new(3.00f, 1.10f),
-                new(2.30f, 2.40f), new(1.50f, 1.60f), new(0.50f, 2.90f),
-                new(-0.50f, 1.80f), new(-1.50f, 2.80f), new(-2.30f, 2.00f),
-                new(-3.00f, 2.70f),
+                // Litoral ártico setentrional autêntico (Estreito de Hudson, Boothia, Victoria, Beaufort)
+                new(4.40f, 1.00f), new(3.40f, 1.80f), new(2.40f, 1.30f),
+                new(1.40f, 2.60f), new(0.40f, 1.70f), new(-0.60f, 2.70f),
+                new(-1.70f, 1.80f), new(-2.70f, 2.50f),
                 // Fronteira oeste com o Alasca (Yukon)
                 new(-3.75f, 2.13f), new(-3.83f, 0.22f), new(-3.31f, 0.15f),
                 new(-2.81f, -1.03f),
@@ -680,14 +675,13 @@ namespace War2D.Presentation.Board
                 new(4.00f, -4.00f),
                 // Litoral do Pacífico (Vladivostok, Mar de Okhotsk, Península de Kamchatka, Chukotka)
                 new(5.30f, -3.30f), new(6.00f, -1.60f), new(7.30f, 0.00f),
-                new(8.30f, 1.70f), new(7.70f, 2.80f),
-                // Litoral ártico setentrional recortado (Chukotka, Yana, Delta do Lena, Taimir, Yamal, Urais)
-                new(7.10f, 3.60f), new(6.20f, 3.00f), new(5.30f, 3.80f),
-                new(4.50f, 3.10f), new(3.70f, 3.90f), new(3.00f, 3.40f),
-                new(2.30f, 4.20f), new(1.50f, 3.50f), new(0.80f, 4.40f),
-                new(0.00f, 4.60f), new(-0.80f, 4.00f), new(-1.50f, 3.30f),
-                new(-2.20f, 4.10f), new(-2.70f, 3.10f), new(-3.50f, 4.00f),
-                new(-4.50f, 3.00f), new(-5.50f, 3.40f), new(-6.00f, 2.70f)
+                new(8.30f, 1.70f), new(7.80f, 2.60f),
+                // Litoral ártico setentrional autêntico (Chukotka, Sibéria Oriental, Delta do Lena, Taimir, Yamal)
+                new(6.80f, 3.40f), new(5.60f, 3.20f), new(4.50f, 3.30f),
+                new(3.40f, 3.60f), new(2.50f, 3.30f), new(1.60f, 3.00f),
+                new(0.80f, 3.80f), new(0.00f, 4.60f), new(-1.00f, 3.90f),
+                new(-1.80f, 3.20f), new(-2.80f, 3.60f), new(-3.60f, 2.80f),
+                new(-4.50f, 3.70f), new(-5.60f, 2.90f)
             };
 
 
