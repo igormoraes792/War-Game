@@ -182,11 +182,13 @@ namespace War.Presentation.Editor
 
         private static GameObject CreateBoardGraphicSurface(Transform parent)
         {
-            var surface = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            // Usamos um Quad rotacionado em 90 graus (olhando para cima) para garantir coordenadas UV perfeitas [0..1] na textura do mapa
+            var surface = GameObject.CreatePrimitive(PrimitiveType.Quad);
             surface.name = "Superficie_Mapa_Tatico";
             surface.transform.SetParent(parent, false);
-            surface.transform.localPosition = new Vector3(0f, 0.01f, 0f);
-            surface.transform.localScale = new Vector3(52f, 0.02f, 32f);
+            surface.transform.localPosition = new Vector3(0f, 0.02f, 0f);
+            surface.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            surface.transform.localScale = new Vector3(52f, 32f, 1f);
 
             // Remove o colisor da superfície para que raycasts e cliques atinjam os territórios sem obstrução
             var col = surface.GetComponent<Collider>();
