@@ -91,10 +91,9 @@ namespace War.Presentation.Board
 
             var pixels = new Color[width * height];
 
-            // Cores do oceano (gradiente de sala de comando / marinho oceânico rico)
-            var oceanDeep = new Color(0.04f, 0.08f, 0.16f, 1f);      // Azul marinho profundo
-            var oceanMid = new Color(0.07f, 0.15f, 0.28f, 1f);       // Azul oceânico rico
-            var oceanLight = new Color(0.10f, 0.22f, 0.38f, 1f);     // Plataforma marítima suave
+            // Cores do oceano (gradiente meia-noite tático idêntico à referência de WAR)
+            var oceanDeep = new Color(0.025f, 0.05f, 0.10f, 1f);      // #060D1A - Azul meia-noite profundo
+            var oceanMid = new Color(0.045f, 0.09f, 0.17f, 1f);       // #0B172B - Azul marinho tático
 
             for (int y = 0; y < height; y++)
             {
@@ -108,25 +107,32 @@ namespace War.Presentation.Board
 
                     // 1. Base do Oceano com vinheta suave e gradiente de profundidade
                     float distFromCenter = Vector2.Distance(new Vector2(u, v), new Vector2(0.5f, 0.5f));
-                    Color current = Color.Lerp(oceanMid, oceanDeep, Mathf.Clamp01(distFromCenter * 1.25f));
+                    Color current = Color.Lerp(oceanMid, oceanDeep, Mathf.Clamp01(distFromCenter * 1.35f));
 
-                    // Leve textura de batimetria suave
-                    float depthNoise = (Mathf.PerlinNoise(u * 8f, v * 8f) - 0.5f) * 0.03f;
-                    current += new Color(depthNoise * 0.5f, depthNoise * 1.0f, depthNoise * 1.5f, 0f);
+                    // 2. Curvas de nível batimétricas (Linhas topográficas submarinas orgânicas)
+                    float topoField = (Mathf.PerlinNoise(worldX * 0.10f + 10f, worldZ * 0.10f + 10f) * 7.5f)
+                                    + (Mathf.Sin(worldX * 0.06f + worldZ * 0.04f) * 1.8f);
+                    float topoFrac = Mathf.Abs(topoField - Mathf.Round(topoField));
+                    if (topoFrac < 0.048f)
+                    {
+                        float lineIntensity = Mathf.SmoothStep(0.048f, 0f, topoFrac) * 0.42f;
+                        var isolineColor = new Color(0.12f, 0.38f, 0.54f, 1f); // Ciano náutico suave
+                        current = Color.Lerp(current, isolineColor, lineIntensity);
+                    }
 
-                    // 3. Grid tático náutico (Latitude / Longitude finas)
-                    bool isGridX = (Mathf.Abs(worldX % 4f) < 0.08f);
-                    bool isGridZ = (Mathf.Abs(worldZ % 4f) < 0.08f);
-                    bool isEquator = (Mathf.Abs(worldZ) < 0.12f);
-                    bool isPrimeMeridian = (Mathf.Abs(worldX) < 0.12f);
+                    // 3. Grid tático náutico fino (Meridianos e Paralelos sutis)
+                    bool isGridX = (Mathf.Abs(worldX % 4f) < 0.06f);
+                    bool isGridZ = (Mathf.Abs(worldZ % 4f) < 0.06f);
+                    bool isEquator = (Mathf.Abs(worldZ) < 0.10f);
+                    bool isPrimeMeridian = (Mathf.Abs(worldX) < 0.10f);
 
                     if (isEquator || isPrimeMeridian)
                     {
-                        current = Color.Lerp(current, new Color(0.35f, 0.55f, 0.65f, 1f), 0.35f);
+                        current = Color.Lerp(current, new Color(0.25f, 0.50f, 0.65f, 1f), 0.25f);
                     }
                     else if (isGridX || isGridZ)
                     {
-                        current = Color.Lerp(current, new Color(0.20f, 0.35f, 0.45f, 1f), 0.16f);
+                        current = Color.Lerp(current, new Color(0.14f, 0.28f, 0.40f, 1f), 0.10f);
                     }
 
                     // 4. Borda moldurada tática (faixa de margem com régua militar)

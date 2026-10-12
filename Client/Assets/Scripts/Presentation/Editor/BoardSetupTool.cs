@@ -98,6 +98,12 @@ namespace War.Presentation.Editor
                 boardViewSo.ApplyModifiedProperties();
             }
 
+            // 4.1 Criação dos Marcadores e Badges dos Continentes com Bônus Táticos
+            var continentsObj = new GameObject("Indicadores_Continentes");
+            continentsObj.transform.SetParent(boardObj.transform, false);
+            var continentRenderer = continentsObj.AddComponent<ContinentIndicatorsRenderer>();
+            continentRenderer.RebuildIndicators();
+
             // 5. Criação da Câmera Tática
             var cameraObj = SetupTacticalCamera(rootObj.transform);
 

@@ -103,12 +103,12 @@ namespace War.Presentation.Game
 
             var classicColors = new[]
             {
-                PlayerColor.Red,
-                PlayerColor.Blue,
-                PlayerColor.Green,
-                PlayerColor.Yellow,
-                PlayerColor.Black,
-                PlayerColor.White
+                PlayerColor.Yellow, // Ouro / Mostarda
+                PlayerColor.Blue,   // Teal / Ciano
+                PlayerColor.Black,  // Roxo Imperial
+                PlayerColor.Red,    // Carmim Militar
+                PlayerColor.Green,  // Verde Esmeralda
+                PlayerColor.White   // Titânio
             };
 
             var players = new List<Player>();
@@ -157,13 +157,13 @@ namespace War.Presentation.Game
         {
             return color switch
             {
-                PlayerColor.Red => new Color(0.82f, 0.28f, 0.26f, 1f),       // Terracotta / Crimson Imperial
-                PlayerColor.Blue => new Color(0.26f, 0.54f, 0.82f, 1f),      // Azul Cobalto / Steel Azure
-                PlayerColor.Green => new Color(0.28f, 0.64f, 0.38f, 1f),     // Verde Tático / Olive Sage
-                PlayerColor.Yellow => new Color(0.88f, 0.70f, 0.24f, 1f),    // Ouro Âmbar / Mostarda Militar
-                PlayerColor.Black => new Color(0.20f, 0.22f, 0.26f, 1f),     // Grafite Tático
-                PlayerColor.White => new Color(0.92f, 0.90f, 0.84f, 1f),     // Marfim Militar / Bone
-                _ => new Color(0.55f, 0.58f, 0.65f, 1f)
+                PlayerColor.Blue => new Color(0.00f, 0.60f, 0.66f, 1f),      // Ciano / Teal Tático (como na referência)
+                PlayerColor.Yellow => new Color(0.78f, 0.62f, 0.08f, 1f),    // Mostarda / Ouro Âmbar (como na referência)
+                PlayerColor.Black => new Color(0.28f, 0.12f, 0.38f, 1f),     // Roxo Imperial / Violeta Escuro (como na referência)
+                PlayerColor.Red => new Color(0.74f, 0.16f, 0.22f, 1f),       // Carmim / Rubi Militar
+                PlayerColor.Green => new Color(0.18f, 0.52f, 0.30f, 1f),     // Verde Esmeralda Tático
+                PlayerColor.White => new Color(0.86f, 0.89f, 0.92f, 1f),     // Titânio / Branco Gélido
+                _ => new Color(0.45f, 0.48f, 0.55f, 1f)
             };
         }
 

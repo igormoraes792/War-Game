@@ -55,6 +55,12 @@ namespace War.Presentation.Board
         private Material? _runtimeMaterial;
         private Material? _runtimePinMaterial;
 
+        // Animação 3D física de elevação e pin
+        private Vector3 _initialLocalPosition;
+        private Vector3 _initialPinScale = Vector3.one;
+        private float _currentElevation;
+        private float _currentPinScale = 1f;
+
         // Propriedade estática para shaders URP (_BaseColor) e Built-in (_Color)
         private static readonly int BaseColorProp = Shader.PropertyToID("_BaseColor");
         private static readonly int LegacyColorProp = Shader.PropertyToID("_Color");
@@ -137,8 +143,38 @@ namespace War.Presentation.Board
                 }
             }
 
+            _initialLocalPosition = transform.localPosition;
+            if (tacticalPinRoot != null)
+            {
+                _initialPinScale = tacticalPinRoot.localScale;
+            }
+
             _ownerColor = defaultNeutralColor;
             ApplyVisualState();
+        }
+
+        private void Update()
+        {
+            // Elevação física 3D suave da peça do país (estilo maquete / mapa de comando de referência)
+            float targetElevation = _isSelected ? 0.38f : (_isHighlighted ? 0.12f : 0f);
+            if (Mathf.Abs(_currentElevation - targetElevation) > 0.001f)
+            {
+                _currentElevation = Mathf.Lerp(_currentElevation, targetElevation, Time.deltaTime * 14f);
+                var pos = _initialLocalPosition;
+                pos.y += _currentElevation;
+                transform.localPosition = pos;
+            }
+
+            // Escala dinâmica suave do pin/estandarte tático
+            if (tacticalPinRoot != null)
+            {
+                float targetPinScale = _isSelected ? 1.25f : (_isHighlighted ? 1.10f : 1.0f);
+                if (Mathf.Abs(_currentPinScale - targetPinScale) > 0.001f)
+                {
+                    _currentPinScale = Mathf.Lerp(_currentPinScale, targetPinScale, Time.deltaTime * 14f);
+                    tacticalPinRoot.localScale = _initialPinScale * _currentPinScale;
+                }
+            }
         }
 
         private void OnDestroy()
@@ -239,15 +275,15 @@ namespace War.Presentation.Board
 
             if (_isSelected)
             {
-                // Dourado tático misturado à cor do dono com emissão brilhante
-                targetColor = Color.Lerp(_ownerColor, selectedTint, 0.65f);
-                emissionColor = new Color(0.45f, 0.38f, 0.08f, 1f);
+                // Dourado tático misturado à cor do dono com emissão brilhante de borda (referência Argentina)
+                targetColor = Color.Lerp(_ownerColor, selectedTint, 0.60f);
+                emissionColor = new Color(0.75f, 0.65f, 0.22f, 1f);
             }
             else if (_isHighlighted)
             {
-                // Brilho acetinado de seleção com clareamento suave de 35%
+                // Brilho acetinado de seleção com clareamento suave
                 targetColor = Color.Lerp(_ownerColor, highlightTint, 0.35f);
-                emissionColor = new Color(0.20f, 0.22f, 0.25f, 1f);
+                emissionColor = new Color(0.30f, 0.32f, 0.36f, 1f);
             }
             else
             {
@@ -281,14 +317,44 @@ namespace War.Presentation.Board
                 }
             }
 
-            // Atualiza também o badge do pin tático se presente
+            // Atualiza também o badge do pin tático se presente (brilha em branco/ouro quando selecionado)
             if (_runtimePinMaterial != null)
             {
-                var pinColor = Color.Lerp(_ownerColor, Color.white, 0.15f);
+                Color pinColor;
+                Color pinEmission = Color.black;
+
+                if (_isSelected)
+                {
+                    pinColor = Color.Lerp(_ownerColor, Color.white, 0.85f);
+                    pinEmission = new Color(0.8f, 0.75f, 0.35f, 1f);
+                }
+                else if (_isHighlighted)
+                {
+                    pinColor = Color.Lerp(_ownerColor, Color.white, 0.40f);
+                    pinEmission = new Color(0.2f, 0.2f, 0.2f, 1f);
+                }
+                else
+                {
+                    pinColor = Color.Lerp(_ownerColor, Color.white, 0.15f);
+                }
+
                 if (_runtimePinMaterial.HasProperty(BaseColorProp))
                     _runtimePinMaterial.SetColor(BaseColorProp, pinColor);
                 else
                     _runtimePinMaterial.color = pinColor;
+
+                if (_runtimePinMaterial.HasProperty(EmissionColorProp))
+                {
+                    if (pinEmission != Color.black)
+                    {
+                        _runtimePinMaterial.EnableKeyword("_EMISSION");
+                        _runtimePinMaterial.SetColor(EmissionColorProp, pinEmission);
+                    }
+                    else
+                    {
+                        _runtimePinMaterial.SetColor(EmissionColorProp, Color.black);
+                    }
+                }
             }
         }
 
