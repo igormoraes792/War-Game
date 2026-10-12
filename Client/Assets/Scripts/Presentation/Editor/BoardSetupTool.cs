@@ -390,37 +390,39 @@ namespace War.Presentation.Editor
                 textMesh.color = Color.white;
                 textMesh.fontStyle = FontStyle.Bold;
 
-                // 3.5 Root da Plaqueta de Nome do País (controlada pelo nível de zoom da câmera)
+                // 3.5 Nome do País impresso diretamente dentro do território (sem tarjas ou placas)
                 var nameTagRoot = new GameObject("NameTag_Root");
-                nameTagRoot.transform.SetParent(pinRoot.transform, false);
-                nameTagRoot.transform.localPosition = new Vector3(0f, 0.04f, -1.35f);
+                nameTagRoot.transform.SetParent(terrObj.transform, false);
+                nameTagRoot.transform.localPosition = new Vector3(centroid.x, TerritoryMeshBuilder.DefaultExtrusionHeight + 0.015f, centroid.y - 0.70f);
+                nameTagRoot.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
 
-                // Plaqueta cartográfica de fundo (obsidiana escura para legibilidade absoluta)
-                var plaqueObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                plaqueObj.name = "Plaque_Background";
-                plaqueObj.transform.SetParent(nameTagRoot.transform, false);
-                plaqueObj.transform.localPosition = Vector3.zero;
-                plaqueObj.transform.localScale = new Vector3(3.4f, 0.025f, 0.75f);
-                var plaqueRend = plaqueObj.GetComponent<MeshRenderer>();
-                if (plaqueRend != null)
-                {
-                    plaqueRend.sharedMaterial = plaqueMat;
-                    plaqueRend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                }
-                var plaqueCol = plaqueObj.GetComponent<Collider>();
-                if (plaqueCol != null) Object.DestroyImmediate(plaqueCol);
+                // Sombra suave projetada para contraste perfeito em qualquer cor de país
+                var shadowObj = new GameObject("Text_Shadow");
+                shadowObj.transform.SetParent(nameTagRoot.transform, false);
+                shadowObj.transform.localPosition = new Vector3(0.04f, -0.04f, 0f);
+                shadowObj.transform.localRotation = Quaternion.identity;
+                shadowObj.transform.localScale = Vector3.one * 0.14f;
 
-                // Texto do nome do país sobre a plaqueta
+                var shadowMesh = shadowObj.AddComponent<TextMesh>();
+                shadowMesh.text = def.Name.ToUpperInvariant();
+                shadowMesh.fontSize = 44;
+                shadowMesh.characterSize = 0.18f;
+                shadowMesh.anchor = TextAnchor.MiddleCenter;
+                shadowMesh.alignment = TextAlignment.Center;
+                shadowMesh.color = new Color(0f, 0f, 0f, 0.75f);
+                shadowMesh.fontStyle = FontStyle.Bold;
+
+                // Texto principal do nome do país em caixa alta
                 var nameObj = new GameObject("Text_Name");
                 nameObj.transform.SetParent(nameTagRoot.transform, false);
-                nameObj.transform.localPosition = new Vector3(0f, 0.04f, 0f);
-                nameObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                nameObj.transform.localScale = Vector3.one * 0.15f;
+                nameObj.transform.localPosition = Vector3.zero;
+                nameObj.transform.localRotation = Quaternion.identity;
+                nameObj.transform.localScale = Vector3.one * 0.14f;
 
                 var nameTextMesh = nameObj.AddComponent<TextMesh>();
-                nameTextMesh.text = def.Name;
-                nameTextMesh.fontSize = 50;
-                nameTextMesh.characterSize = 0.22f;
+                nameTextMesh.text = def.Name.ToUpperInvariant();
+                nameTextMesh.fontSize = 44;
+                nameTextMesh.characterSize = 0.18f;
                 nameTextMesh.anchor = TextAnchor.MiddleCenter;
                 nameTextMesh.alignment = TextAlignment.Center;
                 nameTextMesh.color = Color.white;

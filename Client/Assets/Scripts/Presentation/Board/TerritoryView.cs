@@ -169,7 +169,7 @@ namespace War.Presentation.Board
         private void Update()
         {
             // Elevação física 3D suave da peça do país (estilo maquete / mapa de comando de referência)
-            float targetElevation = _isSelected ? 0.45f : (_isHighlighted && !_isDimmed ? 0.12f : 0f);
+            float targetElevation = _isSelected ? 0.45f : (_isHighlighted && !_isDimmed ? 0.22f : 0f);
             if (Mathf.Abs(_currentElevation - targetElevation) > 0.001f)
             {
                 _currentElevation = Mathf.Lerp(_currentElevation, targetElevation, Time.deltaTime * 14f);
@@ -181,7 +181,7 @@ namespace War.Presentation.Board
             // Escala dinâmica suave do pin/estandarte tático
             if (tacticalPinRoot != null)
             {
-                float targetPinScale = _isSelected ? 1.25f : (_isHighlighted ? 1.10f : 1.0f);
+                float targetPinScale = _isSelected ? 1.25f : (_isHighlighted ? 1.15f : 1.0f);
                 if (Mathf.Abs(_currentPinScale - targetPinScale) > 0.001f)
                 {
                     _currentPinScale = Mathf.Lerp(_currentPinScale, targetPinScale, Time.deltaTime * 14f);
@@ -292,13 +292,10 @@ namespace War.Presentation.Board
             }
             else if (_isHighlighted)
             {
-                // Hover INTENSO e vibrante (fica mais forte, nunca pálido/branco!)
-                Color.RGBToHSV(_ownerColor, out float h, out float s, out float v);
-                float boostedS = Mathf.Clamp01(s * 1.35f + 0.12f);
-                float boostedV = Mathf.Clamp01(v * 1.25f + 0.10f);
-                targetColor = Color.HSVToRGB(h, boostedS, boostedV);
-                // Emissão viva e rica na própria cor do território
-                emissionColor = new Color(targetColor.r * 0.45f, targetColor.g * 0.45f, targetColor.b * 0.45f, 1f);
+                // Hover: Mantém a cor rica autêntica do país (NÃO fica mais clara!)
+                // O destaque é puramente pelo relevo 3D físico e expansão do pin
+                targetColor = _ownerColor;
+                emissionColor = Color.black;
             }
             else if (_isDimmed)
             {
