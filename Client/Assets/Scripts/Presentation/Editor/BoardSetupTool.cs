@@ -691,6 +691,21 @@ namespace War.Presentation.Editor
             StretchFull(misBtnTextObj.GetComponent<RectTransform>());
             CreateTMP(misBtnTextObj, "Minha Missão", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
 
+            // 1.15 Fita Tática dos Bônus de Continente (HUD Ribbon elegante)
+            var ribbonPanel = CreateUiElement("HUD_ContinentsRibbon", hudRoot.transform);
+            var rbRt = ribbonPanel.GetComponent<RectTransform>();
+            rbRt.anchorMin = new Vector2(0.5f, 1f);
+            rbRt.anchorMax = new Vector2(0.5f, 1f);
+            rbRt.pivot = new Vector2(0.5f, 1f);
+            rbRt.anchoredPosition = new Vector2(0f, -92f);
+            rbRt.sizeDelta = new Vector2(880f, 32f);
+            var rbImg = ribbonPanel.AddComponent<Image>();
+            rbImg.color = new Color(0.06f, 0.08f, 0.12f, 0.88f);
+
+            var rbTextObj = CreateUiElement("Text_ContinentsBonus", ribbonPanel.transform);
+            StretchFull(rbTextObj.GetComponent<RectTransform>());
+            CreateTMP(rbTextObj, "<b>BÔNUS:</b>  Am. Norte +5  •  Am. Sul +2  •  Europa +5  •  África +3  •  Ásia +7  •  Oceania +2", 13f, new Color(0.85f, 0.88f, 0.94f, 1f), TextAlignmentOptions.Center);
+
             // 1.2 BottomBar (Status)
             var bottomPanel = CreateUiElement("HUD_BottomPanel", hudRoot.transform);
             var botRt = bottomPanel.GetComponent<RectTransform>();

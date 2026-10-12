@@ -160,27 +160,28 @@ namespace War.Presentation.Board
         }
 
         /// <summary>
-        /// Define qual território está selecionado (ou desmarca a seleção se nulo).
+        /// Define qual território está selecionado (ou desmarca a seleção se nulo),
+        /// escurecendo o restante do mapa para destacar o país ativo em relevo com sua cor autêntica.
         /// </summary>
         public void SelectTerritory(string? territoryId)
         {
-            if (!string.IsNullOrEmpty(_selectedTerritoryId) &&
-                _viewsById.TryGetValue(_selectedTerritoryId, out var prevView))
-            {
-                prevView.SetSelected(false);
-            }
-
             _selectedTerritoryId = territoryId;
+            bool hasSelection = !string.IsNullOrEmpty(_selectedTerritoryId);
 
-            if (!string.IsNullOrEmpty(_selectedTerritoryId) &&
-                _viewsById.TryGetValue(_selectedTerritoryId, out var nextView))
+            foreach (var kvp in _viewsById)
             {
-                nextView.SetSelected(true);
+                var view = kvp.Value;
+                if (view == null) continue;
+
+                bool isSelected = hasSelection && string.Equals(kvp.Key, _selectedTerritoryId, StringComparison.OrdinalIgnoreCase);
+                view.SetSelected(isSelected);
+                view.SetDimmed(hasSelection && !isSelected);
             }
         }
 
         /// <summary>
         /// Desmarca qualquer território selecionado e desativa os destaques das linhas.
+        /// Restaura todos os territórios para o brilho padrão (remove o escurecimento do mapa).
         /// </summary>
         public void ClearSelection()
         {
@@ -206,6 +207,7 @@ namespace War.Presentation.Board
 
         /// <summary>
         /// Destaca visualmente um conjunto de territórios (ex: vizinhos válidos para ataque).
+        /// Territórios destacados não sofrem escurecimento para que os alvos fiquem nítidos.
         /// </summary>
         public void HighlightTerritories(IEnumerable<string> territoryIds, bool highlight)
         {
@@ -216,6 +218,14 @@ namespace War.Presentation.Board
                 if (_viewsById.TryGetValue(id, out var view))
                 {
                     view.SetHighlighted(highlight);
+                    if (highlight)
+                    {
+                        view.SetDimmed(false);
+                    }
+                    else if (!string.IsNullOrEmpty(_selectedTerritoryId) && !view.IsSelected)
+                    {
+                        view.SetDimmed(true);
+                    }
                 }
             }
         }
@@ -225,9 +235,18 @@ namespace War.Presentation.Board
         /// </summary>
         public void ClearAllHighlights()
         {
+            bool hasSelection = !string.IsNullOrEmpty(_selectedTerritoryId);
             foreach (var view in _viewsById.Values)
             {
                 view.SetHighlighted(false);
+                if (hasSelection && !view.IsSelected)
+                {
+                    view.SetDimmed(true);
+                }
+                else if (!hasSelection)
+                {
+                    view.SetDimmed(false);
+                }
             }
             ClearConnectionHighlights();
         }

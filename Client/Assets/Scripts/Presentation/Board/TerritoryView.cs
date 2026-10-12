@@ -51,6 +51,7 @@ namespace War.Presentation.Board
         private Color _ownerColor;
         private bool _isHighlighted;
         private bool _isSelected;
+        private bool _isDimmed;
         private int _currentArmyCount = 1;
         private Material? _runtimeMaterial;
         private Material? _runtimePinMaterial;
@@ -87,6 +88,7 @@ namespace War.Presentation.Board
         public int CurrentArmyCount => _currentArmyCount;
         public bool IsHighlighted => _isHighlighted;
         public bool IsSelected => _isSelected;
+        public bool IsDimmed => _isDimmed;
         #endregion
 
         private void Awake()
@@ -156,7 +158,7 @@ namespace War.Presentation.Board
         private void Update()
         {
             // Elevação física 3D suave da peça do país (estilo maquete / mapa de comando de referência)
-            float targetElevation = _isSelected ? 0.38f : (_isHighlighted ? 0.12f : 0f);
+            float targetElevation = _isSelected ? 0.45f : (_isHighlighted && !_isDimmed ? 0.12f : 0f);
             if (Mathf.Abs(_currentElevation - targetElevation) > 0.001f)
             {
                 _currentElevation = Mathf.Lerp(_currentElevation, targetElevation, Time.deltaTime * 14f);
@@ -254,8 +256,19 @@ namespace War.Presentation.Board
         }
 
         /// <summary>
-        /// Recalcula e aplica a cor resultante com base no estado atual (Owner, Hover, Selection),
-        /// acentuando o brilho físico volumétrico e emissão suave nas bordas.
+        /// Escurece o território quando outro território do tabuleiro está selecionado,
+        /// criando efeito dramático de foco onde apenas o país selecionado sobressai.
+        /// </summary>
+        public void SetDimmed(bool dimmed)
+        {
+            if (_isDimmed == dimmed) return;
+            _isDimmed = dimmed;
+            ApplyVisualState();
+        }
+
+        /// <summary>
+        /// Recalcula e aplica a cor resultante com base no estado atual (Owner, Hover, Selection, Dimmed),
+        /// mantendo a cor autêntica do país no destaque e escurecendo o restante do mapa.
         /// </summary>
         private void ApplyVisualState()
         {
@@ -275,15 +288,22 @@ namespace War.Presentation.Board
 
             if (_isSelected)
             {
-                // Dourado tático misturado à cor do dono com emissão brilhante de borda (referência Argentina)
-                targetColor = Color.Lerp(_ownerColor, selectedTint, 0.60f);
-                emissionColor = new Color(0.75f, 0.65f, 0.22f, 1f);
+                // Mantém 100% da cor pura do jogador (sem ficar branco!)
+                targetColor = _ownerColor;
+                // Brilho de borda extremamente sutil na própria tonalidade do país
+                emissionColor = new Color(_ownerColor.r * 0.15f, _ownerColor.g * 0.15f, _ownerColor.b * 0.15f, 1f);
             }
             else if (_isHighlighted)
             {
-                // Brilho acetinado de seleção com clareamento suave
-                targetColor = Color.Lerp(_ownerColor, highlightTint, 0.35f);
-                emissionColor = new Color(0.30f, 0.32f, 0.36f, 1f);
+                // Hover suave clareando apenas 12%
+                targetColor = Color.Lerp(_ownerColor, Color.white, 0.12f);
+                emissionColor = Color.black;
+            }
+            else if (_isDimmed)
+            {
+                // Escurece o restante do mapa em 60% para criar contraste de foco
+                targetColor = new Color(_ownerColor.r * 0.38f, _ownerColor.g * 0.38f, _ownerColor.b * 0.38f, 1f);
+                emissionColor = Color.black;
             }
             else
             {
@@ -317,26 +337,10 @@ namespace War.Presentation.Board
                 }
             }
 
-            // Atualiza também o badge do pin tático se presente (brilha em branco/ouro quando selecionado)
+            // Atualiza o pin tático com a cor correspondente
             if (_runtimePinMaterial != null)
             {
-                Color pinColor;
-                Color pinEmission = Color.black;
-
-                if (_isSelected)
-                {
-                    pinColor = Color.Lerp(_ownerColor, Color.white, 0.85f);
-                    pinEmission = new Color(0.8f, 0.75f, 0.35f, 1f);
-                }
-                else if (_isHighlighted)
-                {
-                    pinColor = Color.Lerp(_ownerColor, Color.white, 0.40f);
-                    pinEmission = new Color(0.2f, 0.2f, 0.2f, 1f);
-                }
-                else
-                {
-                    pinColor = Color.Lerp(_ownerColor, Color.white, 0.15f);
-                }
+                Color pinColor = _isSelected ? _ownerColor : (_isDimmed ? _ownerColor * 0.45f : _ownerColor);
 
                 if (_runtimePinMaterial.HasProperty(BaseColorProp))
                     _runtimePinMaterial.SetColor(BaseColorProp, pinColor);
@@ -345,17 +349,14 @@ namespace War.Presentation.Board
 
                 if (_runtimePinMaterial.HasProperty(EmissionColorProp))
                 {
-                    if (pinEmission != Color.black)
-                    {
-                        _runtimePinMaterial.EnableKeyword("_EMISSION");
-                        _runtimePinMaterial.SetColor(EmissionColorProp, pinEmission);
-                    }
-                    else
-                    {
-                        _runtimePinMaterial.SetColor(EmissionColorProp, Color.black);
-                    }
+                    _runtimePinMaterial.SetColor(EmissionColorProp, Color.black);
                 }
             }
+
+            // Diminui a intensidade do texto das tropas se esmaecido
+            Color textCol = _isDimmed && !_isSelected ? new Color(0.6f, 0.6f, 0.6f, 0.7f) : Color.white;
+            if (armyCountText != null) armyCountText.color = textCol;
+            if (armyCountLegacyText != null) armyCountLegacyText.color = textCol;
         }
 
         #region Interação com o Mouse
