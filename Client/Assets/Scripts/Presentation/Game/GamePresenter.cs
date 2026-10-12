@@ -226,8 +226,9 @@ namespace War.Presentation.Game
                 return;
             }
 
-            // Seleciona visualmente o território no tabuleiro
+            // Seleciona visualmente o território no tabuleiro e destaca rotas aliadas
             boardView?.SelectTerritory(clickedTerritory.Id);
+            boardView?.HighlightConnections(clickedTerritory.Id, _ => false);
 
             // Abre o diálogo modal de alocação de tropas
             if (deployDialog != null)
@@ -312,12 +313,15 @@ namespace War.Presentation.Game
                 _selectedSourceTerritoryId = clickedTerritory.Id;
                 boardView?.SelectTerritory(clickedTerritory.Id);
 
-                // Destaca fronteiras inimigas válidas
+                // Destaca fronteiras inimigas válidas e conexões táticas
                 var enemyNeighbors = clickedTerritory.AdjacentTerritoryIds
                     .Where(id => state.Territories.TryGetValue(id, out var t) &&
                                  !string.Equals(t.OwnerId, ActivePlayer?.Id, StringComparison.OrdinalIgnoreCase));
                 boardView?.ClearAllHighlights();
                 boardView?.HighlightTerritories(enemyNeighbors, true);
+                boardView?.HighlightConnections(clickedTerritory.Id, targetId =>
+                    state.Territories.TryGetValue(targetId, out var t) &&
+                    !string.Equals(t.OwnerId, ActivePlayer?.Id, StringComparison.OrdinalIgnoreCase));
 
                 NotifyStatusMessage($"Atacante selecionado: {clickedTerritory.Name} ({clickedTerritory.Armies} tropas). Agora clique em um território inimigo vizinho para atacar!");
             }
@@ -347,6 +351,9 @@ namespace War.Presentation.Game
                                          !string.Equals(t.OwnerId, ActivePlayer?.Id, StringComparison.OrdinalIgnoreCase));
                         boardView?.ClearAllHighlights();
                         boardView?.HighlightTerritories(enemyNeighbors, true);
+                        boardView?.HighlightConnections(clickedTerritory.Id, targetId =>
+                            state.Territories.TryGetValue(targetId, out var t) &&
+                            !string.Equals(t.OwnerId, ActivePlayer?.Id, StringComparison.OrdinalIgnoreCase));
 
                         NotifyStatusMessage($"Atacante alterado para: {clickedTerritory.Name} ({clickedTerritory.Armies} tropas).");
                     }
@@ -440,6 +447,7 @@ namespace War.Presentation.Game
 
                 _selectedSourceTerritoryId = clickedTerritory.Id;
                 boardView?.SelectTerritory(clickedTerritory.Id);
+                boardView?.HighlightConnections(clickedTerritory.Id, _ => false);
                 NotifyStatusMessage($"Origem do remanejamento selecionada: {clickedTerritory.Name}. Agora clique no território destino conectado.");
             }
             else

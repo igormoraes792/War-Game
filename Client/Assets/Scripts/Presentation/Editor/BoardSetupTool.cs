@@ -42,23 +42,48 @@ namespace War.Presentation.Editor
             var rootObj = new GameObject(rootName);
             Undo.RegisterCreatedObjectUndo(rootObj, "Gerar Tabuleiro 3D Básico");
 
-            // 1. Criação da Mesa de Madeira
+            // 1. Criação da Mesa de Madeira com Moldura Nobre Biselada
             var tableObj = CreateWoodTable(rootObj.transform);
 
-            // 2. Criação do Tabuleiro e dos 42 territórios
+            // 2. Criação da Superfície Texturizada Náutica/Tática do Mapa Mundi
+            var mapSurfaceObj = CreateBoardGraphicSurface(rootObj.transform);
+
+            // 3. Criação do Tabuleiro e dos 42 territórios
             var boardObj = new GameObject("Tabuleiro");
             boardObj.transform.SetParent(rootObj.transform, false);
             var boardView = boardObj.AddComponent<BoardView>();
 
             var territoryViews = CreateTerritories(boardObj.transform);
 
-            // 3. Criação da Câmera Tática
+            // 4. Criação das Linhas de Conexão Táticas e Rotas Marítimas
+            var linesObj = new GameObject("Linhas_Conexao");
+            linesObj.transform.SetParent(boardObj.transform, false);
+            var linesRenderer = linesObj.AddComponent<ConnectionLinesRenderer>();
+
+            var coords = GetTerritoryWorldCoordinates();
+            var positions3D = new Dictionary<string, Vector3>(System.StringComparer.OrdinalIgnoreCase);
+            foreach (var kvp in coords)
+            {
+                positions3D[kvp.Key] = new Vector3(kvp.Value.x, 0.15f, kvp.Value.y);
+            }
+            linesRenderer.BuildConnectionsFromMapData(positions3D);
+
+            // Vincula o ConnectionLinesRenderer ao BoardView
+            var boardViewSo = new SerializedObject(boardView);
+            var linesProp = boardViewSo.FindProperty("connectionLinesRenderer");
+            if (linesProp != null)
+            {
+                linesProp.objectReferenceValue = linesRenderer;
+                boardViewSo.ApplyModifiedProperties();
+            }
+
+            // 5. Criação da Câmera Tática
             var cameraObj = SetupTacticalCamera(rootObj.transform);
 
-            // 4. Criação da Iluminação Direcional com Sombras
+            // 6. Criação da Iluminação Direcional com Sombras
             SetupDirectionalLight(rootObj.transform);
 
-            // 5. Criação do GameController (Presenter + View)
+            // 7. Criação do GameController (Presenter + View)
             var controllerObj = new GameObject("GameController");
             controllerObj.transform.SetParent(rootObj.transform, false);
             var presenter = controllerObj.AddComponent<GamePresenter>();
@@ -75,7 +100,7 @@ namespace War.Presentation.Editor
             // Atualiza o BoardView com todos os territórios criados
             boardView.ScanAndIndexTerritories();
 
-            // 6. Criação do War_Canvas (GameHUD, CombatPanelUI, ObjectiveModalUI)
+            // 8. Criação do War_Canvas (GameHUD, CombatPanelUI, ObjectiveModalUI)
             SetupGameCanvas(presenter);
 
             // Seleciona o root na Hierarchy e foca a SceneView
@@ -86,13 +111,13 @@ namespace War.Presentation.Editor
             }
 
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-            Debug.Log("[War Setup] Tabuleiro 3D básico gerado com sucesso com os 42 territórios, Câmera Tática e War_Canvas!");
+            Debug.Log("[War Setup] Tabuleiro 3D tático completo gerado com sucesso: Superfície Cartográfica, 42 Territórios, Conexões e Rotas Marítimas, Câmera e HUD!");
         }
 
         [MenuItem("War Game/Gerar Canvas de HUD e Batalha na Cena")]
         public static void GenerateCanvasOnly()
         {
-            var presenter = Object.FindFirstObjectByType<GamePresenter>();
+            var presenter = Object.FindAnyObjectByType<GamePresenter>();
             var canvasObj = SetupGameCanvas(presenter);
             Selection.activeGameObject = canvasObj;
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
@@ -101,25 +126,82 @@ namespace War.Presentation.Editor
 
         private static GameObject CreateWoodTable(Transform parent)
         {
+            var tableRoot = new GameObject("Mesa_Madeira_Militar");
+            tableRoot.transform.SetParent(parent, false);
+
             var table = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            table.name = "Mesa_Madeira";
-            table.transform.SetParent(parent, false);
+            table.name = "Mesa_Base";
+            table.transform.SetParent(tableRoot.transform, false);
             table.transform.localPosition = new Vector3(0f, -0.6f, 0f);
             table.transform.localScale = new Vector3(56f, 1.2f, 36f);
+
+            var woodShader = GetSafeLitShader();
+            var mat = new Material(woodShader)
+            {
+                name = "Mesa_Madeira_Mat",
+                color = new Color(0.20f, 0.13f, 0.08f, 1f) // Mogno escuro acetinado
+            };
+            if (mat.HasProperty("_Smoothness"))
+            {
+                mat.SetFloat("_Smoothness", 0.45f);
+            }
 
             var renderer = table.GetComponent<MeshRenderer>();
             if (renderer != null)
             {
-                var woodShader = GetSafeLitShader();
-                var mat = new Material(woodShader)
-                {
-                    name = "Mesa_Madeira_Mat",
-                    color = new Color(0.25f, 0.16f, 0.10f, 1f) // Tom escuro amadeirado
-                };
                 renderer.sharedMaterial = mat;
             }
 
-            return table;
+            // Moldura elevada com acabamento biselado
+            var rimMat = new Material(woodShader)
+            {
+                name = "Moldura_Bisel_Mat",
+                color = new Color(0.14f, 0.09f, 0.05f, 1f)
+            };
+            if (rimMat.HasProperty("_Smoothness"))
+            {
+                rimMat.SetFloat("_Smoothness", 0.55f);
+            }
+
+            CreateRimPart("Moldura_Norte", tableRoot.transform, new Vector3(0f, 0.06f, 16.5f), new Vector3(54.4f, 0.22f, 1.2f), rimMat);
+            CreateRimPart("Moldura_Sul", tableRoot.transform, new Vector3(0f, 0.06f, -16.5f), new Vector3(54.4f, 0.22f, 1.2f), rimMat);
+            CreateRimPart("Moldura_Oeste", tableRoot.transform, new Vector3(-26.5f, 0.06f, 0f), new Vector3(1.2f, 0.22f, 34.2f), rimMat);
+            CreateRimPart("Moldura_Leste", tableRoot.transform, new Vector3(26.5f, 0.06f, 0f), new Vector3(1.2f, 0.22f, 34.2f), rimMat);
+
+            return tableRoot;
+        }
+
+        private static void CreateRimPart(string name, Transform parent, Vector3 localPos, Vector3 localScale, Material mat)
+        {
+            var rim = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            rim.name = name;
+            rim.transform.SetParent(parent, false);
+            rim.transform.localPosition = localPos;
+            rim.transform.localScale = localScale;
+
+            var r = rim.GetComponent<MeshRenderer>();
+            if (r != null) r.sharedMaterial = mat;
+        }
+
+        private static GameObject CreateBoardGraphicSurface(Transform parent)
+        {
+            var surface = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            surface.name = "Superficie_Mapa_Tatico";
+            surface.transform.SetParent(parent, false);
+            surface.transform.localPosition = new Vector3(0f, 0.01f, 0f);
+            surface.transform.localScale = new Vector3(52f, 0.02f, 32f);
+
+            // Remove o colisor da superfície para que raycasts e cliques atinjam os territórios sem obstrução
+            var col = surface.GetComponent<Collider>();
+            if (col != null)
+            {
+                Object.DestroyImmediate(col);
+            }
+
+            var graphic = surface.AddComponent<MapBoardGraphic>();
+            graphic.GenerateAndApplyTexture();
+
+            return surface;
         }
 
         private static List<TerritoryView> CreateTerritories(Transform boardTransform)
@@ -1202,7 +1284,7 @@ namespace War.Presentation.Editor
 
         private static void EnsureEventSystem()
         {
-            if (Object.FindFirstObjectByType<EventSystem>() != null) return;
+            if (Object.FindAnyObjectByType<EventSystem>() != null) return;
 
             var esObj = new GameObject("EventSystem");
             esObj.AddComponent<EventSystem>();

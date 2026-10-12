@@ -18,6 +18,10 @@ namespace War.Presentation.Board
         [Tooltip("Lista manual ou populada automaticamente de todos os TerritoryViews do tabuleiro.")]
         [SerializeField] private List<TerritoryView> registeredTerritories = new();
 
+        [Header("Linhas Táticas de Conexão")]
+        [Tooltip("Gerenciador visual das conexões e rotas entre territórios.")]
+        [SerializeField] private ConnectionLinesRenderer? connectionLinesRenderer;
+
         private readonly Dictionary<string, TerritoryView> _viewsById = new(StringComparer.OrdinalIgnoreCase);
         private string? _selectedTerritoryId;
 
@@ -41,10 +45,15 @@ namespace War.Presentation.Board
         #region Propriedades Públicas
         public IReadOnlyDictionary<string, TerritoryView> TerritoriesById => _viewsById;
         public string? SelectedTerritoryId => _selectedTerritoryId;
+        public ConnectionLinesRenderer? ConnectionLines => connectionLinesRenderer;
         #endregion
 
         private void Awake()
         {
+            if (connectionLinesRenderer == null)
+            {
+                connectionLinesRenderer = GetComponentInChildren<ConnectionLinesRenderer>();
+            }
             ScanAndIndexTerritories();
         }
 
@@ -171,11 +180,28 @@ namespace War.Presentation.Board
         }
 
         /// <summary>
-        /// Desmarca qualquer território selecionado.
+        /// Desmarca qualquer território selecionado e desativa os destaques das linhas.
         /// </summary>
         public void ClearSelection()
         {
             SelectTerritory(null);
+            ClearConnectionHighlights();
+        }
+
+        /// <summary>
+        /// Destaca visualmente as linhas de conexão conectadas a um território selecionado.
+        /// </summary>
+        public void HighlightConnections(string? territoryId, Func<string, bool>? isEnemyPredicate = null)
+        {
+            connectionLinesRenderer?.HighlightConnectionsFor(territoryId, isEnemyPredicate);
+        }
+
+        /// <summary>
+        /// Restaura o estilo neutro de todas as linhas de conexão.
+        /// </summary>
+        public void ClearConnectionHighlights()
+        {
+            connectionLinesRenderer?.ClearHighlights();
         }
 
         /// <summary>
@@ -195,7 +221,7 @@ namespace War.Presentation.Board
         }
 
         /// <summary>
-        /// Remove o destaque visual de todos os territórios do tabuleiro.
+        /// Remove o destaque visual de todos os territórios do tabuleiro e das conexões.
         /// </summary>
         public void ClearAllHighlights()
         {
@@ -203,6 +229,7 @@ namespace War.Presentation.Board
             {
                 view.SetHighlighted(false);
             }
+            ClearConnectionHighlights();
         }
 
         #region Manipuladores de Eventos
