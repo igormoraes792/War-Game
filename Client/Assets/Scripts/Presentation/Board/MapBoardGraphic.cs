@@ -52,7 +52,7 @@ namespace War.Presentation.Board
                 {
                     var bytes = System.IO.File.ReadAllBytes(filePath);
                     tex = new Texture2D(2, 2);
-                    tex.LoadImage(bytes);
+                    ImageConversion.LoadImage(tex, bytes);
                 }
             }
 
