@@ -35,10 +35,17 @@ namespace War.Presentation.Board
         [SerializeField] private TextMesh? armyCountLegacyText;
         [SerializeField] private TextMesh? territoryNameLegacyText;
 
+        [Header("Estandarte e Pin Tático")]
+        [Tooltip("Transform raiz do estandarte/pin tático do território.")]
+        [SerializeField] private Transform? tacticalPinRoot;
+
+        [Tooltip("Renderer do emblema/badge do pin tático.")]
+        [SerializeField] private MeshRenderer? pinBadgeRenderer;
+
         [Header("Configuração de Cores")]
-        [SerializeField] private Color defaultNeutralColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+        [SerializeField] private Color defaultNeutralColor = new Color(0.68f, 0.68f, 0.72f, 1f);
         [SerializeField] private Color highlightTint = new Color(1f, 1f, 1f, 1f);
-        [SerializeField] private Color selectedTint = new Color(1f, 0.92f, 0.2f, 1f);
+        [SerializeField] private Color selectedTint = new Color(1f, 0.88f, 0.25f, 1f);
 
         // Estados internos
         private Color _ownerColor;
@@ -46,10 +53,13 @@ namespace War.Presentation.Board
         private bool _isSelected;
         private int _currentArmyCount = 1;
         private Material? _runtimeMaterial;
+        private Material? _runtimePinMaterial;
 
         // Propriedade estática para shaders URP (_BaseColor) e Built-in (_Color)
         private static readonly int BaseColorProp = Shader.PropertyToID("_BaseColor");
         private static readonly int LegacyColorProp = Shader.PropertyToID("_Color");
+        private static readonly int EmissionColorProp = Shader.PropertyToID("_EmissionColor");
+        private static readonly int SmoothnessProp = Shader.PropertyToID("_Smoothness");
 
         #region Eventos
         public event Action<TerritoryView>? OnClicked;
@@ -66,6 +76,7 @@ namespace War.Presentation.Board
 
         public Transform ArmySpawnPoint => armySpawnPoint != null ? armySpawnPoint : transform;
         public MeshRenderer? TerritoryRenderer => territoryRenderer;
+        public Transform? TacticalPinRoot => tacticalPinRoot;
         public Color CurrentOwnerColor => _ownerColor;
         public int CurrentArmyCount => _currentArmyCount;
         public bool IsHighlighted => _isHighlighted;
@@ -79,9 +90,16 @@ namespace War.Presentation.Board
                 territoryRenderer = GetComponent<MeshRenderer>() ?? GetComponentInChildren<MeshRenderer>();
             }
 
+            if (tacticalPinRoot == null)
+            {
+                var pinChild = transform.Find("Pin_TacticalRoot");
+                if (pinChild != null) tacticalPinRoot = pinChild;
+            }
+
             if (armySpawnPoint == null)
             {
                 var spawnChild = transform.Find("ArmySpawnPoint");
+                if (spawnChild == null && tacticalPinRoot != null) spawnChild = tacticalPinRoot.Find("ArmySpawnPoint");
                 armySpawnPoint = spawnChild != null ? spawnChild : transform;
             }
 
@@ -100,7 +118,18 @@ namespace War.Presentation.Board
                                  ?? Shader.Find("Standard") 
                                  ?? Shader.Find("Diffuse");
                 }
+
+                if (mat.HasProperty(SmoothnessProp))
+                {
+                    mat.SetFloat(SmoothnessProp, 0.55f);
+                }
+
                 _runtimeMaterial = mat;
+            }
+
+            if (pinBadgeRenderer != null)
+            {
+                _runtimePinMaterial = pinBadgeRenderer.material;
             }
 
             _ownerColor = defaultNeutralColor;
@@ -113,6 +142,12 @@ namespace War.Presentation.Board
             {
                 Destroy(_runtimeMaterial);
                 _runtimeMaterial = null;
+            }
+
+            if (_runtimePinMaterial != null)
+            {
+                Destroy(_runtimePinMaterial);
+                _runtimePinMaterial = null;
             }
         }
 
@@ -178,7 +213,8 @@ namespace War.Presentation.Board
         }
 
         /// <summary>
-        /// Recalcula e aplica a cor resultante com base no estado atual (Owner, Hover, Selection).
+        /// Recalcula e aplica a cor resultante com base no estado atual (Owner, Hover, Selection),
+        /// acentuando o brilho físico volumétrico e emissão suave nas bordas.
         /// </summary>
         private void ApplyVisualState()
         {
@@ -190,20 +226,24 @@ namespace War.Presentation.Board
             if (_runtimeMaterial == null) return;
 
             Color targetColor;
+            Color emissionColor = Color.black;
 
             if (_isSelected)
             {
-                // Amarelo/Dourado misturado à cor do dono para claro destaque de seleção
+                // Dourado tático misturado à cor do dono com emissão brilhante
                 targetColor = Color.Lerp(_ownerColor, selectedTint, 0.65f);
+                emissionColor = new Color(0.45f, 0.38f, 0.08f, 1f);
             }
             else if (_isHighlighted)
             {
-                // Clareia a cor base em 35% ao passar o mouse
+                // Brilho acetinado de seleção com clareamento suave de 35%
                 targetColor = Color.Lerp(_ownerColor, highlightTint, 0.35f);
+                emissionColor = new Color(0.20f, 0.22f, 0.25f, 1f);
             }
             else
             {
                 targetColor = _ownerColor;
+                emissionColor = Color.black;
             }
 
             if (_runtimeMaterial.HasProperty(BaseColorProp))
@@ -218,7 +258,29 @@ namespace War.Presentation.Board
             {
                 _runtimeMaterial.color = targetColor;
             }
-        }
+
+            if (_runtimeMaterial.HasProperty(EmissionColorProp))
+            {
+                if (emissionColor != Color.black)
+                {
+                    _runtimeMaterial.EnableKeyword("_EMISSION");
+                    _runtimeMaterial.SetColor(EmissionColorProp, emissionColor);
+                }
+                else
+                {
+                    _runtimeMaterial.SetColor(EmissionColorProp, Color.black);
+                }
+            }
+
+            // Atualiza também o badge do pin tático se presente
+            if (_runtimePinMaterial != null)
+            {
+                var pinColor = Color.Lerp(_ownerColor, Color.white, 0.15f);
+                if (_runtimePinMaterial.HasProperty(BaseColorProp))
+                    _runtimePinMaterial.SetColor(BaseColorProp, pinColor);
+                else
+                    _runtimePinMaterial.color = pinColor;
+            }
 
         #region Interação com o Mouse
         private void OnMouseEnter()

@@ -30,7 +30,7 @@ namespace War.Presentation.Board
         [SerializeField] private float highlightWidthMultiplier = 1.5f;
 
         [Header("Altura Y sobre a mesa")]
-        [SerializeField] private float linesHeightY = 0.06f;
+        [SerializeField] private float linesHeightY = 0.35f;
 
         // Materiais cacheados
         private Material? _terrestrialMaterial;

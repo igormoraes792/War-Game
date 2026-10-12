@@ -81,7 +81,7 @@ namespace War.Presentation.Editor
             var positions3D = new Dictionary<string, Vector3>(System.StringComparer.OrdinalIgnoreCase);
             foreach (var kvp in coords)
             {
-                positions3D[kvp.Key] = new Vector3(kvp.Value.x, 0.15f, kvp.Value.y);
+                positions3D[kvp.Key] = new Vector3(kvp.Value.x, 0.35f, kvp.Value.y);
             }
             linesRenderer.BuildConnectionsFromMapData(positions3D);
 
@@ -233,69 +233,130 @@ namespace War.Presentation.Editor
             var defaultTerritoryMat = new Material(defaultShader)
             {
                 name = "Territorio_Base_Mat",
-                color = new Color(0.72f, 0.72f, 0.75f, 1f)
+                color = new Color(0.72f, 0.72f, 0.76f, 1f)
             };
+            if (defaultTerritoryMat.HasProperty("_Smoothness"))
+            {
+                defaultTerritoryMat.SetFloat("_Smoothness", 0.55f);
+            }
+
+            // Material do pedestal de latão/bronze do pin tático
+            var brassMat = new Material(defaultShader)
+            {
+                name = "Pin_Pedestal_Brass_Mat",
+                color = new Color(0.24f, 0.20f, 0.14f, 1f)
+            };
+            if (brassMat.HasProperty("_Smoothness")) brassMat.SetFloat("_Smoothness", 0.65f);
+            if (brassMat.HasProperty("_Metallic")) brassMat.SetFloat("_Metallic", 0.75f);
+
+            // Material do badge do pin tático
+            var badgeMat = new Material(defaultShader)
+            {
+                name = "Pin_Badge_Mat",
+                color = new Color(0.12f, 0.15f, 0.22f, 1f)
+            };
+            if (badgeMat.HasProperty("_Smoothness")) badgeMat.SetFloat("_Smoothness", 0.5f);
 
             foreach (var def in defs)
             {
                 positions.TryGetValue(def.Id, out var coord);
 
-                var terrObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                terrObj.name = $"Territory_{def.Name} ({def.Id})";
+                // 1. Cria o GameObject do território com a malha 3D recortada
+                var terrObj = new GameObject($"Territory_{def.Name} ({def.Id})");
                 terrObj.transform.SetParent(boardTransform, false);
-                terrObj.transform.localPosition = new Vector3(coord.x, 0.15f, coord.y);
-                terrObj.transform.localScale = new Vector3(2.4f, 0.25f, 2.4f);
+                terrObj.transform.localPosition = new Vector3(coord.x, 0.05f, coord.y);
 
-                var meshRenderer = terrObj.GetComponent<MeshRenderer>();
-                if (meshRenderer != null)
-                {
-                    meshRenderer.sharedMaterial = defaultTerritoryMat;
-                }
+                var meshFilter = terrObj.AddComponent<MeshFilter>();
+                var territoryMesh = TerritoryMeshBuilder.CreateTerritoryMesh(def.Id);
+                meshFilter.sharedMesh = territoryMesh;
+
+                var meshRenderer = terrObj.AddComponent<MeshRenderer>();
+                meshRenderer.sharedMaterial = defaultTerritoryMat;
+                meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                meshRenderer.receiveShadows = true;
+
+                // MeshCollider preciso seguindo o contorno exato do polígono recortado
+                var meshCollider = terrObj.AddComponent<MeshCollider>();
+                meshCollider.sharedMesh = territoryMesh;
+                meshCollider.convex = false;
 
                 var terrView = terrObj.AddComponent<TerritoryView>();
                 terrView.TerritoryId = def.Id;
 
-                // Cria o ponto de ancoragem para tropas
-                var spawnPoint = new GameObject("ArmySpawnPoint");
-                spawnPoint.transform.SetParent(terrObj.transform, false);
-                spawnPoint.transform.localPosition = new Vector3(0f, 0.6f, 0f);
+                // 2. Calcula o centroide do polígono para centralizar o pin tático
+                var poly = TerritoryMeshBuilder.GetTerritoryPolygon(def.Id);
+                var centroid = TerritoryMeshBuilder.GetPolygonCentroid(poly);
 
-                // Cria o contador de tropas (Texto 3D nativo garantido)
+                // 3. Estandarte / Pin Tático Elegante
+                var pinRoot = new GameObject("Pin_TacticalRoot");
+                pinRoot.transform.SetParent(terrObj.transform, false);
+                pinRoot.transform.localPosition = new Vector3(centroid.x, TerritoryMeshBuilder.DefaultExtrusionHeight, centroid.y);
+
+                // Pedestal de latão do pin
+                var pedestal = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                pedestal.name = "Pin_Pedestal";
+                pedestal.transform.SetParent(pinRoot.transform, false);
+                pedestal.transform.localPosition = new Vector3(0f, 0.04f, 0f);
+                pedestal.transform.localScale = new Vector3(0.55f, 0.04f, 0.55f);
+                var pedRend = pedestal.GetComponent<MeshRenderer>();
+                if (pedRend != null) pedRend.sharedMaterial = brassMat;
+                var pedCol = pedestal.GetComponent<Collider>();
+                if (pedCol != null) Object.DestroyImmediate(pedCol);
+
+                // Badge / Cabeça do pin
+                var badge = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                badge.name = "Pin_Badge";
+                badge.transform.SetParent(pinRoot.transform, false);
+                badge.transform.localPosition = new Vector3(0f, 0.10f, 0f);
+                badge.transform.localScale = new Vector3(0.68f, 0.03f, 0.68f);
+                var badgeRend = badge.GetComponent<MeshRenderer>();
+                if (badgeRend != null) badgeRend.sharedMaterial = badgeMat;
+                var badgeCol = badge.GetComponent<Collider>();
+                if (badgeCol != null) Object.DestroyImmediate(badgeCol);
+
+                // Ponto de spawn de tropas
+                var spawnPoint = new GameObject("ArmySpawnPoint");
+                spawnPoint.transform.SetParent(pinRoot.transform, false);
+                spawnPoint.transform.localPosition = new Vector3(0f, 0.16f, 0f);
+
+                // Texto do contador de tropas no pin
                 var textObj = new GameObject("Text_ArmyCount");
-                textObj.transform.SetParent(terrObj.transform, false);
-                textObj.transform.localPosition = new Vector3(0f, 0.7f, 0f);
-                textObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // Virado para cima
-                textObj.transform.localScale = Vector3.one * 0.18f;
+                textObj.transform.SetParent(pinRoot.transform, false);
+                textObj.transform.localPosition = new Vector3(0f, 0.13f, 0f);
+                textObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                textObj.transform.localScale = Vector3.one * 0.12f;
 
                 var textMesh = textObj.AddComponent<TextMesh>();
                 textMesh.text = "1";
-                textMesh.fontSize = 72;
-                textMesh.characterSize = 0.25f;
+                textMesh.fontSize = 64;
+                textMesh.characterSize = 0.20f;
                 textMesh.anchor = TextAnchor.MiddleCenter;
                 textMesh.alignment = TextAlignment.Center;
                 textMesh.color = Color.white;
                 textMesh.fontStyle = FontStyle.Bold;
 
-                // Cria o rótulo do nome do território
+                // Rótulo discreto do nome do país
                 var nameObj = new GameObject("Text_Name");
-                nameObj.transform.SetParent(terrObj.transform, false);
-                nameObj.transform.localPosition = new Vector3(0f, 0.65f, -1.25f);
+                nameObj.transform.SetParent(pinRoot.transform, false);
+                nameObj.transform.localPosition = new Vector3(0f, 0.02f, -1.05f);
                 nameObj.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                nameObj.transform.localScale = Vector3.one * 0.12f;
+                nameObj.transform.localScale = Vector3.one * 0.10f;
 
                 var nameTextMesh = nameObj.AddComponent<TextMesh>();
                 nameTextMesh.text = def.Name;
-                nameTextMesh.fontSize = 42;
-                nameTextMesh.characterSize = 0.2f;
+                nameTextMesh.fontSize = 38;
+                nameTextMesh.characterSize = 0.17f;
                 nameTextMesh.anchor = TextAnchor.MiddleCenter;
                 nameTextMesh.alignment = TextAlignment.Center;
-                nameTextMesh.color = new Color(0.95f, 0.95f, 0.95f, 0.95f);
+                nameTextMesh.color = new Color(0.92f, 0.94f, 0.98f, 0.92f);
                 nameTextMesh.fontStyle = FontStyle.Bold;
 
-                // Serializa os campos no TerritoryView
+                // Serialização dos campos no TerritoryView
                 var viewSo = new SerializedObject(terrView);
                 viewSo.FindProperty("territoryId").stringValue = def.Id;
                 viewSo.FindProperty("territoryRenderer").objectReferenceValue = meshRenderer;
+                viewSo.FindProperty("tacticalPinRoot").objectReferenceValue = pinRoot.transform;
+                viewSo.FindProperty("pinBadgeRenderer").objectReferenceValue = badgeRend;
                 viewSo.FindProperty("armySpawnPoint").objectReferenceValue = spawnPoint.transform;
                 viewSo.FindProperty("armyCountLegacyText").objectReferenceValue = textMesh;
                 viewSo.FindProperty("territoryNameLegacyText").objectReferenceValue = nameTextMesh;
