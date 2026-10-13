@@ -238,8 +238,21 @@ namespace War2D.Presentation.Editor
 
                 // 2. Colisor 2D preciso (PolygonCollider2D)
                 var poly = Territory2DMeshBuilder.GetTerritoryPolygon(def.Id);
+                var islands = Territory2DMeshBuilder.GetTerritoryIslands(def.Id);
                 var polyCollider = terrObj.AddComponent<PolygonCollider2D>();
-                polyCollider.points = poly;
+                if (islands != null && islands.Count > 0)
+                {
+                    polyCollider.pathCount = 1 + islands.Count;
+                    polyCollider.SetPath(0, poly);
+                    for (int idx = 0; idx < islands.Count; idx++)
+                    {
+                        polyCollider.SetPath(1 + idx, islands[idx]);
+                    }
+                }
+                else
+                {
+                    polyCollider.points = poly;
+                }
 
                 // 3. Contorno/Borda de Fronteira
                 var borderObj = new GameObject("Border_Outline");
@@ -259,6 +272,31 @@ namespace War2D.Presentation.Editor
                 lr.endColor = lr.startColor;
                 lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 lr.receiveShadows = false;
+
+                if (islands != null && islands.Count > 0)
+                {
+                    for (int islIdx = 0; islIdx < islands.Count; islIdx++)
+                    {
+                        var isl = islands[islIdx];
+                        var islBorderObj = new GameObject($"Border_Island_{islIdx}");
+                        islBorderObj.transform.SetParent(terrObj.transform, false);
+                        var islLr = islBorderObj.AddComponent<LineRenderer>();
+                        islLr.useWorldSpace = false;
+                        islLr.loop = true;
+                        islLr.positionCount = isl.Length;
+                        for (int i = 0; i < isl.Length; i++)
+                        {
+                            islLr.SetPosition(i, new Vector3(isl[i].x, isl[i].y, -0.02f));
+                        }
+                        islLr.startWidth = 0.05f;
+                        islLr.endWidth = 0.05f;
+                        islLr.sharedMaterial = defaultTerritoryMat;
+                        islLr.startColor = new Color(0.12f, 0.15f, 0.20f, 0.95f);
+                        islLr.endColor = islLr.startColor;
+                        islLr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        islLr.receiveShadows = false;
+                    }
+                }
 
                 var terrView = terrObj.AddComponent<Territory2DView>();
                 terrView.TerritoryId = def.Id;
@@ -412,9 +450,9 @@ namespace War2D.Presentation.Editor
             {
                 // América do Sul (6)
                 [TerritoryIds.Venezuela] = new Vector2(-13.02f, -1.97f),
-                [TerritoryIds.Peru] = new Vector2(-15.40f, -4.40f),
+                [TerritoryIds.Peru] = new Vector2(-14.60f, -4.60f),
                 [TerritoryIds.Brasil] = new Vector2(-10.09f, -4.75f),
-                [TerritoryIds.Chile] = new Vector2(-14.20f, -10.40f),
+                [TerritoryIds.Chile] = new Vector2(-14.10f, -10.50f),
                 [TerritoryIds.Argentina] = new Vector2(-12.00f, -9.80f),
                 [TerritoryIds.Uruguai] = new Vector2(-10.20f, -8.70f),
 

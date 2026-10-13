@@ -511,9 +511,9 @@ namespace War.Presentation.Editor
             {
                 // América do Sul (6)
                 [TerritoryIds.Venezuela] = new Vector2(-13.02f, -1.97f),
-                [TerritoryIds.Peru] = new Vector2(-15.40f, -4.40f),
+                [TerritoryIds.Peru] = new Vector2(-14.60f, -4.60f),
                 [TerritoryIds.Brasil] = new Vector2(-10.09f, -4.75f),
-                [TerritoryIds.Chile] = new Vector2(-14.20f, -10.40f),
+                [TerritoryIds.Chile] = new Vector2(-14.10f, -10.50f),
                 [TerritoryIds.Argentina] = new Vector2(-12.00f, -9.80f),
                 [TerritoryIds.Uruguai] = new Vector2(-10.20f, -8.70f),
 

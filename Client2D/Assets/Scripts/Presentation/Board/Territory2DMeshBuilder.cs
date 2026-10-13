@@ -15,10 +15,23 @@ namespace War2D.Presentation.Board
         public const float PolygonInsetAmount = 0.045f;
 
         private static readonly Dictionary<string, Vector2[]> TerritoryPolygons = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, List<Vector2[]>> TerritoryIslands = new(StringComparer.OrdinalIgnoreCase);
 
         static Territory2DMeshBuilder()
         {
             RegisterAllPolygons();
+        }
+
+        /// <summary>
+        /// Obtém ilhotas ou satélites adicionais pertencentes ao território (ex: ilhotas árticas da Rússia).
+        /// </summary>
+        public static List<Vector2[]> GetTerritoryIslands(string territoryId)
+        {
+            if (TerritoryIslands.TryGetValue(territoryId, out var islands) && islands != null)
+            {
+                return islands;
+            }
+            return new List<Vector2[]>();
         }
 
         /// <summary>
@@ -66,7 +79,6 @@ namespace War2D.Presentation.Board
         {
             var rawPoly = GetTerritoryPolygon(territoryId);
             var poly = InsetPolygon(rawPoly, PolygonInsetAmount);
-            int n = poly.Length;
 
             var mesh = new Mesh
             {
@@ -75,7 +87,7 @@ namespace War2D.Presentation.Board
 
             float minX = float.MaxValue, maxX = float.MinValue;
             float minY = float.MaxValue, maxY = float.MinValue;
-            for (int i = 0; i < n; i++)
+            for (int i = 0; i < poly.Length; i++)
             {
                 if (poly[i].x < minX) minX = poly[i].x;
                 if (poly[i].x > maxX) maxX = poly[i].x;
@@ -90,6 +102,34 @@ namespace War2D.Presentation.Board
             var uvs = new List<Vector2>();
             var triangles = new List<int>();
 
+            Append2DPolygon(poly, vertices, normals, uvs, triangles, minX, sizeX, minY, sizeY);
+
+            if (TerritoryIslands.TryGetValue(territoryId, out var islands) && islands != null)
+            {
+                foreach (var island in islands)
+                {
+                    if (island != null && island.Length >= 3)
+                    {
+                        var insetIsland = InsetPolygon(island, PolygonInsetAmount * 0.4f);
+                        Append2DPolygon(insetIsland, vertices, normals, uvs, triangles, minX, sizeX, minY, sizeY);
+                    }
+                }
+            }
+
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private static void Append2DPolygon(Vector2[] poly, List<Vector3> vertices, List<Vector3> normals, List<Vector2> uvs, List<int> triangles, float minX, float sizeX, float minY, float sizeY)
+        {
+            int n = poly.Length;
+            if (n < 3) return;
+
+            int baseOffset = vertices.Count;
             for (int i = 0; i < n; i++)
             {
                 vertices.Add(new Vector3(poly[i].x, poly[i].y, 0f));
@@ -104,31 +144,24 @@ namespace War2D.Presentation.Board
                 int i1 = tris[i + 1];
                 int i2 = tris[i + 2];
 
-                Vector3 v0 = vertices[i0];
-                Vector3 v1 = vertices[i1];
-                Vector3 v2 = vertices[i2];
+                Vector3 v0 = vertices[baseOffset + i0];
+                Vector3 v1 = vertices[baseOffset + i1];
+                Vector3 v2 = vertices[baseOffset + i2];
                 Vector3 cross = Vector3.Cross(v1 - v0, v2 - v0);
 
                 if (cross.z <= 0f)
                 {
-                    triangles.Add(i0);
-                    triangles.Add(i1);
-                    triangles.Add(i2);
+                    triangles.Add(baseOffset + i0);
+                    triangles.Add(baseOffset + i1);
+                    triangles.Add(baseOffset + i2);
                 }
                 else
                 {
-                    triangles.Add(i0);
-                    triangles.Add(i2);
-                    triangles.Add(i1);
+                    triangles.Add(baseOffset + i0);
+                    triangles.Add(baseOffset + i2);
+                    triangles.Add(baseOffset + i1);
                 }
             }
-
-            mesh.SetVertices(vertices);
-            mesh.SetNormals(normals);
-            mesh.SetUVs(0, uvs);
-            mesh.SetTriangles(triangles, 0);
-            mesh.RecalculateBounds();
-            return mesh;
         }
 
         /// <summary>
@@ -344,10 +377,12 @@ namespace War2D.Presentation.Board
 
             TerritoryPolygons[TerritoryIds.Peru] = new Vector2[]
             {
-                new(-1.00f, 2.60f), new(-0.07f, 1.71f), new(1.18f, 0.90f),
-                new(0.76f, 0.32f), new(1.79f, -0.08f), new(1.51f, -0.31f),
-                new(1.10f, -1.30f), new(0.80f, -2.20f), new(-0.10f, -2.20f),
-                new(-0.70f, -1.20f), new(-1.20f, 0.20f), new(-1.40f, 1.60f)
+                new(-2.00f, 2.80f), new(-0.87f, 1.91f), new(0.38f, 1.10f),
+                new(-0.04f, 0.52f), new(0.99f, 0.12f), new(0.71f, -0.11f),
+                new(0.87f, -0.37f), new(1.77f, -0.06f), new(3.05f, -0.65f),
+                new(2.00f, -2.00f), new(1.00f, -2.20f), new(0.00f, -2.20f),
+                new(-1.00f, -2.20f), new(-1.60f, -1.00f), new(-2.20f, 0.40f),
+                new(-2.40f, 1.80f)
             };
 
             TerritoryPolygons[TerritoryIds.Brasil] = new Vector2[]
@@ -366,20 +401,20 @@ namespace War2D.Presentation.Board
 
             TerritoryPolygons[TerritoryIds.Chile] = new Vector2[]
             {
-                new(-1.30f, 3.80f), new(-0.40f, 3.80f), new(-0.10f, 2.40f),
-                new(0.30f, 0.80f), new(0.70f, -0.80f), new(1.30f, -2.30f),
-                new(1.80f, -3.80f), new(1.40f, -3.80f), new(0.50f, -2.60f),
-                new(-0.10f, -1.10f), new(-0.50f, 0.60f), new(-0.90f, 2.20f)
+                new(-1.50f, 3.70f), new(-0.50f, 3.70f), new(-0.20f, 2.30f),
+                new(0.20f, 0.70f), new(0.60f, -0.90f), new(1.20f, -2.40f),
+                new(1.70f, -3.70f), new(1.30f, -3.70f), new(0.50f, -2.50f),
+                new(-0.10f, -1.00f), new(-0.50f, 0.70f), new(-1.00f, 2.30f)
             };
 
             TerritoryPolygons[TerritoryIds.Argentina] = new Vector2[]
             {
-                new(-0.40f, -4.40f), new(-0.90f, -2.90f), new(-1.50f, -1.40f),
-                new(-1.90f, 0.20f), new(-2.30f, 1.80f), new(-2.60f, 3.20f),
-                new(-2.30f, 4.10f), new(-1.89f, 5.09f), new(-1.73f, 4.83f),
-                new(-0.83f, 5.14f), new(0.45f, 4.55f), new(1.88f, 2.26f),
-                new(1.36f, 1.58f), new(1.50f, 1.00f), new(2.00f, 0.60f),
-                new(1.40f, -0.80f), new(0.70f, -2.30f), new(0.20f, -3.50f)
+                new(-0.40f, -4.40f), new(-0.90f, -3.10f), new(-1.50f, -1.60f),
+                new(-1.90f, 0.00f), new(-2.30f, 1.60f), new(-2.60f, 3.00f),
+                new(-1.60f, 3.00f), new(-0.60f, 3.20f), new(0.45f, 4.55f),
+                new(1.88f, 2.26f), new(1.36f, 1.58f), new(1.50f, 1.00f),
+                new(2.00f, 0.60f), new(1.40f, -0.80f), new(0.70f, -2.30f),
+                new(0.20f, -3.50f)
             };
 
             TerritoryPolygons[TerritoryIds.Uruguai] = new Vector2[]
@@ -675,13 +710,30 @@ namespace War2D.Presentation.Board
                 new(4.00f, -4.00f),
                 // Litoral do Pacífico (Vladivostok, Mar de Okhotsk, Península de Kamchatka, Chukotka)
                 new(5.30f, -3.30f), new(6.00f, -1.60f), new(7.30f, 0.00f),
-                new(8.30f, 1.70f), new(7.80f, 2.60f),
-                // Litoral ártico setentrional autêntico (Chukotka, Sibéria Oriental, Delta do Lena, Taimir, Yamal)
-                new(6.80f, 3.40f), new(5.60f, 3.20f), new(4.50f, 3.30f),
-                new(3.40f, 3.60f), new(2.50f, 3.30f), new(1.60f, 3.00f),
-                new(0.80f, 3.80f), new(0.00f, 4.60f), new(-1.00f, 3.90f),
-                new(-1.80f, 3.20f), new(-2.80f, 3.60f), new(-3.60f, 2.80f),
-                new(-4.50f, 3.70f), new(-5.60f, 2.90f)
+                new(8.30f, 1.70f), new(8.40f, 2.20f),
+                // Litoral ártico setentrional autêntico com golfos (Ob, Ienissei, Khatanga, Lena, Chaun)
+                new(7.80f, 3.10f), new(7.10f, 3.60f), new(6.60f, 3.40f),
+                new(6.00f, 3.10f), new(5.50f, 3.40f), new(4.90f, 3.50f),
+                new(4.50f, 3.20f), new(3.90f, 3.60f), new(3.50f, 3.90f),
+                new(3.10f, 3.70f), new(2.50f, 3.30f), new(1.80f, 3.00f),
+                new(1.30f, 3.70f), new(0.70f, 4.40f), new(0.00f, 4.80f),
+                new(-0.60f, 4.40f), new(-1.40f, 3.80f), new(-2.20f, 2.60f),
+                new(-2.60f, 3.30f), new(-3.00f, 3.80f), new(-3.40f, 3.40f),
+                new(-3.60f, 2.40f), new(-4.00f, 2.30f), new(-4.20f, 3.20f),
+                new(-4.50f, 3.80f), new(-4.90f, 4.10f), new(-5.80f, 2.70f)
+            };
+
+            // Ilhotas do Ártico Russo (Terra do Norte, Nova Sibéria, Nova Zembla, Wrangel)
+            TerritoryIslands[TerritoryIds.RussiaAsiatica] = new List<Vector2[]>
+            {
+                // Severnaya Zemlya (Terra do Norte - acima do Cabo Chelyuskin/Taimir)
+                new Vector2[] { new(-0.35f, 5.25f), new(0.35f, 5.30f), new(0.40f, 5.75f), new(-0.25f, 5.80f) },
+                // Ilhas da Nova Sibéria (Mar de Laptev / Mar da Sibéria Oriental)
+                new Vector2[] { new(3.10f, 4.45f), new(3.80f, 4.40f), new(3.90f, 4.85f), new(3.20f, 4.80f) },
+                // Nova Zembla (Mar de Kara ao norte dos Urais)
+                new Vector2[] { new(-5.90f, 4.10f), new(-5.50f, 4.30f), new(-5.20f, 5.20f), new(-5.60f, 5.30f), new(-5.85f, 4.60f) },
+                // Ilha de Wrangel (Mar de Chukchi)
+                new Vector2[] { new(6.80f, 4.15f), new(7.40f, 4.20f), new(7.35f, 4.55f), new(6.75f, 4.50f) }
             };
 
 

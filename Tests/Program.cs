@@ -464,37 +464,64 @@ namespace War.Tests
                 (0.44f, -2.15f), (0.94f, -1.30f), (1.52f, -1.25f),
                 (3.35f, -3.20f), (4.00f, -4.00f), (5.30f, -3.30f),
                 (6.00f, -1.60f), (7.30f, 0.00f), (8.30f, 1.70f),
-                (7.80f, 2.60f), (6.80f, 3.40f), (5.60f, 3.20f),
-                (4.50f, 3.30f), (3.40f, 3.60f), (2.50f, 3.30f),
-                (1.60f, 3.00f), (0.80f, 3.80f), (0.00f, 4.60f),
-                (-1.00f, 3.90f), (-1.80f, 3.20f), (-2.80f, 3.60f),
-                (-3.60f, 2.80f), (-4.50f, 3.70f), (-5.60f, 2.90f)
+                (8.40f, 2.20f), (7.80f, 3.10f), (7.10f, 3.60f),
+                (6.60f, 3.40f), (6.00f, 3.10f), (5.50f, 3.40f),
+                (4.90f, 3.50f), (4.50f, 3.20f), (3.90f, 3.60f),
+                (3.50f, 3.90f), (3.10f, 3.70f), (2.50f, 3.30f),
+                (1.80f, 3.00f), (1.30f, 3.70f), (0.70f, 4.40f),
+                (0.00f, 4.80f), (-0.60f, 4.40f), (-1.40f, 3.80f),
+                (-2.20f, 2.60f), (-2.60f, 3.30f), (-3.00f, 3.80f),
+                (-3.40f, 3.40f), (-3.60f, 2.40f), (-4.00f, 2.30f),
+                (-4.20f, 3.20f), (-4.50f, 3.80f), (-4.90f, 4.10f),
+                (-5.80f, 2.70f)
+            };
+
+            var islandSevernayaZemlya = new (float x, float y)[]
+            {
+                (-0.35f, 5.25f), (0.35f, 5.30f), (0.40f, 5.75f), (-0.25f, 5.80f)
+            };
+
+            var islandNovosibirskiye = new (float x, float y)[]
+            {
+                (3.10f, 4.45f), (3.80f, 4.40f), (3.90f, 4.85f), (3.20f, 4.80f)
+            };
+
+            var islandNovayaZemlya = new (float x, float y)[]
+            {
+                (-5.90f, 4.10f), (-5.50f, 4.30f), (-5.20f, 5.20f), (-5.60f, 5.30f), (-5.85f, 4.60f)
+            };
+
+            var islandWrangel = new (float x, float y)[]
+            {
+                (6.80f, 4.15f), (7.40f, 4.20f), (7.35f, 4.55f), (6.75f, 4.50f)
             };
 
             var chile = new (float x, float y)[]
             {
-                (-1.30f, 3.80f), (-0.40f, 3.80f), (-0.10f, 2.40f),
-                (0.30f, 0.80f), (0.70f, -0.80f), (1.30f, -2.30f),
-                (1.80f, -3.80f), (1.40f, -3.80f), (0.50f, -2.60f),
-                (-0.10f, -1.10f), (-0.50f, 0.60f), (-0.90f, 2.20f)
+                (-1.50f, 3.70f), (-0.50f, 3.70f), (-0.20f, 2.30f),
+                (0.20f, 0.70f), (0.60f, -0.90f), (1.20f, -2.40f),
+                (1.70f, -3.70f), (1.30f, -3.70f), (0.50f, -2.50f),
+                (-0.10f, -1.00f), (-0.50f, 0.70f), (-1.00f, 2.30f)
             };
 
             var peru = new (float x, float y)[]
             {
-                (-1.00f, 2.60f), (-0.07f, 1.71f), (1.18f, 0.90f),
-                (0.76f, 0.32f), (1.79f, -0.08f), (1.51f, -0.31f),
-                (1.10f, -1.30f), (0.80f, -2.20f), (-0.10f, -2.20f),
-                (-0.70f, -1.20f), (-1.20f, 0.20f), (-1.40f, 1.60f)
+                (-2.00f, 2.80f), (-0.87f, 1.91f), (0.38f, 1.10f),
+                (-0.04f, 0.52f), (0.99f, 0.12f), (0.71f, -0.11f),
+                (0.87f, -0.37f), (1.77f, -0.06f), (3.05f, -0.65f),
+                (2.00f, -2.00f), (1.00f, -2.20f), (0.00f, -2.20f),
+                (-1.00f, -2.20f), (-1.60f, -1.00f), (-2.20f, 0.40f),
+                (-2.40f, 1.80f)
             };
 
             var argentina = new (float x, float y)[]
             {
-                (-0.40f, -4.40f), (-0.90f, -2.90f), (-1.50f, -1.40f),
-                (-1.90f, 0.20f), (-2.30f, 1.80f), (-2.60f, 3.20f),
-                (-2.30f, 4.10f), (-1.89f, 5.09f), (-1.73f, 4.83f),
-                (-0.83f, 5.14f), (0.45f, 4.55f), (1.88f, 2.26f),
-                (1.36f, 1.58f), (1.50f, 1.00f), (2.00f, 0.60f),
-                (1.40f, -0.80f), (0.70f, -2.30f), (0.20f, -3.50f)
+                (-0.40f, -4.40f), (-0.90f, -3.10f), (-1.50f, -1.60f),
+                (-1.90f, 0.00f), (-2.30f, 1.60f), (-2.60f, 3.00f),
+                (-1.60f, 3.00f), (-0.60f, 3.20f), (0.45f, 4.55f),
+                (1.88f, 2.26f), (1.36f, 1.58f), (1.50f, 1.00f),
+                (2.00f, 0.60f), (1.40f, -0.80f), (0.70f, -2.30f),
+                (0.20f, -3.50f)
             };
 
             var uruguai = new (float x, float y)[]
@@ -513,7 +540,7 @@ namespace War.Tests
             Assert(areaC > 4f, $"Área do Chile deve ser positiva e substancial, obtido: {areaC}");
 
             float areaP = Math.Abs(ComputeArea(peru));
-            Assert(areaP > 4f, $"Área do Peru deve ser positiva e substancial, obtido: {areaP}");
+            Assert(areaP > 8f, $"Área do Peru deve ser substancial e cobrir a região andina, obtido: {areaP}");
 
             float areaA = Math.Abs(ComputeArea(argentina));
             Assert(areaA > 10f, $"Área da Argentina deve ser positiva e substancial, obtido: {areaA}");
@@ -526,6 +553,18 @@ namespace War.Tests
 
             int triR = EarClipCount(russiaAsiatica);
             Assert(triR == russiaAsiatica.Length - 2, $"Rússia Asiática deve triangular {russiaAsiatica.Length - 2} triângulos, obtido: {triR}");
+
+            int triISZ = EarClipCount(islandSevernayaZemlya);
+            Assert(triISZ == islandSevernayaZemlya.Length - 2, "Severnaya Zemlya deve triangular");
+
+            int triINS = EarClipCount(islandNovosibirskiye);
+            Assert(triINS == islandNovosibirskiye.Length - 2, "Novosibirskiye deve triangular");
+
+            int triINZ = EarClipCount(islandNovayaZemlya);
+            Assert(triINZ == islandNovayaZemlya.Length - 2, "Novaya Zemlya deve triangular");
+
+            int triIW = EarClipCount(islandWrangel);
+            Assert(triIW == islandWrangel.Length - 2, "Wrangel deve triangular");
 
             int triC = EarClipCount(chile);
             Assert(triC == chile.Length - 2, $"Chile deve triangular {chile.Length - 2} triângulos, obtido: {triC}");
