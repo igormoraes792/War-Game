@@ -157,13 +157,14 @@ namespace War.Presentation.Game
         {
             return color switch
             {
-                PlayerColor.Blue => new Color(0.00f, 0.60f, 0.66f, 1f),      // Ciano / Teal Tático (como na referência)
-                PlayerColor.Yellow => new Color(0.78f, 0.62f, 0.08f, 1f),    // Mostarda / Ouro Âmbar (como na referência)
-                PlayerColor.Black => new Color(0.28f, 0.12f, 0.38f, 1f),     // Roxo Imperial / Violeta Escuro (como na referência)
-                PlayerColor.Red => new Color(0.74f, 0.16f, 0.22f, 1f),       // Carmim / Rubi Militar
-                PlayerColor.Green => new Color(0.18f, 0.52f, 0.30f, 1f),     // Verde Esmeralda Tático
-                PlayerColor.White => new Color(0.86f, 0.89f, 0.92f, 1f),     // Titânio / Branco Gélido
-                _ => new Color(0.45f, 0.48f, 0.55f, 1f)
+                // Paleta tática militar escurecida e elegante (tons nobres, profundos e de alto contraste):
+                PlayerColor.Yellow => new Color(0.64f, 0.46f, 0.12f, 1f), // #A3751F - Bronze Nobre / Âmbar Escurecido
+                PlayerColor.Red => new Color(0.58f, 0.14f, 0.16f, 1f),    // #942429 - Carmim Militar Profundo / Rubi Escuro
+                PlayerColor.Green => new Color(0.16f, 0.38f, 0.20f, 1f),  // #296133 - Verde Floresta Militar / Oliva Escuro
+                PlayerColor.Blue => new Color(0.14f, 0.28f, 0.46f, 1f),   // #244775 - Azul Marinho Imperial / Índigo Naval
+                PlayerColor.Black => new Color(0.14f, 0.15f, 0.18f, 1f),  // #24262E - Obsidiana / Grafite Carvão
+                PlayerColor.White => new Color(0.46f, 0.48f, 0.52f, 1f),  // #757A85 - Titânio / Peltre Escuro
+                _ => new Color(0.24f, 0.26f, 0.30f, 1f)
             };
         }
 

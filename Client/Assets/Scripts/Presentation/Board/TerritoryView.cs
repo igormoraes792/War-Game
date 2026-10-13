@@ -49,7 +49,7 @@ namespace War.Presentation.Board
         [SerializeField] private MeshRenderer? pinRimRenderer;
 
         [Header("Configuração de Cores")]
-        [SerializeField] private Color defaultNeutralColor = new Color(0.68f, 0.68f, 0.72f, 1f);
+        [SerializeField] private Color defaultNeutralColor = new Color(0.24f, 0.26f, 0.30f, 1f);
         [SerializeField] private Color highlightTint = new Color(1f, 1f, 1f, 1f);
         [SerializeField] private Color selectedTint = new Color(1f, 0.88f, 0.25f, 1f);
 

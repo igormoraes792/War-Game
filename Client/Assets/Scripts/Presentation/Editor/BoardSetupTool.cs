@@ -251,7 +251,7 @@ namespace War.Presentation.Editor
             var defaultTerritoryMat = new Material(defaultShader)
             {
                 name = "Territorio_Base_Mat",
-                color = new Color(0.72f, 0.72f, 0.76f, 1f),
+                color = new Color(0.24f, 0.26f, 0.30f, 1f),
                 enableInstancing = true
             };
             defaultTerritoryMat.EnableKeyword("_EMISSION");
@@ -719,30 +719,32 @@ namespace War.Presentation.Editor
             bgRt.anchorMax = new Vector2(1f, 0.5f);
             bgRt.pivot = new Vector2(1f, 0.5f);
             bgRt.anchoredPosition = new Vector2(-20f, 0f);
-            bgRt.sizeDelta = new Vector2(350f, 52f);
+            bgRt.sizeDelta = new Vector2(520f, 52f);
 
-            var advBtnObj = CreateUiElement("Btn_AdvancePhase", buttonsGroup.transform);
-            var advRt = advBtnObj.GetComponent<RectTransform>();
-            advRt.anchorMin = new Vector2(0f, 0.5f);
-            advRt.anchorMax = new Vector2(0f, 0.5f);
-            advRt.pivot = new Vector2(0f, 0.5f);
-            advRt.anchoredPosition = Vector2.zero;
-            advRt.sizeDelta = new Vector2(190f, 48f);
-            var advBtnImg = advBtnObj.AddComponent<Image>();
-            advBtnImg.color = new Color(0.04f, 0.6f, 0.4f, 1f);
-            var advBtn = advBtnObj.AddComponent<Button>();
+            var hlg = buttonsGroup.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 10f;
+            hlg.childAlignment = TextAnchor.MiddleRight;
+            hlg.childControlWidth = false;
+            hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false;
+            hlg.childForceExpandHeight = false;
 
-            var advBtnTextObj = CreateUiElement("Text_Label", advBtnObj.transform);
-            StretchFull(advBtnTextObj.GetComponent<RectTransform>());
-            var advancePhaseButtonText = CreateTMP(advBtnTextObj, "Avançar para Ataque", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+            // Botão 1: Visão Geral de Territórios por Jogador
+            var terrBtnObj = CreateUiElement("Btn_PlayerTerritories", buttonsGroup.transform);
+            var tbRt = terrBtnObj.GetComponent<RectTransform>();
+            tbRt.sizeDelta = new Vector2(145f, 48f);
+            var tbBtnImg = terrBtnObj.AddComponent<Image>();
+            tbBtnImg.color = new Color(0.18f, 0.30f, 0.46f, 1f);
+            var territoriesOverviewBtn = terrBtnObj.AddComponent<Button>();
 
+            var tbTxtObj = CreateUiElement("Text_Label", terrBtnObj.transform);
+            StretchFull(tbTxtObj.GetComponent<RectTransform>());
+            CreateTMP(tbTxtObj, "🌍 Territórios", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Botão 2: Minha Missão
             var missionBtnObj = CreateUiElement("Btn_MyMission", buttonsGroup.transform);
             var misRt = missionBtnObj.GetComponent<RectTransform>();
-            misRt.anchorMin = new Vector2(1f, 0.5f);
-            misRt.anchorMax = new Vector2(1f, 0.5f);
-            misRt.pivot = new Vector2(1f, 0.5f);
-            misRt.anchoredPosition = Vector2.zero;
-            misRt.sizeDelta = new Vector2(145f, 48f);
+            misRt.sizeDelta = new Vector2(140f, 48f);
             var misBtnImg = missionBtnObj.AddComponent<Image>();
             misBtnImg.color = new Color(0.85f, 0.47f, 0.05f, 1f);
             var myMissionButton = missionBtnObj.AddComponent<Button>();
@@ -750,6 +752,18 @@ namespace War.Presentation.Editor
             var misBtnTextObj = CreateUiElement("Text_Label", missionBtnObj.transform);
             StretchFull(misBtnTextObj.GetComponent<RectTransform>());
             CreateTMP(misBtnTextObj, "Minha Missão", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Botão 3: Avançar Fase / Encerrar Turno
+            var advBtnObj = CreateUiElement("Btn_AdvancePhase", buttonsGroup.transform);
+            var advRt = advBtnObj.GetComponent<RectTransform>();
+            advRt.sizeDelta = new Vector2(185f, 48f);
+            var advBtnImg = advBtnObj.AddComponent<Image>();
+            advBtnImg.color = new Color(0.04f, 0.6f, 0.4f, 1f);
+            var advBtn = advBtnObj.AddComponent<Button>();
+
+            var advBtnTextObj = CreateUiElement("Text_Label", advBtnObj.transform);
+            StretchFull(advBtnTextObj.GetComponent<RectTransform>());
+            var advancePhaseButtonText = CreateTMP(advBtnTextObj, "Avançar para Ataque", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
 
             // 1.15 Fita Tática dos Bônus de Continente (HUD Ribbon elegante)
             var ribbonPanel = CreateUiElement("HUD_ContinentsRibbon", hudRoot.transform);
@@ -797,6 +811,10 @@ namespace War.Presentation.Editor
             var deployDialogObj = SetupDeployArmiesDialogUI(canvasObj.transform);
             var deployDialogUI = deployDialogObj.GetComponent<DeployArmiesDialogUI>();
 
+            // 5. Criação do Modal de Visão Geral de Territórios por Jogador (PlayerTerritoriesOverviewUI)
+            var territoriesOverviewObj = SetupPlayerTerritoriesOverviewUI(canvasObj.transform);
+            var territoriesOverviewUI = territoriesOverviewObj.GetComponent<PlayerTerritoriesOverviewUI>();
+
             // Conecta deployDialog no GamePresenter se presente
             if (presenter != null)
             {
@@ -815,6 +833,8 @@ namespace War.Presentation.Editor
             hudSo.FindProperty("objectiveModal").objectReferenceValue = objectiveModalUI;
             hudSo.FindProperty("combatPanel").objectReferenceValue = combatPanelUI;
             hudSo.FindProperty("deployDialog").objectReferenceValue = deployDialogUI;
+            hudSo.FindProperty("territoriesOverviewModal").objectReferenceValue = territoriesOverviewUI;
+            hudSo.FindProperty("territoriesOverviewButton").objectReferenceValue = territoriesOverviewBtn;
             hudSo.FindProperty("playerColorBadge").objectReferenceValue = playerColorBadge;
             hudSo.FindProperty("playerNameText").objectReferenceValue = playerNameText;
             hudSo.FindProperty("phaseNameText").objectReferenceValue = phaseTitleText;
@@ -1421,6 +1441,136 @@ namespace War.Presentation.Editor
             dSo.ApplyModifiedProperties();
 
             // Começa desativado/fechado
+            modalRoot.SetActive(false);
+
+            return modalRoot;
+        }
+
+        private static GameObject SetupPlayerTerritoriesOverviewUI(Transform canvasTransform)
+        {
+            var modalRoot = CreateUiElement("Modal_PlayerTerritoriesOverview", canvasTransform);
+            StretchFull(modalRoot.GetComponent<RectTransform>());
+
+            var backdropImg = modalRoot.AddComponent<Image>();
+            backdropImg.color = new Color(0f, 0f, 0f, 0.72f);
+
+            var overviewUI = modalRoot.AddComponent<PlayerTerritoriesOverviewUI>();
+
+            // Card Central
+            var cardObj = CreateUiElement("OverviewCard", modalRoot.transform);
+            var cardRt = cardObj.GetComponent<RectTransform>();
+            cardRt.anchorMin = new Vector2(0.5f, 0.5f);
+            cardRt.anchorMax = new Vector2(0.5f, 0.5f);
+            cardRt.pivot = new Vector2(0.5f, 0.5f);
+            cardRt.anchoredPosition = Vector2.zero;
+            cardRt.sizeDelta = new Vector2(780f, 620f);
+            var cardImg = cardObj.AddComponent<Image>();
+            cardImg.color = new Color(0.10f, 0.12f, 0.16f, 0.98f);
+
+            // Botão Fechar [X] no topo direito
+            var closeXObj = CreateUiElement("Btn_CloseX", cardObj.transform);
+            var cxRt = closeXObj.GetComponent<RectTransform>();
+            cxRt.anchorMin = new Vector2(1f, 1f);
+            cxRt.anchorMax = new Vector2(1f, 1f);
+            cxRt.pivot = new Vector2(1f, 1f);
+            cxRt.anchoredPosition = new Vector2(-15f, -15f);
+            cxRt.sizeDelta = new Vector2(36f, 36f);
+            var cxImg = closeXObj.AddComponent<Image>();
+            cxImg.color = new Color(0.24f, 0.28f, 0.35f, 1f);
+            var closeXBtn = closeXObj.AddComponent<Button>();
+
+            var cxTxtObj = CreateUiElement("Text_X", closeXObj.transform);
+            StretchFull(cxTxtObj.GetComponent<RectTransform>());
+            CreateTMP(cxTxtObj, "✕", 18f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Título
+            var titleObj = CreateUiElement("Text_HeaderTitle", cardObj.transform);
+            var tRt = titleObj.GetComponent<RectTransform>();
+            tRt.anchorMin = new Vector2(0f, 1f);
+            tRt.anchorMax = new Vector2(1f, 1f);
+            tRt.pivot = new Vector2(0.5f, 1f);
+            tRt.anchoredPosition = new Vector2(0f, -20f);
+            tRt.sizeDelta = new Vector2(-100f, 36f);
+            var titleText = CreateTMP(titleObj, "🌍 TERRITÓRIOS POR JOGADOR", 21f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Subtítulo
+            var subObj = CreateUiElement("Text_Subtitle", cardObj.transform);
+            var sbRt = subObj.GetComponent<RectTransform>();
+            sbRt.anchorMin = new Vector2(0f, 1f);
+            sbRt.anchorMax = new Vector2(1f, 1f);
+            sbRt.pivot = new Vector2(0.5f, 1f);
+            sbRt.anchoredPosition = new Vector2(0f, -54f);
+            sbRt.sizeDelta = new Vector2(-60f, 24f);
+            var subtitleText = CreateTMP(subObj, "Ranking global de ocupação militar ordenado por quantidade de territórios dominados", 13f, new Color(0.65f, 0.70f, 0.78f, 1f), TextAlignmentOptions.Center);
+
+            // Scroll View
+            var scrollObj = CreateUiElement("ScrollView", cardObj.transform);
+            var scRt = scrollObj.GetComponent<RectTransform>();
+            scRt.anchorMin = new Vector2(0f, 0f);
+            scRt.anchorMax = new Vector2(1f, 1f);
+            scRt.offsetMin = new Vector2(25f, 80f);
+            scRt.offsetMax = new Vector2(-25f, -85f);
+            var scrollRect = scrollObj.AddComponent<ScrollRect>();
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.scrollSensitivity = 25f;
+
+            var scrollBg = scrollObj.AddComponent<Image>();
+            scrollBg.color = new Color(0.06f, 0.08f, 0.11f, 0.90f);
+
+            var viewportObj = CreateUiElement("Viewport", scrollObj.transform);
+            StretchFull(viewportObj.GetComponent<RectTransform>());
+            viewportObj.AddComponent<RectMask2D>();
+
+            var contentObj = CreateUiElement("Content", viewportObj.transform);
+            var cRt = contentObj.GetComponent<RectTransform>();
+            cRt.anchorMin = new Vector2(0f, 1f);
+            cRt.anchorMax = new Vector2(1f, 1f);
+            cRt.pivot = new Vector2(0.5f, 1f);
+            cRt.anchoredPosition = Vector2.zero;
+            cRt.sizeDelta = new Vector2(0f, 1200f);
+
+            var contentTextObj = CreateUiElement("Text_ListContent", contentObj.transform);
+            StretchFull(contentTextObj.GetComponent<RectTransform>());
+            var ctRt = contentTextObj.GetComponent<RectTransform>();
+            ctRt.offsetMin = new Vector2(15f, 10f);
+            ctRt.offsetMax = new Vector2(-15f, -10f);
+            var contentText = CreateTMP(contentTextObj, "Carregando territórios...", 15f, Color.white, TextAlignmentOptions.TopLeft);
+            contentText.enableWordWrapping = true;
+
+            var csFitter = contentObj.AddComponent<ContentSizeFitter>();
+            csFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            scrollRect.viewport = viewportObj.GetComponent<RectTransform>();
+            scrollRect.content = cRt;
+
+            // Botão Fechar inferior
+            var closeBottomObj = CreateUiElement("Btn_CloseBottom", cardObj.transform);
+            var cbRt = closeBottomObj.GetComponent<RectTransform>();
+            cbRt.anchorMin = new Vector2(0.5f, 0f);
+            cbRt.anchorMax = new Vector2(0.5f, 0f);
+            cbRt.pivot = new Vector2(0.5f, 0f);
+            cbRt.anchoredPosition = new Vector2(0f, 20f);
+            cbRt.sizeDelta = new Vector2(180f, 44f);
+            var cbImg = closeBottomObj.AddComponent<Image>();
+            cbImg.color = new Color(0.22f, 0.28f, 0.38f, 1f);
+            var closeBottomBtn = closeBottomObj.AddComponent<Button>();
+
+            var cbTxtObj = CreateUiElement("Text_Label", closeBottomObj.transform);
+            StretchFull(cbTxtObj.GetComponent<RectTransform>());
+            CreateTMP(cbTxtObj, "Fechar Painel", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+
+            // Serializa no PlayerTerritoriesOverviewUI
+            var oSo = new SerializedObject(overviewUI);
+            oSo.FindProperty("modalRoot").objectReferenceValue = modalRoot;
+            oSo.FindProperty("closeButton").objectReferenceValue = closeXBtn;
+            oSo.FindProperty("titleText").objectReferenceValue = titleText;
+            oSo.FindProperty("subtitleText").objectReferenceValue = subtitleText;
+            oSo.FindProperty("contentText").objectReferenceValue = contentText;
+            oSo.FindProperty("scrollRect").objectReferenceValue = scrollRect;
+            oSo.ApplyModifiedProperties();
+
+            // Começa oculto
             modalRoot.SetActive(false);
 
             return modalRoot;

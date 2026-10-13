@@ -1,21 +1,32 @@
 #nullable enable
 using System;
 using System.Collections;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using War.Core.Game;
+using War.Presentation.Game;
 
 namespace War.Presentation.UI
 {
     /// <summary>
-    /// Gerenciador principal da interface em tela (HUD uGUI) para a partida de WAR 2D.
+    /// Gerenciador principal da interface em tela (HUD uGUI) para a partida de WAR.
     /// Exibe informações de jogador ativo, fase da rodada, tropas de reforço,
     /// controle de turnos/fases, modal de missão e barra de status em tempo real.
     /// </summary>
     [DisallowMultipleComponent]
     public class GameHUD : MonoBehaviour
     {
+        [Header("Conexão Core / MVP")]
+        [SerializeField] private GamePresenter? presenter;
+
+        [Header("Modais da Interface")]
+        [SerializeField] private ObjectiveModalUI? objectiveModal;
+        [SerializeField] private CombatPanelUI? combatPanel;
+        [SerializeField] private DeployArmiesDialogUI? deployDialog;
+        [SerializeField] private PlayerTerritoriesOverviewUI? territoriesOverviewModal;
+
         [Header("Topo - Jogador Ativo")]
         [SerializeField] private Image? playerColorBadge;
         [SerializeField] private TMP_Text? playerNameText;
@@ -24,18 +35,19 @@ namespace War.Presentation.UI
         [SerializeField] private TMP_Text? phaseNameText;
         [SerializeField] private TMP_Text? phaseInstructionText;
 
-        [Header("Topo - Tropas de Reforço")]
+        [Header("Topo - Reforços / Tropas")]
         [SerializeField] private GameObject? armiesBadgeRoot;
         [SerializeField] private TMP_Text? armiesToDeployText;
 
-        [Header("Controles e Ações")]
+        [Header("Topo - Botões de Ação")]
         [SerializeField] private Button? advancePhaseButton;
         [SerializeField] private TMP_Text? advancePhaseButtonText;
         [SerializeField] private Button? myMissionButton;
+        [SerializeField] private Button? territoriesOverviewButton;
 
-        [Header("Barra de Notificação e Status")]
+        [Header("Inferior - Barra de Status")]
         [SerializeField] private GameObject? statusBarRoot;
-        [SerializeField] private TMP_Text? statusText;
+        [SerializeField] private TMP_Text? statusMessageText;
 
         [Header("Fallback Text (UnityEngine.UI)")]
         [SerializeField] private Text? legacyPlayerNameText;
@@ -47,126 +59,281 @@ namespace War.Presentation.UI
 
         private Coroutine? _statusFadeRoutine;
 
-        public event Action? OnAdvancePhaseClicked;
-        public event Action? OnOpenMissionClicked;
+        public DeployArmiesDialogUI? DeployDialog => deployDialog;
 
         private void Awake()
         {
+            if (presenter == null)
+            {
+                presenter = FindFirstObjectByType<GamePresenter>();
+            }
+
+            if (objectiveModal == null)
+            {
+                objectiveModal = FindFirstObjectByType<ObjectiveModalUI>();
+            }
+
+            if (combatPanel == null)
+            {
+                combatPanel = FindFirstObjectByType<CombatPanelUI>();
+            }
+
+            if (deployDialog == null)
+            {
+                deployDialog = FindFirstObjectByType<DeployArmiesDialogUI>();
+            }
+
+            if (territoriesOverviewModal == null)
+            {
+                territoriesOverviewModal = FindFirstObjectByType<PlayerTerritoriesOverviewUI>();
+            }
+
             if (advancePhaseButton != null)
             {
-                advancePhaseButton.onClick.AddListener(HandleAdvancePhase);
+                advancePhaseButton.onClick.AddListener(OnAdvancePhaseClicked);
             }
 
             if (myMissionButton != null)
             {
-                myMissionButton.onClick.AddListener(HandleOpenMission);
+                myMissionButton.onClick.AddListener(OnMyMissionClicked);
+            }
+
+            if (territoriesOverviewButton != null)
+            {
+                territoriesOverviewButton.onClick.AddListener(OnTerritoriesOverviewClicked);
+            }
+        }
+
+        private void Start()
+        {
+            if (presenter != null)
+            {
+                BindPresenter(presenter);
             }
         }
 
         private void OnDestroy()
         {
+            UnbindPresenter();
+
             if (advancePhaseButton != null)
             {
-                advancePhaseButton.onClick.RemoveListener(HandleAdvancePhase);
+                advancePhaseButton.onClick.RemoveListener(OnAdvancePhaseClicked);
             }
 
             if (myMissionButton != null)
             {
-                myMissionButton.onClick.RemoveListener(HandleOpenMission);
+                myMissionButton.onClick.RemoveListener(OnMyMissionClicked);
+            }
+
+            if (territoriesOverviewButton != null)
+            {
+                territoriesOverviewButton.onClick.RemoveListener(OnTerritoriesOverviewClicked);
             }
         }
 
-        private void HandleAdvancePhase()
-        {
-            OnAdvancePhaseClicked?.Invoke();
-        }
-
-        private void HandleOpenMission()
-        {
-            OnOpenMissionClicked?.Invoke();
-        }
-
         /// <summary>
-        /// Atualiza os elementos de status do HUD com os dados do jogador ativo e da fase atual.
+        /// Conecta o HUD aos eventos do GamePresenter.
         /// </summary>
-        public void UpdateHUD(string playerName, Color playerColor, TurnPhase phase, int armiesToDeploy)
+        public void BindPresenter(GamePresenter newPresenter)
         {
+            UnbindPresenter();
+
+            presenter = newPresenter;
+
+            if (presenter != null)
+            {
+                presenter.OnPhaseChanged += HandlePhaseChanged;
+                presenter.OnGameStatusMessage += HandleGameStatusMessage;
+                presenter.OnPlayerArmiesChanged += HandlePlayerArmiesChanged;
+                presenter.OnGameOver += HandleGameOver;
+
+                if (presenter.ActivePlayer != null)
+                {
+                    HandlePhaseChanged(presenter.CurrentPhase, presenter.ActivePlayer);
+                    HandlePlayerArmiesChanged(presenter.ActivePlayer);
+                }
+            }
+        }
+
+        private void UnbindPresenter()
+        {
+            if (presenter != null)
+            {
+                presenter.OnPhaseChanged -= HandlePhaseChanged;
+                presenter.OnGameStatusMessage -= HandleGameStatusMessage;
+                presenter.OnPlayerArmiesChanged -= HandlePlayerArmiesChanged;
+                presenter.OnGameOver -= HandleGameOver;
+            }
+        }
+
+        #region Tratamento de Ações do Usuário
+        private void OnAdvancePhaseClicked()
+        {
+            if (presenter == null) return;
+
+            if (presenter.CurrentPhase == TurnPhase.Fortification)
+            {
+                presenter.EndTurn();
+            }
+            else
+            {
+                presenter.AdvancePhase();
+            }
+        }
+
+        private void OnMyMissionClicked()
+        {
+            if (objectiveModal == null || presenter == null) return;
+
+            var activePlayer = presenter.ActivePlayer;
+            if (activePlayer != null)
+            {
+                objectiveModal.ToggleObjective(activePlayer, presenter.GameState);
+            }
+        }
+
+        private void OnTerritoriesOverviewClicked()
+        {
+            if (territoriesOverviewModal == null || presenter == null || presenter.GameState == null) return;
+
+            territoriesOverviewModal.Toggle(
+                presenter.GameState,
+                GamePresenter.ResolvePlayerColor,
+                player => presenter.TurnManager != null ? presenter.TurnManager.CalculateTurnReinforcements(player) : Math.Max(3, presenter.GameState.Territories.Values.Count(t => string.Equals(t.OwnerId, player.Id, StringComparison.OrdinalIgnoreCase)) / 2)
+            );
+        }
+        #endregion
+
+        #region Tratamento de Eventos do Presenter
+        private void HandlePhaseChanged(TurnPhase phase, Player activePlayer)
+        {
+            // 1. Atualiza dados do jogador ativo
+            var playerColor = GamePresenter.ResolvePlayerColor(activePlayer.Color);
             if (playerColorBadge != null)
             {
                 playerColorBadge.color = playerColor;
             }
 
-            SetLabel(playerNameText, legacyPlayerNameText, playerName);
+            SetLabel(playerNameText, legacyPlayerNameText, activePlayer.Name);
 
+            // Atualiza o painel de territórios se estiver aberto na tela
+            if (territoriesOverviewModal != null && presenter != null && presenter.GameState != null)
+            {
+                territoriesOverviewModal.Refresh(
+                    presenter.GameState,
+                    GamePresenter.ResolvePlayerColor,
+                    player => presenter.TurnManager != null ? presenter.TurnManager.CalculateTurnReinforcements(player) : Math.Max(3, presenter.GameState.Territories.Values.Count(t => string.Equals(t.OwnerId, player.Id, StringComparison.OrdinalIgnoreCase)) / 2)
+                );
+            }
+
+            // 2. Atualiza fase e instruções
             string phaseTitle;
             string phaseDesc;
-            string btnLabel;
+            string buttonLabel;
 
             switch (phase)
             {
                 case TurnPhase.Reinforcement:
                     phaseTitle = "FASE DE REFORÇO";
                     phaseDesc = "Clique em um território seu para escolher quantas tropas alocar.";
-                    btnLabel = "AVANÇAR PARA ATAQUE ▸";
+                    buttonLabel = "Avançar para Ataque";
                     if (armiesBadgeRoot != null) armiesBadgeRoot.SetActive(true);
                     break;
 
                 case TurnPhase.Attack:
+                    deployDialog?.Close();
                     phaseTitle = "FASE DE ATAQUE";
                     phaseDesc = "Selecione um território seu (com 2+ tropas) e um território inimigo vizinho.";
-                    btnLabel = "AVANÇAR PARA FORTIFICAÇÃO ▸";
+                    buttonLabel = "Avançar para Fortificação";
                     if (armiesBadgeRoot != null) armiesBadgeRoot.SetActive(false);
                     break;
 
                 case TurnPhase.Fortification:
+                    deployDialog?.Close();
                     phaseTitle = "FASE DE FORTIFICAÇÃO";
                     phaseDesc = "Remaneje tropas entre territórios conectados seus ou encerre a rodada.";
-                    btnLabel = "ENCERRAR TURNO ⮑";
+                    buttonLabel = "Encerrar Turno";
                     if (armiesBadgeRoot != null) armiesBadgeRoot.SetActive(false);
                     break;
 
-                default:
+                case TurnPhase.GameOver:
+                    deployDialog?.Close();
                     phaseTitle = "FIM DE JOGO";
                     phaseDesc = "Partida encerrada!";
-                    btnLabel = "FIM";
+                    buttonLabel = "Fim de Jogo";
+                    if (armiesBadgeRoot != null) armiesBadgeRoot.SetActive(false);
+                    if (advancePhaseButton != null) advancePhaseButton.interactable = false;
+                    break;
+
+                default:
+                    phaseTitle = phase.ToString().ToUpperInvariant();
+                    phaseDesc = "Aguardando próxima ação...";
+                    buttonLabel = "Avançar";
                     break;
             }
 
             SetLabel(phaseNameText, legacyPhaseNameText, phaseTitle);
             SetLabel(phaseInstructionText, legacyPhaseInstructionText, phaseDesc);
-            SetLabel(advancePhaseButtonText, legacyAdvancePhaseButtonText, btnLabel);
-            SetLabel(armiesToDeployText, legacyArmiesToDeployText, $"Tropas para posicionar: {armiesToDeploy}");
+            SetLabel(advancePhaseButtonText, legacyAdvancePhaseButtonText, buttonLabel);
+
+            // 3. Atualiza tropas de reforço
+            HandlePlayerArmiesChanged(activePlayer);
         }
 
-        /// <summary>
-        /// Exibe uma mensagem transitória ou evento importante na barra de status inferior.
-        /// </summary>
-        public void SetStatusMessage(string message)
+        private void HandlePlayerArmiesChanged(Player player)
         {
-            if (string.IsNullOrEmpty(message)) return;
+            var text = $"Tropas para posicionar: {player.ArmiesToDeploy}";
+            SetLabel(armiesToDeployText, legacyArmiesToDeployText, text);
+        }
 
-            if (statusBarRoot != null)
+        private void HandleGameStatusMessage(string message)
+        {
+            SetLabel(statusMessageText, legacyStatusMessageText, message);
+
+            if (statusBarRoot != null && !statusBarRoot.activeSelf)
             {
                 statusBarRoot.SetActive(true);
             }
-
-            SetLabel(statusText, legacyStatusMessageText, message);
 
             if (_statusFadeRoutine != null)
             {
                 StopCoroutine(_statusFadeRoutine);
             }
-            _statusFadeRoutine = StartCoroutine(AutoClearStatusMessage(5.5f));
+            _statusFadeRoutine = StartCoroutine(AnimateStatusPulse());
         }
 
-        private IEnumerator AutoClearStatusMessage(float delay)
+        private IEnumerator AnimateStatusPulse()
         {
-            yield return new WaitForSeconds(delay);
-            if (statusBarRoot != null)
+            if (statusMessageText != null)
             {
-                statusBarRoot.SetActive(false);
+                var originalColor = statusMessageText.color;
+                var flashColor = new Color(1f, 0.95f, 0.5f, 1f);
+
+                for (var t = 0f; t < 0.25f; t += Time.deltaTime)
+                {
+                    statusMessageText.color = Color.Lerp(originalColor, flashColor, t / 0.25f);
+                    yield return null;
+                }
+                for (var t = 0f; t < 0.35f; t += Time.deltaTime)
+                {
+                    statusMessageText.color = Color.Lerp(flashColor, originalColor, t / 0.35f);
+                    yield return null;
+                }
+                statusMessageText.color = originalColor;
             }
         }
+
+        private void HandleGameOver(Player winner)
+        {
+            if (advancePhaseButton != null)
+            {
+                advancePhaseButton.interactable = false;
+            }
+
+            HandleGameStatusMessage($"★ VITÓRIA DEFINITIVA! O vencedor da partida é {winner.Name}! ★");
+        }
+        #endregion
 
         private static void SetLabel(TMP_Text? tmp, Text? legacy, string value)
         {

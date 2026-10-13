@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,6 +25,7 @@ namespace War.Presentation.UI
         [SerializeField] private ObjectiveModalUI? objectiveModal;
         [SerializeField] private CombatPanelUI? combatPanel;
         [SerializeField] private DeployArmiesDialogUI? deployDialog;
+        [SerializeField] private PlayerTerritoriesOverviewUI? territoriesOverviewModal;
 
         [Header("Topo - Jogador Ativo")]
         [SerializeField] private Image? playerColorBadge;
@@ -41,6 +43,7 @@ namespace War.Presentation.UI
         [SerializeField] private Button? advancePhaseButton;
         [SerializeField] private TMP_Text? advancePhaseButtonText;
         [SerializeField] private Button? myMissionButton;
+        [SerializeField] private Button? territoriesOverviewButton;
 
         [Header("Inferior - Barra de Status")]
         [SerializeField] private GameObject? statusBarRoot;
@@ -80,6 +83,11 @@ namespace War.Presentation.UI
                 deployDialog = FindFirstObjectByType<DeployArmiesDialogUI>();
             }
 
+            if (territoriesOverviewModal == null)
+            {
+                territoriesOverviewModal = FindFirstObjectByType<PlayerTerritoriesOverviewUI>();
+            }
+
             if (advancePhaseButton != null)
             {
                 advancePhaseButton.onClick.AddListener(OnAdvancePhaseClicked);
@@ -88,6 +96,11 @@ namespace War.Presentation.UI
             if (myMissionButton != null)
             {
                 myMissionButton.onClick.AddListener(OnMyMissionClicked);
+            }
+
+            if (territoriesOverviewButton != null)
+            {
+                territoriesOverviewButton.onClick.AddListener(OnTerritoriesOverviewClicked);
             }
         }
 
@@ -111,6 +124,11 @@ namespace War.Presentation.UI
             if (myMissionButton != null)
             {
                 myMissionButton.onClick.RemoveListener(OnMyMissionClicked);
+            }
+
+            if (territoriesOverviewButton != null)
+            {
+                territoriesOverviewButton.onClick.RemoveListener(OnTerritoriesOverviewClicked);
             }
         }
 
@@ -174,6 +192,17 @@ namespace War.Presentation.UI
                 objectiveModal.ToggleObjective(activePlayer, presenter.GameState);
             }
         }
+
+        private void OnTerritoriesOverviewClicked()
+        {
+            if (territoriesOverviewModal == null || presenter == null || presenter.GameState == null) return;
+
+            territoriesOverviewModal.Toggle(
+                presenter.GameState,
+                GamePresenter.ResolvePlayerColor,
+                player => presenter.TurnManager != null ? presenter.TurnManager.CalculateTurnReinforcements(player) : Math.Max(3, presenter.GameState.Territories.Values.Count(t => string.Equals(t.OwnerId, player.Id, StringComparison.OrdinalIgnoreCase)) / 2)
+            );
+        }
         #endregion
 
         #region Tratamento de Eventos do Presenter
@@ -187,6 +216,16 @@ namespace War.Presentation.UI
             }
 
             SetLabel(playerNameText, legacyPlayerNameText, activePlayer.Name);
+
+            // Atualiza o painel de territórios se estiver aberto na tela
+            if (territoriesOverviewModal != null && presenter != null && presenter.GameState != null)
+            {
+                territoriesOverviewModal.Refresh(
+                    presenter.GameState,
+                    GamePresenter.ResolvePlayerColor,
+                    player => presenter.TurnManager != null ? presenter.TurnManager.CalculateTurnReinforcements(player) : Math.Max(3, presenter.GameState.Territories.Values.Count(t => string.Equals(t.OwnerId, player.Id, StringComparison.OrdinalIgnoreCase)) / 2)
+                );
+            }
 
             // 2. Atualiza fase e instruções
             string phaseTitle;

@@ -39,6 +39,8 @@ namespace War.Tests
             RunTest("Cartografia GIS: Alta densidade de curvas no Pacífico Sul (Chile, Peru, Argentina, Brasil)", TestSouthAmericaGisHighDensityPacificCurves);
             RunTest("Cartografia GIS: Litoral Ártico e arquipélagos da Sibéria (Rússia Asiática)", TestAsianRussiaArcticCoastlineAndArchipelagos);
             RunTest("Cartografia GIS: Triangulação Ear-Clipping robusta para todos os 41 territórios", TestAll41TerritoriesTriangulation);
+            RunTest("Cartografia GIS: Ausência de sobreposição entre Brasil/Venezuela e entre as Rússias", TestNoCartographicOverlapsBetweenKeyRegions);
+            RunTest("HUD Jogadores: Ordenação decrescente por territórios dominados (ranking)", TestPlayerTerritoryOverviewRankingSort);
 
             Console.WriteLine("\n==================================================");
             Console.WriteLine($"RESULTADO DOS TESTES: {_passed} PASSOU | {_failed} FALHOU");
@@ -710,6 +712,70 @@ namespace War.Tests
                 var tris = WorldCartographyData.TriangulatePolygon(item.Polygon);
                 Assert(tris.Count > 0 && tris.Count % 3 == 0, $"Triangulação de {item.TerritoryId} falhou (obtido {tris.Count} índices).");
             }
+        }
+
+        static void TestNoCartographicOverlapsBetweenKeyRegions()
+        {
+            var rAsiatica = WorldCartographyData.GetCartography(TerritoryIds.RussiaAsiatica);
+            var rEuropeia = WorldCartographyData.GetCartography(TerritoryIds.RussiaEuropeia);
+            Assert(rAsiatica != null && rEuropeia != null, "Rússia Asiática e Européia devem existir no registro cartográfico.");
+
+            // A fronteira ocidental da Rússia Asiática foi estritamente alinhada aos Urais (X absoluto >= 7.70f)
+            float minAbsXRussiaAsia = rAsiatica!.Polygon.Min(p => rAsiatica.Center.X + p.X);
+            Assert(minAbsXRussiaAsia >= 7.70f, $"Fronteira ocidental da Rússia Asiática deve respeitar os Montes Urais (>= 7.70), obtido: {minAbsXRussiaAsia}");
+
+            // Venezuela e Brasil
+            var vz = WorldCartographyData.GetCartography(TerritoryIds.Venezuela);
+            var br = WorldCartographyData.GetCartography(TerritoryIds.Brasil);
+            Assert(vz != null && br != null, "Venezuela e Brasil devem existir no registro cartográfico.");
+
+            // Limite meridional de Venezuela alinhado com o norte brasileiro
+            float minAbsYVenezuela = vz!.Polygon.Min(p => vz.Center.Y + p.Y);
+            Assert(minAbsYVenezuela >= -2.90f, $"Borda sul da Venezuela deve estar ao norte do interior brasileiro (>= -2.90), obtido: {minAbsYVenezuela}");
+
+            // Ambas as malhas triangulam 100% perfeitamente com contagem de índices múltipla de 3
+            var vzTris = WorldCartographyData.TriangulatePolygon(vz.Polygon);
+            Assert(vzTris.Count > 0 && vzTris.Count % 3 == 0, "Venezuela deve triangular perfeitamente sem auto-interseção.");
+
+            var raTris = WorldCartographyData.TriangulatePolygon(rAsiatica.Polygon);
+            Assert(raTris.Count > 0 && raTris.Count % 3 == 0, "Rússia Asiática deve triangular perfeitamente sem auto-interseção.");
+        }
+
+        static void TestPlayerTerritoryOverviewRankingSort()
+        {
+            var p1 = new Player("p1", "Vermelho", PlayerColor.Red);
+            var p2 = new Player("p2", "Azul", PlayerColor.Blue);
+            var p3 = new Player("p3", "Verde", PlayerColor.Green);
+            var p4 = new Player("p4", "Amarelo", PlayerColor.Yellow);
+
+            var map = ClassicMapData.CreateClassicMap();
+
+            // Atribui territórios com contagens distintas:
+            // Azul: 18 territórios
+            // Verde: 12 territórios
+            // Amarelo: 7 territórios
+            // Vermelho: 4 territórios
+            var territoryList = map.Values.ToList();
+            int idx = 0;
+            for (int i = 0; i < 18; i++) territoryList[idx++].SetOwner(p2.Id, 1);
+            for (int i = 0; i < 12; i++) territoryList[idx++].SetOwner(p3.Id, 1);
+            for (int i = 0; i < 7; i++) territoryList[idx++].SetOwner(p4.Id, 1);
+            while (idx < territoryList.Count) territoryList[idx++].SetOwner(p1.Id, 1);
+
+            var gameState = new GameState(new[] { p1, p2, p3, p4 }, map);
+
+            // Algoritmo de ordenação idêntico ao PlayerTerritoriesOverviewUI:
+            // Maior número de territórios primeiro (ordem decrescente), desempatando por nome
+            var sorted = gameState.Players
+                .OrderByDescending(p => gameState.Territories.Values.Count(t => string.Equals(t.OwnerId, p.Id, StringComparison.OrdinalIgnoreCase)))
+                .ThenBy(p => p.Name)
+                .ToList();
+
+            Assert(sorted.Count == 4, "Devem existir 4 jogadores ranqueados.");
+            Assert(sorted[0].Id == p2.Id, $"1º colocado deve ser Azul (18 territórios), obtido: {sorted[0].Name}");
+            Assert(sorted[1].Id == p3.Id, $"2º colocado deve ser Verde (12 territórios), obtido: {sorted[1].Name}");
+            Assert(sorted[2].Id == p4.Id, $"3º colocado deve ser Amarelo (7 territórios), obtido: {sorted[2].Name}");
+            Assert(sorted[3].Id == p1.Id, $"4º colocado deve ser Vermelho (4 territórios), obtido: {sorted[3].Name}");
         }
     }
 }

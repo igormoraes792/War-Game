@@ -31,7 +31,7 @@ namespace War2D.Presentation.Board
         [SerializeField] private GameObject? nameTagRoot;
 
         [Header("Cores")]
-        [SerializeField] private Color defaultNeutralColor = new Color(0.70f, 0.72f, 0.76f, 1f);
+        [SerializeField] private Color defaultNeutralColor = new Color(0.24f, 0.26f, 0.30f, 1f);
         [SerializeField] private Color borderColor = new Color(0.12f, 0.15f, 0.20f, 0.95f);
         [SerializeField] private Color borderHighlightColor = new Color(1.0f, 0.88f, 0.30f, 1.0f);
 
