@@ -29,6 +29,22 @@ namespace War.Presentation.Board
         /// </summary>
         public static List<Vector2[]> GetTerritoryIslands(string territoryId)
         {
+            var gisIslands = WorldCartographyData.GetIslands(territoryId);
+            if (gisIslands != null && gisIslands.Count > 0)
+            {
+                var result = new List<Vector2[]>();
+                foreach (var isl in gisIslands)
+                {
+                    var v2 = new Vector2[isl.Count];
+                    for (int i = 0; i < isl.Count; i++)
+                    {
+                        v2[i] = new Vector2(isl[i].X, isl[i].Y);
+                    }
+                    result.Add(v2);
+                }
+                return result;
+            }
+
             if (TerritoryIslands.TryGetValue(territoryId, out var islands) && islands != null)
             {
                 return islands;
@@ -225,9 +241,20 @@ namespace War.Presentation.Board
         /// </summary>
         public static Vector2[] GetTerritoryPolygon(string territoryId)
         {
-            if (TerritoryPolygons.TryGetValue(territoryId, out var poly))
+            var gisPoly = WorldCartographyData.GetPolygon(territoryId);
+            if (gisPoly != null && gisPoly.Count >= 3)
             {
+                var poly = new Vector2[gisPoly.Count];
+                for (int i = 0; i < gisPoly.Count; i++)
+                {
+                    poly[i] = new Vector2(gisPoly[i].X, gisPoly[i].Y);
+                }
                 return poly;
+            }
+
+            if (TerritoryPolygons.TryGetValue(territoryId, out var existing))
+            {
+                return existing;
             }
 
             // Fallback elegante (octógono regular de raio 1.6f)
@@ -325,7 +352,8 @@ namespace War.Presentation.Board
             }
 
             int safetyCounter = 0;
-            while (indices.Count > 3 && safetyCounter < 300)
+            int maxSafety = n * 50;
+            while (indices.Count > 3 && safetyCounter < maxSafety)
             {
                 safetyCounter++;
                 bool earFound = false;

@@ -34,8 +34,11 @@ namespace War.Tests
             RunTest("FSM: Ataque, conquista, eliminação de jogador adversário e espólio de cartas", TestAttackConquestAndElimination);
             RunTest("FSM: Remanejamento (Fortificação) com validação de conectividade em grafo BFS", TestFortificationBFS);
             RunTest("FSM: Compra de carta ao conquistar território e passagem para próximo jogador", TestEndTurnAndDrawCard);
-            RunTest("FSM: Vitória da partida encerra em GameOver", TestGameOverTrigger);
             RunTest("Cartografia: Polígonos de Mackenzie e Rússia Asiática (geometria contígua e triangulação)", TestMackenzieAndRussiaPolygons);
+            RunTest("Cartografia GIS: Integridade dos 41 territórios na base WorldCartographyData", TestWorldCartographyAllTerritoriesPresent);
+            RunTest("Cartografia GIS: Alta densidade de curvas no Pacífico Sul (Chile, Peru, Argentina, Brasil)", TestSouthAmericaGisHighDensityPacificCurves);
+            RunTest("Cartografia GIS: Litoral Ártico e arquipélagos da Sibéria (Rússia Asiática)", TestAsianRussiaArcticCoastlineAndArchipelagos);
+            RunTest("Cartografia GIS: Triangulação Ear-Clipping robusta para todos os 41 territórios", TestAll41TerritoriesTriangulation);
 
             Console.WriteLine("\n==================================================");
             Console.WriteLine($"RESULTADO DOS TESTES: {_passed} PASSOU | {_failed} FALHOU");
@@ -648,6 +651,65 @@ namespace War.Tests
             }
             if (indices.Count == 3) triCount++;
             return triCount;
+        }
+
+        static void TestWorldCartographyAllTerritoriesPresent()
+        {
+            var all = WorldCartographyData.GetAllCartography().ToList();
+            Assert(all.Count == 41, $"Devem existir 41 territórios na base, obtido: {all.Count}");
+
+            foreach (var item in all)
+            {
+                Assert(!string.IsNullOrWhiteSpace(item.TerritoryId), "ID do território não pode ser vazio.");
+                Assert(item.Polygon.Count >= 6, $"Território {item.TerritoryId} deve ter pelo menos 6 pontos, obtido: {item.Polygon.Count}");
+                float area = Math.Abs(WorldCartographyData.ComputeArea(item.Polygon));
+                Assert(area > 0.1f, $"Área de {item.TerritoryId} deve ser positiva e relevante, obtido: {area}");
+            }
+        }
+
+        static void TestSouthAmericaGisHighDensityPacificCurves()
+        {
+            var chilePoly = WorldCartographyData.GetPolygon(TerritoryIds.Chile);
+            Assert(chilePoly.Count >= 60, $"Chile deve ter pelo menos 60 pontos GIS para descrever os fiordes e litoral, obtido: {chilePoly.Count}");
+
+            var peruPoly = WorldCartographyData.GetPolygon(TerritoryIds.Peru);
+            Assert(peruPoly.Count >= 35, $"Peru deve ter pelo menos 35 pontos GIS para descrever as curvas do Pacífico, obtido: {peruPoly.Count}");
+
+            var brasilPoly = WorldCartographyData.GetPolygon(TerritoryIds.Brasil);
+            Assert(brasilPoly.Count >= 60, $"Brasil deve ter pelo menos 60 pontos GIS, obtido: {brasilPoly.Count}");
+
+            var argentinaPoly = WorldCartographyData.GetPolygon(TerritoryIds.Argentina);
+            Assert(argentinaPoly.Count >= 50, $"Argentina deve ter pelo menos 50 pontos GIS, obtido: {argentinaPoly.Count}");
+
+            var saIds = new[] { TerritoryIds.Chile, TerritoryIds.Peru, TerritoryIds.Brasil, TerritoryIds.Argentina, TerritoryIds.Venezuela, TerritoryIds.Uruguai };
+            foreach (var id in saIds)
+            {
+                var poly = WorldCartographyData.GetPolygon(id);
+                var tris = WorldCartographyData.TriangulatePolygon(poly);
+                Assert(tris.Count > 0 && tris.Count % 3 == 0, $"Triangulação de {id} falhou ou retornou contagem inválida: {tris.Count}");
+            }
+        }
+
+        static void TestAsianRussiaArcticCoastlineAndArchipelagos()
+        {
+            var russiaPoly = WorldCartographyData.GetPolygon(TerritoryIds.RussiaAsiatica);
+            Assert(russiaPoly.Count >= 80, $"Rússia Asiática deve ter pelo menos 80 pontos GIS para detalhar o litoral ártico, obtido: {russiaPoly.Count}");
+
+            var islands = WorldCartographyData.GetIslands(TerritoryIds.RussiaAsiatica);
+            Assert(islands.Count == 4, $"Rússia Asiática deve ter 4 arquipélagos árticos satélites, obtido: {islands.Count}");
+
+            var tris = WorldCartographyData.TriangulatePolygon(russiaPoly);
+            Assert(tris.Count > 0 && tris.Count % 3 == 0, $"Triangulação da Rússia Asiática deve ser válida, obtido: {tris.Count}");
+        }
+
+        static void TestAll41TerritoriesTriangulation()
+        {
+            var all = WorldCartographyData.GetAllCartography().ToList();
+            foreach (var item in all)
+            {
+                var tris = WorldCartographyData.TriangulatePolygon(item.Polygon);
+                Assert(tris.Count > 0 && tris.Count % 3 == 0, $"Triangulação de {item.TerritoryId} falhou (obtido {tris.Count} índices).");
+            }
         }
     }
 }

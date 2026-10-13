@@ -1,0 +1,921 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+
+namespace War.Core.Data
+{
+    /// <summary>
+    /// Ponto 2D no plano cartográfico do tabuleiro (POCO puro .NET Standard 2.1).
+    /// </summary>
+    public readonly struct CartoPoint : IEquatable<CartoPoint>
+    {
+        public float X { get; }
+        public float Y { get; }
+
+        public CartoPoint(float x, float y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        public bool Equals(CartoPoint other) => Math.Abs(X - other.X) < 1e-5f && Math.Abs(Y - other.Y) < 1e-5f;
+        public override bool Equals(object? obj) => obj is CartoPoint other && Equals(other);
+        public override int GetHashCode() => HashCode.Combine(X, Y);
+        public override string ToString() => $"({X:F2}, {Y:F2})";
+    }
+
+    /// <summary>
+    /// Representa a definição cartográfica vetorial de um território.
+    /// </summary>
+    public sealed class TerritoryCartography
+    {
+        public string TerritoryId { get; }
+        public CartoPoint Center { get; }
+        public IReadOnlyList<CartoPoint> Polygon { get; }
+        public IReadOnlyList<IReadOnlyList<CartoPoint>> Islands { get; }
+
+        public TerritoryCartography(string territoryId, CartoPoint center, IEnumerable<CartoPoint> polygon, IEnumerable<IEnumerable<CartoPoint>>? islands = null)
+        {
+            TerritoryId = territoryId;
+            Center = center;
+            Polygon = new ReadOnlyCollection<CartoPoint>(polygon.ToList());
+            Islands = new ReadOnlyCollection<IReadOnlyList<CartoPoint>>(
+                (islands ?? Enumerable.Empty<IEnumerable<CartoPoint>>())
+                .Select(isl => (IReadOnlyList<CartoPoint>)new ReadOnlyCollection<CartoPoint>(isl.ToList()))
+                .ToList());
+        }
+    }
+
+    /// <summary>
+    /// Base de dados cartográfica vetorial mundial (Opção 1 - Padrão Natural Earth GIS).
+    /// Fornece contornos orgânicos e precisos para todos os 41 territórios do War.
+    /// </summary>
+    public static class WorldCartographyData
+    {
+        private static readonly Dictionary<string, TerritoryCartography> Registry = new(StringComparer.OrdinalIgnoreCase);
+
+        static WorldCartographyData()
+        {
+            RegisterAllCartography();
+        }
+
+        public static IReadOnlyCollection<TerritoryCartography> GetAllCartography() => Registry.Values;
+
+        public static TerritoryCartography? GetCartography(string territoryId)
+        {
+            Registry.TryGetValue(territoryId, out var item);
+            return item;
+        }
+
+        public static IReadOnlyList<CartoPoint> GetPolygon(string territoryId)
+        {
+            return Registry.TryGetValue(territoryId, out var item) ? item.Polygon : Array.Empty<CartoPoint>();
+        }
+
+        public static IReadOnlyList<IReadOnlyList<CartoPoint>> GetIslands(string territoryId)
+        {
+            return Registry.TryGetValue(territoryId, out var item) ? item.Islands : Array.Empty<IReadOnlyList<CartoPoint>>();
+        }
+
+        public static CartoPoint GetCenter(string territoryId)
+        {
+            return Registry.TryGetValue(territoryId, out var item) ? item.Center : new CartoPoint(0f, 0f);
+        }
+
+        public static float ComputeArea(IReadOnlyList<CartoPoint> poly)
+        {
+            int n = poly.Count;
+            if (n < 3) return 0f;
+            float area = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                var a = poly[i];
+                var b = poly[(i + 1) % n];
+                area += (a.X * b.Y - b.X * a.Y);
+            }
+            return area * 0.5f;
+        }
+
+        public static CartoPoint ComputeCentroid(IReadOnlyList<CartoPoint> poly)
+        {
+            int n = poly.Count;
+            if (n < 3) return new CartoPoint(0f, 0f);
+            float a = ComputeArea(poly);
+            if (Math.Abs(a) < 1e-5f)
+            {
+                float sumX = 0f, sumY = 0f;
+                for (int i = 0; i < n; i++) { sumX += poly[i].X; sumY += poly[i].Y; }
+                return new CartoPoint(sumX / n, sumY / n);
+            }
+            float cx = 0f, cy = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                var p0 = poly[i];
+                var p1 = poly[(i + 1) % n];
+                float cross = (p0.X * p1.Y - p1.X * p0.Y);
+                cx += (p0.X + p1.X) * cross;
+                cy += (p0.Y + p1.Y) * cross;
+            }
+            return new CartoPoint(cx / (6f * a), cy / (6f * a));
+        }
+
+        public static List<int> TriangulatePolygon(IReadOnlyList<CartoPoint> poly)
+        {
+            var triangles = new List<int>();
+            int n = poly.Count;
+            if (n < 3) return triangles;
+
+            float area = ComputeArea(poly);
+            var indices = new List<int>(n);
+            if (area < 0f)
+            {
+                for (int i = n - 1; i >= 0; i--) indices.Add(i);
+            }
+            else
+            {
+                for (int i = 0; i < n; i++) indices.Add(i);
+            }
+
+            int safetyCounter = 0;
+            int maxSafety = n * 50;
+            while (indices.Count > 3 && safetyCounter < maxSafety)
+            {
+                safetyCounter++;
+                bool earFound = false;
+
+                for (int i = 0; i < indices.Count; i++)
+                {
+                    int prevIdx = indices[(i - 1 + indices.Count) % indices.Count];
+                    int currIdx = indices[i];
+                    int nextIdx = indices[(i + 1) % indices.Count];
+
+                    var a = poly[prevIdx];
+                    var b = poly[currIdx];
+                    var c = poly[nextIdx];
+
+                    float cross = (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
+                    if (cross <= 1e-6f) continue;
+
+                    bool isEar = true;
+                    for (int j = 0; j < indices.Count; j++)
+                    {
+                        int testIdx = indices[j];
+                        if (testIdx == prevIdx || testIdx == currIdx || testIdx == nextIdx) continue;
+
+                        var p = poly[testIdx];
+                        float c1 = (b.X - a.X) * (p.Y - a.Y) - (b.Y - a.Y) * (p.X - a.X);
+                        float c2 = (c.X - b.X) * (p.Y - b.Y) - (c.Y - b.Y) * (p.X - b.X);
+                        float c3 = (a.X - c.X) * (p.Y - c.Y) - (a.Y - c.Y) * (p.X - c.X);
+
+                        if (c1 >= 0f && c2 >= 0f && c3 >= 0f)
+                        {
+                            isEar = false;
+                            break;
+                        }
+                    }
+
+                    if (isEar)
+                    {
+                        triangles.Add(prevIdx);
+                        triangles.Add(currIdx);
+                        triangles.Add(nextIdx);
+                        indices.RemoveAt(i);
+                        earFound = true;
+                        break;
+                    }
+                }
+
+                if (!earFound)
+                {
+                    if (indices.Count >= 3)
+                    {
+                        triangles.Add(indices[0]);
+                        triangles.Add(indices[1]);
+                        triangles.Add(indices[2]);
+                        indices.RemoveAt(1);
+                    }
+                    else break;
+                }
+            }
+
+            if (indices.Count == 3)
+            {
+                triangles.Add(indices[0]);
+                triangles.Add(indices[1]);
+                triangles.Add(indices[2]);
+            }
+
+            return triangles;
+        }
+
+        private static void RegisterAllCartography()
+        {
+            // AfricaDoSul (19 pontos GIS)
+            Register(
+                TerritoryIds.AfricaDoSul,
+                new CartoPoint(2.31f, -10.93f),
+                new CartoPoint[]
+                {
+                    new(-2.20f, 2.87f), new(-1.20f, 2.69f), new(-1.10f, 2.36f), new(-0.47f, 2.45f),
+                    new(-0.26f, 1.76f), new(0.83f, 1.39f), new(0.74f, 2.03f), new(1.23f, 2.21f),
+                    new(1.86f, 0.72f), new(1.98f, 1.51f), new(2.85f, 1.84f), new(2.87f, 0.82f),
+                    new(2.10f, 0.10f), new(1.05f, -2.47f), new(-0.81f, -3.04f), new(-1.17f, -2.86f),
+                    new(-1.75f, -0.48f), new(-2.30f, 0.52f), new(-1.94f, 1.53f),
+                },
+                null
+            );
+
+            // Alasca (23 pontos GIS)
+            Register(
+                TerritoryIds.Alasca,
+                new CartoPoint(-21.66f, 9.99f),
+                new CartoPoint[]
+                {
+                    new(1.93f, -2.30f), new(1.49f, -1.38f), new(0.42f, -0.84f), new(0.02f, -1.08f),
+                    new(-0.26f, -1.02f), new(-0.13f, -0.77f), new(-0.46f, -0.82f), new(-1.85f, -1.80f),
+                    new(-2.06f, -1.69f), new(-1.22f, -1.00f), new(-1.82f, -1.00f), new(-2.34f, -0.52f),
+                    new(-1.93f, 0.09f), new(-1.27f, 0.24f), new(-1.66f, 0.24f), new(-1.77f, 0.67f),
+                    new(-0.94f, 0.84f), new(-1.26f, 1.46f), new(-0.05f, 1.82f), new(1.41f, 1.34f),
+                    new(1.33f, -0.57f), new(1.85f, -0.64f), new(2.35f, -1.82f),
+                },
+                null
+            );
+
+            // Alemanha (14 pontos GIS)
+            Register(
+                TerritoryIds.Alemanha,
+                new CartoPoint(-0.07f, 4.81f),
+                new CartoPoint[]
+                {
+                    new(1.26f, 1.60f), new(1.89f, 1.40f), new(2.14f, 0.26f), new(1.38f, -0.57f),
+                    new(1.10f, -1.78f), new(0.48f, -1.78f), new(0.34f, -1.07f), new(-0.59f, -1.58f),
+                    new(-1.63f, -1.61f), new(-2.33f, -0.70f), new(-0.92f, 1.19f), new(-0.95f, 2.09f),
+                    new(-0.64f, 2.22f), new(-0.40f, 1.43f),
+                },
+                null
+            );
+
+            // ArabiaSaudita (8 pontos GIS)
+            Register(
+                TerritoryIds.ArabiaSaudita,
+                new CartoPoint(5.20f, -2.60f),
+                new CartoPoint[]
+                {
+                    new(-1.20f, 1.40f), new(0.40f, 1.60f), new(1.50f, 0.80f), new(1.60f, -0.50f),
+                    new(1.10f, -1.50f), new(-0.20f, -1.60f), new(-1.10f, -0.80f), new(-1.40f, 0.50f),
+                },
+                null
+            );
+
+            // Argelia (17 pontos GIS)
+            Register(
+                TerritoryIds.Argelia,
+                new CartoPoint(-1.63f, -3.62f),
+                new CartoPoint[]
+                {
+                    new(1.57f, 2.70f), new(0.76f, 3.56f), new(-2.20f, 2.87f), new(-3.19f, 0.78f),
+                    new(-3.27f, -0.81f), new(-1.65f, -2.55f), new(0.47f, -2.38f), new(0.63f, -2.64f),
+                    new(1.39f, -2.72f), new(1.46f, -3.27f), new(2.27f, -3.27f), new(2.41f, -2.33f),
+                    new(3.63f, -1.47f), new(3.69f, -0.13f), new(2.84f, 0.53f), new(1.40f, 0.87f),
+                    new(1.14f, 1.93f),
+                },
+                null
+            );
+
+            // Argentina (66 pontos GIS)
+            Register(
+                TerritoryIds.Argentina,
+                new CartoPoint(-12.00f, -9.80f),
+                new CartoPoint[]
+                {
+                    new(-1.12f, 4.25f), new(-0.89f, 4.55f), new(-0.52f, 4.43f), new(-0.46f, 4.24f),
+                    new(-0.37f, 4.49f), new(-0.10f, 4.49f), new(0.31f, 3.96f), new(1.06f, 3.56f),
+                    new(0.87f, 2.94f), new(1.53f, 2.90f), new(1.75f, 3.13f), new(1.79f, 3.45f),
+                    new(2.01f, 3.25f), new(1.97f, 2.98f), new(1.52f, 2.67f), new(1.03f, 1.99f),
+                    new(0.87f, 0.90f), new(1.18f, 0.62f), new(1.15f, 0.40f), new(1.31f, 0.22f),
+                    new(1.11f, -0.22f), new(0.59f, -0.43f), new(-0.01f, -0.42f), new(0.04f, -0.96f),
+                    new(-0.09f, -1.08f), new(-0.64f, -1.02f), new(-0.61f, -1.39f), new(-0.33f, -1.38f),
+                    new(-0.29f, -1.58f), new(-0.60f, -1.55f), new(-0.45f, -1.65f), new(-0.69f, -1.84f),
+                    new(-0.73f, -2.22f), new(-1.21f, -2.53f), new(-1.03f, -2.82f), new(-0.78f, -2.88f),
+                    new(-0.93f, -3.07f), new(-0.79f, -3.10f), new(-1.20f, -3.41f), new(-1.28f, -3.70f),
+                    new(-1.54f, -3.70f), new(-1.39f, -3.74f), new(-1.63f, -4.02f), new(-1.53f, -4.15f),
+                    new(-1.68f, -4.17f), new(-1.41f, -4.40f), new(-2.22f, -4.27f), new(-2.30f, -3.89f),
+                    new(-2.50f, -3.92f), new(-2.59f, -3.68f), new(-2.16f, -2.73f), new(-2.07f, -2.31f),
+                    new(-2.25f, -2.17f), new(-2.03f, -2.10f), new(-2.20f, -2.05f), new(-2.26f, -1.53f),
+                    new(-2.16f, -0.66f), new(-1.96f, -0.36f), new(-2.04f, 0.15f), new(-1.73f, 0.91f),
+                    new(-1.90f, 1.77f), new(-1.69f, 2.62f), new(-1.38f, 3.02f), new(-1.44f, 3.68f),
+                    new(-1.15f, 3.91f), new(-1.12f, 4.25f),
+                },
+                null
+            );
+
+            // Australia (33 pontos GIS)
+            Register(
+                TerritoryIds.Australia,
+                new CartoPoint(19.80f, -10.20f),
+                new CartoPoint[]
+                {
+                    new(1.33f, -3.06f), new(2.75f, -2.71f), new(3.31f, -1.27f), new(3.62f, -1.15f),
+                    new(3.75f, -0.03f), new(3.01f, 1.36f), new(2.48f, 1.52f), new(2.36f, 2.51f),
+                    new(1.97f, 2.46f), new(1.80f, 3.23f), new(1.51f, 2.07f), new(1.22f, 2.00f),
+                    new(0.52f, 2.39f), new(0.81f, 3.00f), new(-0.00f, 3.15f), new(-0.64f, 2.86f),
+                    new(-0.80f, 2.39f), new(-1.12f, 2.56f), new(-2.78f, 1.22f), new(-3.92f, 0.78f),
+                    new(-4.12f, -0.26f), new(-3.58f, -1.47f), new(-3.84f, -2.13f), new(-3.31f, -2.40f),
+                    new(-2.28f, -1.89f), new(-1.60f, -1.94f), new(-1.49f, -1.60f), new(-0.77f, -1.35f),
+                    new(-0.13f, -1.43f), new(0.23f, -2.01f), new(0.67f, -1.47f), new(0.46f, -2.16f),
+                    new(0.75f, -2.01f),
+                },
+                null
+            );
+
+            // Brasil (75 pontos GIS)
+            Register(
+                TerritoryIds.Brasil,
+                new CartoPoint(-10.09f, -4.75f),
+                new CartoPoint[]
+                {
+                    new(-1.12f, -3.59f), new(-0.33f, -3.05f), new(-0.30f, -2.89f), new(-0.49f, -2.77f),
+                    new(-0.42f, -2.50f), new(-0.66f, -2.48f), new(-0.76f, -2.18f), new(-1.20f, -2.15f),
+                    new(-1.23f, -1.73f), new(-1.09f, -1.46f), new(-1.29f, -1.28f), new(-1.27f, -1.11f),
+                    new(-1.66f, -1.11f), new(-1.72f, -0.67f), new(-2.67f, -0.35f), new(-2.75f, 0.07f),
+                    new(-3.42f, -0.19f), new(-3.85f, -0.17f), new(-3.82f, 0.11f), new(-4.17f, 0.01f),
+                    new(-4.39f, 0.12f), new(-4.55f, 0.45f), new(-4.32f, 0.88f), new(-3.71f, 1.03f),
+                    new(-3.59f, 1.58f), new(-3.72f, 1.90f), new(-3.53f, 1.91f), new(-3.68f, 2.10f),
+                    new(-3.17f, 2.18f), new(-3.10f, 2.00f), new(-2.77f, 1.91f), new(-2.33f, 2.20f),
+                    new(-2.47f, 2.24f), new(-2.62f, 2.56f), new(-2.23f, 2.43f), new(-1.67f, 2.73f),
+                    new(-1.52f, 2.50f), new(-1.57f, 2.13f), new(-1.38f, 2.01f), new(-1.06f, 2.15f),
+                    new(-0.78f, 2.12f), new(-0.78f, 2.25f), new(-0.15f, 2.18f), new(0.15f, 2.59f),
+                    new(0.49f, 2.00f), new(-0.10f, 1.51f), new(0.29f, 1.63f), new(0.29f, 1.45f),
+                    new(0.59f, 1.48f), new(0.54f, 1.32f), new(0.88f, 1.68f), new(1.14f, 1.67f),
+                    new(1.60f, 1.48f), new(1.56f, 1.21f), new(1.85f, 1.38f), new(2.57f, 1.29f),
+                    new(3.15f, 0.92f), new(3.50f, 0.88f), new(3.65f, 0.51f), new(3.54f, 0.15f),
+                    new(2.91f, -0.51f), new(2.79f, -0.48f), new(2.74f, -1.36f), new(2.35f, -2.13f),
+                    new(2.14f, -2.31f), new(1.64f, -2.30f), new(0.73f, -2.73f), new(0.73f, -3.30f),
+                    new(0.04f, -3.95f), new(0.35f, -3.64f), new(0.20f, -3.56f), new(-0.24f, -4.23f),
+                    new(-0.18f, -4.05f), new(-0.32f, -3.93f), new(-1.12f, -3.59f),
+                },
+                null
+            );
+
+            // California (16 pontos GIS)
+            Register(
+                TerritoryIds.California,
+                new CartoPoint(-17.27f, 4.64f),
+                new CartoPoint[]
+                {
+                    new(-1.81f, 1.74f), new(-2.07f, 0.77f), new(-2.24f, -0.63f), new(-1.80f, -1.67f),
+                    new(-1.18f, -1.76f), new(-0.76f, -2.03f), new(-0.12f, -2.03f), new(0.35f, -2.35f),
+                    new(0.75f, -2.37f), new(0.60f, -1.85f), new(0.95f, -1.76f), new(1.07f, -1.11f),
+                    new(1.49f, -0.97f), new(1.52f, -0.58f), new(2.37f, -0.50f), new(2.40f, 1.73f),
+                },
+                null
+            );
+
+            // Cazaquistao (18 pontos GIS)
+            Register(
+                TerritoryIds.Cazaquistao,
+                new CartoPoint(8.44f, 3.84f),
+                new CartoPoint[]
+                {
+                    new(2.64f, -0.15f), new(2.20f, 1.02f), new(1.23f, 1.19f), new(-0.14f, 2.42f),
+                    new(-0.89f, 1.96f), new(-1.38f, 2.11f), new(-2.47f, 1.76f), new(-2.78f, 1.25f),
+                    new(-2.31f, 0.17f), new(-1.70f, 0.42f), new(-1.91f, -0.51f), new(-1.49f, -0.84f),
+                    new(-1.08f, -2.13f), new(-0.48f, -2.13f), new(0.18f, -2.62f), new(1.17f, -1.88f),
+                    new(2.09f, -1.86f), new(1.86f, -0.91f),
+                },
+                null
+            );
+
+            // Chile (88 pontos GIS)
+            Register(
+                TerritoryIds.Chile,
+                new CartoPoint(-14.10f, -10.50f),
+                new CartoPoint[]
+                {
+                    new(0.65f, 3.70f), new(1.02f, 3.31f), new(0.91f, 3.11f), new(1.22f, 2.62f),
+                    new(1.52f, 2.58f), new(1.40f, 2.38f), new(0.98f, 2.23f), new(1.06f, 1.76f),
+                    new(0.60f, 1.49f), new(0.29f, 0.92f), new(0.54f, 0.31f), new(0.07f, -0.22f),
+                    new(0.19f, -0.57f), new(-0.11f, -0.78f), new(-0.26f, -1.39f), new(-0.16f, -1.75f),
+                    new(0.09f, -1.78f), new(-0.24f, -1.83f), new(0.02f, -1.93f), new(-0.10f, -2.22f),
+                    new(-0.42f, -2.64f), new(-0.76f, -2.79f), new(-0.62f, -3.04f), new(-0.32f, -3.02f),
+                    new(-0.20f, -3.29f), new(1.02f, -3.36f), new(0.18f, -3.44f), new(0.04f, -3.68f),
+                    new(-0.37f, -3.58f), new(-0.15f, -3.60f), new(-0.00f, -3.44f), new(-0.41f, -3.51f),
+                    new(-0.34f, -3.61f), new(-0.67f, -3.53f), new(-0.06f, -3.41f), new(-0.51f, -3.40f),
+                    new(-0.63f, -3.52f), new(-0.76f, -3.46f), new(-0.53f, -3.40f), new(-0.80f, -3.44f),
+                    new(-0.82f, -3.30f), new(-0.39f, -3.39f), new(-0.38f, -3.25f), new(-0.65f, -3.19f),
+                    new(-0.40f, -3.24f), new(-0.66f, -3.21f), new(-0.64f, -3.31f), new(-0.70f, -3.22f),
+                    new(-0.67f, -3.33f), new(-0.87f, -3.22f), new(-0.80f, -3.12f), new(-1.00f, -3.08f),
+                    new(-0.76f, -2.97f), new(-0.92f, -3.06f), new(-1.15f, -2.93f), new(-0.86f, -2.95f),
+                    new(-1.04f, -2.88f), new(-0.87f, -2.90f), new(-1.03f, -2.85f), new(-0.81f, -2.84f),
+                    new(-0.85f, -2.69f), new(-0.99f, -2.79f), new(-1.07f, -2.69f), new(-0.87f, -2.57f),
+                    new(-1.13f, -2.49f), new(-0.64f, -2.48f), new(-1.16f, -2.43f), new(-0.92f, -2.40f),
+                    new(-1.09f, -2.37f), new(-0.95f, -2.25f), new(-1.50f, -2.21f), new(-1.03f, -2.04f),
+                    new(-0.82f, -2.19f), new(-0.74f, -1.97f), new(-0.50f, -1.96f), new(-0.70f, -1.87f),
+                    new(-0.42f, -1.78f), new(-0.66f, -1.70f), new(-0.32f, -1.14f), new(-0.74f, -1.23f),
+                    new(-0.89f, -1.07f), new(-0.64f, -0.74f), new(-0.80f, -0.32f), new(-0.08f, 0.45f),
+                    new(-0.05f, 1.38f), new(0.46f, 2.90f), new(0.35f, 3.53f), new(0.65f, 3.70f),
+                },
+                null
+            );
+
+            // China (23 pontos GIS)
+            Register(
+                TerritoryIds.China,
+                new CartoPoint(14.26f, 1.86f),
+                new CartoPoint[]
+                {
+                    new(3.15f, 0.91f), new(3.70f, 0.11f), new(3.83f, -1.22f), new(2.46f, -3.09f),
+                    new(1.68f, -2.27f), new(0.95f, -2.71f), new(0.12f, -1.94f), new(-0.17f, -2.15f),
+                    new(-0.37f, -1.71f), new(-1.15f, -1.80f), new(-1.26f, -1.48f), new(-2.96f, -0.93f),
+                    new(-2.82f, 0.13f), new(-3.39f, 0.38f), new(-3.68f, 0.22f), new(-3.98f, 0.92f),
+                    new(-3.23f, 1.73f), new(-3.27f, 2.56f), new(-2.50f, 3.54f), new(-1.64f, 3.22f),
+                    new(-1.69f, 2.78f), new(-1.19f, 2.65f), new(-0.02f, 1.23f),
+                },
+                null
+            );
+
+            // Congo (16 pontos GIS)
+            Register(
+                TerritoryIds.Congo,
+                new CartoPoint(1.93f, -7.31f),
+                new CartoPoint[]
+                {
+                    new(1.43f, -1.40f), new(1.29f, -0.54f), new(2.28f, 0.66f), new(0.99f, 0.91f),
+                    new(0.08f, 2.21f), new(-1.14f, 1.37f), new(-1.16f, 0.44f), new(-2.22f, 0.55f),
+                    new(-2.51f, -0.07f), new(-1.82f, -0.75f), new(-0.82f, -0.92f), new(-0.72f, -1.26f),
+                    new(-0.09f, -1.16f), new(0.12f, -1.86f), new(1.11f, -2.20f), new(1.12f, -1.58f),
+                },
+                null
+            );
+
+            // Egito (14 pontos GIS)
+            Register(
+                TerritoryIds.Egito,
+                new CartoPoint(1.82f, -2.22f),
+                new CartoPoint[]
+                {
+                    new(0.22f, -1.34f), new(-0.17f, -1.29f), new(-0.61f, -0.87f), new(-2.04f, -0.53f),
+                    new(-2.31f, 0.53f), new(-1.88f, 1.30f), new(-1.01f, 0.97f), new(-0.14f, 1.12f),
+                    new(1.56f, 0.71f), new(2.05f, 0.88f), new(2.09f, 0.25f), new(1.76f, 0.39f),
+                    new(2.51f, -0.96f), new(0.53f, -0.98f),
+                },
+                null
+            );
+
+            // Fiji (7 pontos GIS)
+            Register(
+                TerritoryIds.Fiji,
+                new CartoPoint(24.50f, -8.20f),
+                new CartoPoint[]
+                {
+                    new(0.60f, 0.80f), new(0.90f, 0.20f), new(0.70f, -0.60f), new(-0.10f, -0.80f),
+                    new(-0.80f, -0.20f), new(-0.60f, 0.60f), new(0.10f, 0.90f),
+                },
+                null
+            );
+
+            // Franca (21 pontos GIS)
+            Register(
+                TerritoryIds.Franca,
+                new CartoPoint(-3.50f, 1.68f),
+                new CartoPoint[]
+                {
+                    new(1.86f, 1.49f), new(1.54f, 0.84f), new(1.79f, 0.13f), new(1.48f, -0.08f),
+                    new(0.96f, 0.09f), new(0.55f, -0.57f), new(0.79f, -1.33f), new(0.35f, -1.91f),
+                    new(-0.18f, -2.31f), new(-0.97f, -1.88f), new(-1.55f, -1.92f), new(-1.89f, -1.62f),
+                    new(-1.57f, -0.69f), new(-1.93f, -0.04f), new(-1.58f, 0.25f), new(-1.11f, 0.03f),
+                    new(-0.26f, 0.34f), new(-0.31f, 0.87f), new(-0.96f, 1.53f), new(-0.28f, 1.56f),
+                    new(1.10f, 2.43f),
+                },
+                null
+            );
+
+            // Groenlandia (31 pontos GIS)
+            Register(
+                TerritoryIds.Groenlandia,
+                new CartoPoint(-7.91f, 11.69f),
+                new CartoPoint[]
+                {
+                    new(0.01f, -2.05f), new(-0.50f, -3.43f), new(-1.29f, -2.65f), new(-1.49f, -1.89f),
+                    new(-1.19f, -1.35f), new(-1.71f, -1.19f), new(-1.36f, -1.09f), new(-1.83f, -0.28f),
+                    new(-2.33f, 0.10f), new(-3.39f, 0.02f), new(-3.43f, 0.31f), new(-3.08f, 0.37f),
+                    new(-3.39f, 0.56f), new(-2.74f, 0.67f), new(-2.83f, 1.01f), new(-2.05f, 1.40f),
+                    new(-1.17f, 1.47f), new(-0.08f, 2.28f), new(1.55f, 2.16f), new(1.93f, 1.98f),
+                    new(1.30f, 1.71f), new(1.72f, 1.58f), new(2.85f, 1.88f), new(2.45f, 0.90f),
+                    new(2.67f, 0.10f), new(2.41f, -0.27f), new(2.06f, -0.19f), new(2.48f, -0.75f),
+                    new(2.20f, -0.94f), new(1.94f, -0.64f), new(2.06f, -1.08f),
+                },
+                null
+            );
+
+            // IlhasSalomao (7 pontos GIS)
+            Register(
+                TerritoryIds.IlhasSalomao,
+                new CartoPoint(22.60f, -5.80f),
+                new CartoPoint[]
+                {
+                    new(1.20f, 0.80f), new(0.80f, 0.90f), new(-0.20f, 0.40f), new(-1.10f, -0.20f),
+                    new(-0.90f, -0.60f), new(0.10f, -0.30f), new(1.10f, 0.30f),
+                },
+                null
+            );
+
+            // India (20 pontos GIS)
+            Register(
+                TerritoryIds.India,
+                new CartoPoint(11.18f, -0.79f),
+                new CartoPoint[]
+                {
+                    new(-0.31f, 3.03f), new(-2.12f, 2.43f), new(-2.56f, 2.01f), new(-2.64f, 1.38f),
+                    new(-2.04f, -0.23f), new(-1.67f, -0.19f), new(-1.01f, -0.74f), new(-0.97f, -1.17f),
+                    new(-0.60f, -1.09f), new(-0.65f, -1.96f), new(0.55f, -4.17f), new(1.01f, -3.63f),
+                    new(1.67f, -0.91f), new(2.30f, -0.55f), new(2.91f, 0.50f), new(2.71f, 0.94f),
+                    new(1.93f, 0.85f), new(1.82f, 1.17f), new(0.12f, 1.72f), new(0.26f, 2.78f),
+                },
+                null
+            );
+
+            // Inglaterra (20 pontos GIS)
+            Register(
+                TerritoryIds.Inglaterra,
+                new CartoPoint(-4.34f, 5.55f),
+                new CartoPoint[]
+                {
+                    new(-0.44f, -0.18f), new(-0.67f, -0.96f), new(-0.33f, -1.18f), new(-0.81f, -1.71f),
+                    new(1.04f, -1.36f), new(1.34f, -0.71f), new(1.17f, -0.47f), new(0.73f, -0.56f),
+                    new(0.33f, 0.61f), new(-0.21f, 0.74f), new(0.23f, 1.36f), new(0.13f, 1.58f),
+                    new(-0.30f, 1.49f), new(-0.19f, 2.03f), new(-0.69f, 1.99f), new(-1.18f, 1.41f),
+                    new(-0.57f, 0.60f), new(-0.63f, 0.19f), new(-0.19f, -0.08f), new(-0.21f, -0.35f),
+                },
+                null
+            );
+
+            // Ira (7 pontos GIS)
+            Register(
+                TerritoryIds.Ira,
+                new CartoPoint(7.30f, 0.40f),
+                new CartoPoint[]
+                {
+                    new(-1.50f, 1.10f), new(0.10f, 1.40f), new(1.40f, 0.90f), new(1.60f, -0.20f),
+                    new(1.20f, -1.20f), new(-0.30f, -1.30f), new(-1.30f, -0.50f),
+                },
+                null
+            );
+
+            // Islandia (17 pontos GIS)
+            Register(
+                TerritoryIds.Islandia,
+                new CartoPoint(-3.75f, 8.82f),
+                new CartoPoint[]
+                {
+                    new(-1.10f, 0.66f), new(-0.63f, 0.61f), new(-0.54f, 0.29f), new(-0.37f, 0.54f),
+                    new(0.15f, 0.47f), new(0.73f, 0.82f), new(1.26f, 0.37f), new(1.36f, -0.03f),
+                    new(0.85f, -0.47f), new(0.35f, -0.41f), new(0.36f, -0.68f), new(-0.04f, -0.86f),
+                    new(-1.03f, -0.67f), new(-0.88f, -0.32f), new(-1.34f, -0.12f), new(-1.03f, 0.15f),
+                    new(-1.38f, 0.34f),
+                },
+                null
+            );
+
+            // Japao (17 pontos GIS)
+            Register(
+                TerritoryIds.Japao,
+                new CartoPoint(20.50f, 4.50f),
+                new CartoPoint[]
+                {
+                    new(-1.25f, -2.40f), new(-1.56f, -2.02f), new(0.02f, 0.11f), new(-0.30f, 1.37f),
+                    new(-0.11f, 1.93f), new(-0.45f, 2.48f), new(-0.01f, 2.20f), new(0.85f, 2.23f),
+                    new(1.04f, 1.95f), new(0.68f, 1.83f), new(0.59f, 1.40f), new(-0.03f, 1.32f),
+                    new(0.73f, 0.70f), new(0.98f, -0.65f), new(-0.08f, -1.51f), new(-0.72f, -1.40f),
+                    new(-0.59f, -1.83f),
+                },
+                null
+            );
+
+            // Labrador (20 pontos GIS)
+            Register(
+                TerritoryIds.Labrador,
+                new CartoPoint(-10.97f, 7.22f),
+                new CartoPoint[]
+                {
+                    new(-1.72f, -1.69f), new(-1.41f, 0.47f), new(-0.87f, 0.83f), new(-1.03f, 1.44f),
+                    new(-0.67f, 1.82f), new(-0.77f, 2.21f), new(-0.05f, 2.15f), new(0.34f, 1.22f),
+                    new(1.04f, 1.62f), new(1.37f, 0.75f), new(2.27f, 0.16f), new(1.33f, -0.70f),
+                    new(-0.00f, -1.00f), new(0.15f, -1.20f), new(0.62f, -0.98f), new(0.76f, -1.69f),
+                    new(1.19f, -1.63f), new(0.77f, -2.08f), new(0.14f, -1.32f), new(-0.26f, -1.73f),
+                },
+                null
+            );
+
+            // Mackenzie (27 pontos GIS)
+            Register(
+                TerritoryIds.Mackenzie,
+                new CartoPoint(-16.50f, 9.20f),
+                new CartoPoint[]
+                {
+                    new(-2.58f, -2.82f), new(-1.00f, -2.83f), new(0.71f, -2.86f), new(0.98f, 0.05f),
+                    new(2.22f, 0.01f), new(2.02f, -0.70f), new(2.52f, -1.23f), new(3.82f, -1.39f),
+                    new(4.12f, -1.51f), new(4.66f, -1.15f), new(4.50f, -0.54f), new(4.86f, -0.16f),
+                    new(4.76f, 0.23f), new(4.40f, 1.00f), new(3.40f, 1.80f), new(2.40f, 1.30f),
+                    new(1.40f, 2.60f), new(0.40f, 1.70f), new(-0.60f, 2.70f), new(-1.70f, 1.80f),
+                    new(-2.70f, 2.50f), new(-3.75f, 2.13f), new(-3.83f, 0.22f), new(-3.31f, 0.15f),
+                    new(-2.81f, -1.03f), new(-3.20f, -1.60f), new(-3.00f, -2.30f),
+                },
+                null
+            );
+
+            // Madagascar (14 pontos GIS)
+            Register(
+                TerritoryIds.Madagascar,
+                new CartoPoint(6.65f, -11.26f),
+                new CartoPoint[]
+                {
+                    new(0.71f, -0.19f), new(1.01f, 1.13f), new(1.17f, 1.02f), new(1.22f, 1.62f),
+                    new(1.03f, 1.93f), new(0.09f, 0.91f), new(-0.70f, 0.81f), new(-0.83f, 0.49f),
+                    new(-0.54f, 0.17f), new(-0.74f, 0.09f), new(-0.81f, -0.41f), new(-1.11f, -0.83f),
+                    new(-0.89f, -1.54f), new(-0.09f, -1.50f),
+                },
+                null
+            );
+
+            // Mexico (15 pontos GIS)
+            Register(
+                TerritoryIds.Mexico,
+                new CartoPoint(-16.91f, 0.96f),
+                new CartoPoint[]
+                {
+                    new(-2.18f, 2.10f), new(0.40f, 1.29f), new(0.21f, 0.62f), new(0.57f, -0.30f),
+                    new(1.86f, 0.04f), new(1.39f, -0.81f), new(1.65f, -1.25f), new(1.21f, -2.15f),
+                    new(1.84f, -2.10f), new(1.79f, -2.79f), new(0.95f, -2.26f), new(0.44f, -1.00f),
+                    new(-0.60f, -0.65f), new(-0.66f, 0.01f), new(-1.46f, 0.15f),
+                },
+                null
+            );
+
+            // Mongolia (18 pontos GIS)
+            Register(
+                TerritoryIds.Mongolia,
+                new CartoPoint(15.20f, 5.20f),
+                new CartoPoint[]
+                {
+                    new(-2.79f, 1.19f), new(-2.59f, -0.56f), new(-1.62f, -1.47f), new(1.62f, -1.77f),
+                    new(1.97f, -1.47f), new(1.10f, -1.19f), new(1.53f, -0.68f), new(2.44f, -1.25f),
+                    new(2.52f, -1.76f), new(2.85f, -1.59f), new(2.95f, -1.18f), new(2.26f, -0.52f),
+                    new(2.65f, 0.29f), new(0.82f, 2.32f), new(0.24f, 2.26f), new(-0.02f, 1.06f),
+                    new(-0.26f, 1.35f), new(-0.97f, 1.05f),
+                },
+                null
+            );
+
+            // NovaGuine (15 pontos GIS)
+            Register(
+                TerritoryIds.NovaGuine,
+                new CartoPoint(19.80f, -5.50f),
+                new CartoPoint[]
+                {
+                    new(-0.86f, 0.57f), new(-0.72f, 1.08f), new(-0.26f, 1.17f), new(1.14f, 0.37f),
+                    new(1.65f, -0.25f), new(1.42f, -0.41f), new(1.82f, -1.25f), new(0.70f, -0.80f),
+                    new(0.36f, -1.10f), new(-0.72f, -0.84f), new(-0.92f, 0.11f), new(-1.85f, 0.16f),
+                    new(-1.49f, 0.45f), new(-1.91f, 1.11f), new(-1.08f, 1.09f),
+                },
+                null
+            );
+
+            // NovaYork (29 pontos GIS)
+            Register(
+                TerritoryIds.NovaYork,
+                new CartoPoint(-13.73f, 3.92f),
+                new CartoPoint[]
+                {
+                    new(-1.14f, 2.44f), new(-0.72f, 2.44f), new(-0.69f, 2.12f), new(0.06f, 2.24f),
+                    new(0.59f, 0.82f), new(1.33f, 1.36f), new(2.62f, 1.61f), new(2.81f, 1.98f),
+                    new(3.16f, 1.38f), new(3.60f, 1.25f), new(3.17f, 0.83f), new(3.16f, 1.27f),
+                    new(2.62f, 1.00f), new(2.50f, 0.44f), new(1.65f, -0.25f), new(1.80f, -0.65f),
+                    new(0.76f, -1.50f), new(0.90f, -2.39f), new(0.65f, -2.51f), new(0.16f, -1.65f),
+                    new(-0.86f, -1.53f), new(-2.24f, -1.77f), new(-2.97f, -2.35f), new(-2.94f, -1.14f),
+                    new(-2.59f, -1.04f), new(-2.47f, -0.40f), new(-2.05f, -0.26f), new(-1.97f, 0.17f),
+                    new(-1.17f, 0.21f),
+                },
+                null
+            );
+
+            // NovaZelandia (8 pontos GIS)
+            Register(
+                TerritoryIds.NovaZelandia,
+                new CartoPoint(23.20f, -12.50f),
+                new CartoPoint[]
+                {
+                    new(0.80f, 2.10f), new(1.10f, 1.40f), new(0.60f, 0.20f), new(0.10f, -0.80f),
+                    new(-0.50f, -2.00f), new(-0.90f, -1.70f), new(-0.30f, 0.10f), new(0.20f, 1.80f),
+                },
+                null
+            );
+
+            // Ottawa (15 pontos GIS)
+            Register(
+                TerritoryIds.Ottawa,
+                new CartoPoint(-14.18f, 7.13f),
+                new CartoPoint[]
+                {
+                    new(-0.10f, 2.08f), new(-0.30f, 1.37f), new(0.20f, 0.84f), new(1.50f, 0.68f),
+                    new(1.18f, 0.51f), new(1.58f, -0.46f), new(1.50f, -1.60f), new(1.91f, -1.46f),
+                    new(2.14f, -1.71f), new(1.04f, -2.38f), new(0.51f, -0.97f), new(-0.24f, -1.08f),
+                    new(-0.27f, -0.77f), new(-1.61f, -0.79f), new(-1.34f, 2.12f),
+                },
+                null
+            );
+
+            // Peru (40 pontos GIS)
+            Register(
+                TerritoryIds.Peru,
+                new CartoPoint(-14.60f, -4.60f),
+                new CartoPoint[]
+                {
+                    new(1.53f, -1.98f), new(1.24f, -2.21f), new(-0.61f, -1.20f), new(-0.76f, -1.00f),
+                    new(-0.71f, -0.85f), new(-1.63f, 0.55f), new(-1.97f, 0.96f), new(-2.34f, 1.15f),
+                    new(-2.25f, 1.26f), new(-2.41f, 1.58f), new(-2.24f, 1.78f), new(-2.06f, 1.87f),
+                    new(-2.13f, 1.59f), new(-1.85f, 1.59f), new(-1.65f, 1.43f), new(-1.42f, 1.87f),
+                    new(-0.49f, 2.38f), new(-0.38f, 2.54f), new(-0.51f, 2.77f), new(-0.24f, 2.75f),
+                    new(0.39f, 2.14f), new(1.04f, 2.20f), new(1.35f, 2.06f), new(1.12f, 1.77f),
+                    new(1.37f, 1.62f), new(1.15f, 1.68f), new(0.39f, 1.40f), new(0.32f, 1.03f),
+                    new(0.03f, 0.74f), new(0.37f, 0.34f), new(0.30f, 0.23f), new(0.60f, 0.20f),
+                    new(0.63f, 0.07f), new(1.19f, 0.22f), new(1.15f, -0.21f), new(1.51f, -0.19f),
+                    new(1.81f, -0.62f), new(1.56f, -1.47f), new(1.76f, -1.66f), new(1.53f, -1.98f),
+                },
+                null
+            );
+
+            // Polonia (25 pontos GIS)
+            Register(
+                TerritoryIds.Polonia,
+                new CartoPoint(0.36f, 2.14f),
+                new CartoPoint[]
+                {
+                    new(1.09f, 1.88f), new(1.69f, 1.64f), new(2.01f, 0.30f), new(1.21f, -1.24f),
+                    new(0.83f, -1.37f), new(1.21f, -2.24f), new(0.49f, -2.14f), new(-0.02f, -0.67f),
+                    new(-0.77f, -0.24f), new(-0.74f, -0.65f), new(-0.49f, -0.61f), new(-0.12f, -1.19f),
+                    new(-0.68f, -1.21f), new(-0.66f, -1.82f), new(-1.32f, -2.11f), new(-1.59f, -1.74f),
+                    new(-1.11f, -1.83f), new(-0.84f, -1.43f), new(-1.81f, -0.39f), new(-2.19f, -0.38f),
+                    new(-2.19f, 0.87f), new(-0.93f, 1.12f), new(-0.16f, 1.61f), new(0.05f, 0.89f),
+                    new(0.67f, 0.89f),
+                },
+                null
+            );
+
+            // RussiaAsiatica (116 pontos GIS)
+            Register(
+                TerritoryIds.RussiaAsiatica,
+                new CartoPoint(14.50f, 8.80f),
+                new CartoPoint[]
+                {
+                    new(-2.96f, -2.88f), new(-3.92f, -2.45f), new(-4.30f, -1.45f), new(-4.73f, -1.73f),
+                    new(-5.28f, -1.19f), new(-6.26f, -1.59f), new(-6.13f, -1.85f), new(-6.39f, -2.13f),
+                    new(-6.21f, -2.44f), new(-7.52f, -2.18f), new(-7.93f, -2.54f), new(-8.05f, -3.08f),
+                    new(-7.70f, -3.66f), new(-8.02f, -4.13f), new(-7.88f, -5.02f), new(-8.85f, -4.43f),
+                    new(-9.27f, -3.95f), new(-8.83f, -2.77f), new(-9.86f, -2.09f), new(-9.75f, -1.72f),
+                    new(-10.41f, -0.62f), new(-10.33f, -0.03f), new(-10.05f, 0.03f), new(-10.35f, 0.19f),
+                    new(-9.89f, 0.82f), new(-10.27f, 2.33f), new(-9.98f, 2.68f), new(-8.72f, 2.10f),
+                    new(-9.03f, 1.67f), new(-9.85f, 1.96f), new(-9.16f, 1.06f), new(-9.24f, 1.42f),
+                    new(-8.33f, 1.61f), new(-8.44f, 2.37f), new(-8.04f, 2.23f), new(-8.24f, 2.02f),
+                    new(-8.06f, 1.85f), new(-7.14f, 2.45f), new(-6.42f, 2.28f), new(-6.27f, 2.69f),
+                    new(-5.36f, 2.24f), new(-5.25f, 2.45f), new(-5.57f, 3.01f), new(-4.96f, 3.51f),
+                    new(-4.70f, 2.31f), new(-5.28f, 1.87f), new(-4.90f, 1.71f), new(-4.58f, 2.40f),
+                    new(-4.04f, 2.07f), new(-4.69f, 2.50f), new(-4.78f, 3.11f), new(-4.57f, 3.49f),
+                    new(-4.30f, 3.02f), new(-4.03f, 3.00f), new(-4.41f, 3.24f), new(-4.15f, 3.37f),
+                    new(-3.52f, 3.19f), new(-3.54f, 2.75f), new(-3.47f, 3.17f), new(-3.85f, 3.69f),
+                    new(-3.08f, 3.54f), new(-2.98f, 3.77f), new(-3.21f, 3.98f), new(-3.05f, 4.12f),
+                    new(-1.51f, 4.28f), new(-0.93f, 4.81f), new(0.26f, 4.30f), new(-0.83f, 3.47f),
+                    new(1.55f, 3.75f), new(2.17f, 3.54f), new(1.95f, 3.38f), new(2.37f, 2.93f),
+                    new(3.48f, 3.12f), new(3.36f, 3.33f), new(3.56f, 3.51f), new(5.84f, 2.95f),
+                    new(6.04f, 2.33f), new(6.43f, 2.67f), new(7.25f, 2.39f), new(7.23f, 2.77f),
+                    new(8.40f, 2.45f), new(8.40f, 1.40f), new(7.72f, 1.30f), new(8.09f, 1.32f),
+                    new(8.35f, 0.74f), new(7.20f, 0.02f), new(6.38f, 0.05f), new(6.18f, -0.48f),
+                    new(6.35f, -0.99f), new(5.53f, -2.42f), new(5.39f, -1.23f), new(5.54f, -0.57f),
+                    new(6.63f, 0.70f), new(5.96f, 0.19f), new(5.98f, 0.56f), new(5.57f, 0.48f),
+                    new(5.22f, 0.00f), new(5.34f, -0.19f), new(3.58f, -0.40f), new(2.88f, -1.36f),
+                    new(3.65f, -1.77f), new(3.49f, -3.07f), new(2.63f, -4.62f), new(2.32f, -4.72f),
+                    new(2.35f, -4.04f), new(2.62f, -3.97f), new(2.82f, -3.12f), new(2.36f, -3.27f),
+                    new(1.45f, -1.70f), new(1.01f, -1.91f), new(0.75f, -2.79f), new(-0.40f, -2.84f),
+                    new(-1.59f, -2.08f), new(-1.78f, -2.73f), new(-2.40f, -2.42f), new(-2.96f, -2.88f),
+                },
+                new CartoPoint[][]
+                {
+                    new CartoPoint[] { new(-0.35f, 5.25f), new(0.35f, 5.30f), new(0.40f, 5.75f), new(-0.25f, 5.80f) },
+                    new CartoPoint[] { new(3.10f, 4.45f), new(3.80f, 4.40f), new(3.90f, 4.85f), new(3.20f, 4.80f) },
+                    new CartoPoint[] { new(-5.90f, 4.10f), new(-5.50f, 4.30f), new(-5.20f, 5.20f), new(-5.60f, 5.30f), new(-5.85f, 4.60f) },
+                    new CartoPoint[] { new(6.80f, 4.15f), new(7.40f, 4.20f), new(7.35f, 4.55f), new(6.75f, 4.50f) },
+                }
+            );
+
+            // RussiaEuropeia (43 pontos GIS)
+            Register(
+                TerritoryIds.RussiaEuropeia,
+                new CartoPoint(4.68f, 6.81f),
+                new CartoPoint[]
+                {
+                    new(-2.41f, 4.14f), new(-2.30f, 1.15f), new(-3.21f, 1.02f), new(-2.89f, 0.31f),
+                    new(-3.32f, 0.51f), new(-3.56f, -0.02f), new(-3.49f, -0.40f), new(-2.86f, -0.61f),
+                    new(-2.61f, -1.75f), new(-3.38f, -2.66f), new(-2.62f, -3.03f), new(-2.32f, -4.17f),
+                    new(-1.81f, -3.79f), new(-1.25f, -4.37f), new(-0.93f, -4.04f), new(-1.16f, -3.75f),
+                    new(-0.31f, -3.50f), new(-0.70f, -3.98f), new(0.46f, -4.94f), new(0.35f, -5.38f),
+                    new(1.38f, -5.21f), new(1.66f, -4.25f), new(0.99f, -3.38f), new(1.39f, -2.77f),
+                    new(0.96f, -1.72f), new(1.27f, -1.21f), new(2.36f, -0.86f), new(2.85f, -1.01f),
+                    new(3.50f, -0.47f), new(3.52f, 0.38f), new(3.09f, 0.68f), new(3.27f, 4.02f),
+                    new(1.49f, 4.04f), new(0.34f, 3.40f), new(0.14f, 3.85f), new(-0.23f, 3.81f),
+                    new(-0.01f, 3.20f), new(-1.03f, 3.01f), new(-1.14f, 2.57f), new(-1.91f, 3.28f),
+                    new(-0.71f, 3.34f), new(-0.51f, 3.64f), new(-1.05f, 3.97f),
+                },
+                null
+            );
+
+            // Sudao (16 pontos GIS)
+            Register(
+                TerritoryIds.Sudao,
+                new CartoPoint(4.23f, -5.91f),
+                new CartoPoint[]
+                {
+                    new(-2.22f, 0.82f), new(-2.19f, 2.35f), new(-1.88f, 2.71f), new(0.08f, 2.74f),
+                    new(1.31f, 0.59f), new(2.90f, 0.73f), new(2.49f, -0.35f), new(0.68f, -2.13f),
+                    new(0.78f, -3.20f), new(0.06f, -3.51f), new(-0.06f, -4.29f), new(-0.35f, -3.24f),
+                    new(-0.91f, -2.76f), new(-1.01f, -1.94f), new(-0.02f, -0.75f), new(-1.31f, -0.49f),
+                },
+                null
+            );
+
+            // Suecia (16 pontos GIS)
+            Register(
+                TerritoryIds.Suecia,
+                new CartoPoint(0.42f, 8.98f),
+                new CartoPoint[]
+                {
+                    new(1.86f, -0.98f), new(0.58f, -0.86f), new(0.83f, 0.02f), new(0.60f, 0.19f),
+                    new(0.06f, -0.52f), new(0.17f, -1.39f), new(-0.69f, -2.36f), new(-1.08f, -2.16f),
+                    new(-1.22f, -1.45f), new(-1.86f, -1.67f), new(-2.27f, -0.48f), new(-1.22f, 0.29f),
+                    new(-0.51f, 1.48f), new(0.88f, 2.14f), new(1.46f, 2.13f), new(1.83f, 1.85f),
+                },
+                null
+            );
+
+            // Uruguai (15 pontos GIS)
+            Register(
+                TerritoryIds.Uruguai,
+                new CartoPoint(-10.20f, -8.70f),
+                new CartoPoint[]
+                {
+                    new(-0.31f, 0.46f), new(-0.19f, 0.48f), new(-0.06f, 0.24f), new(0.01f, 0.30f),
+                    new(0.40f, -0.15f), new(0.33f, -0.24f), new(0.36f, -0.40f), new(0.29f, -0.55f),
+                    new(0.11f, -0.69f), new(-0.08f, -0.69f), new(-0.41f, -0.49f), new(-0.45f, -0.39f),
+                    new(-0.38f, -0.20f), new(-0.41f, 0.05f), new(-0.31f, 0.46f),
+                },
+                null
+            );
+
+            // Venezuela (54 pontos GIS)
+            Register(
+                TerritoryIds.Venezuela,
+                new CartoPoint(-13.02f, -1.97f),
+                new CartoPoint[]
+                {
+                    new(2.14f, 0.42f), new(2.19f, 0.35f), new(1.93f, 0.17f), new(2.05f, 0.06f),
+                    new(1.81f, -0.02f), new(1.73f, -0.21f), new(1.96f, -0.46f), new(1.33f, -0.67f),
+                    new(1.29f, -0.79f), new(0.73f, -0.61f), new(0.91f, -0.78f), new(0.95f, -1.05f),
+                    new(1.15f, -1.10f), new(0.51f, -1.49f), new(0.50f, -1.41f), new(0.29f, -1.46f),
+                    new(0.12f, -1.35f), new(0.03f, -1.07f), new(-0.17f, -0.97f), new(-0.01f, -0.83f),
+                    new(-0.18f, -0.55f), new(-0.05f, -0.15f), new(-0.58f, -0.18f), new(-0.84f, 0.04f),
+                    new(-1.39f, 0.05f), new(-1.53f, 0.16f), new(-1.62f, 0.56f), new(-1.80f, 0.57f),
+                    new(-1.54f, 1.04f), new(-1.20f, 1.22f), new(-1.38f, 1.15f), new(-1.26f, 0.94f),
+                    new(-1.42f, 0.73f), new(-1.30f, 0.55f), new(-1.17f, 0.57f), new(-1.10f, 0.71f),
+                    new(-1.27f, 0.96f), new(-0.74f, 1.12f), new(-0.89f, 1.22f), new(-0.81f, 1.30f),
+                    new(-0.69f, 1.12f), new(-0.33f, 1.06f), new(-0.25f, 0.89f), new(0.30f, 0.93f),
+                    new(0.65f, 0.78f), new(1.07f, 0.89f), new(0.89f, 0.93f), new(1.60f, 0.95f),
+                    new(1.28f, 0.90f), new(1.37f, 0.80f), new(1.26f, 0.79f), new(1.89f, 0.64f),
+                    new(1.67f, 0.42f), new(2.14f, 0.42f),
+                },
+                null
+            );
+
+            // Vietna (18 pontos GIS)
+            Register(
+                TerritoryIds.Vietna,
+                new CartoPoint(15.36f, -2.05f),
+                new CartoPoint[]
+                {
+                    new(1.11f, 0.98f), new(0.89f, 1.12f), new(0.68f, 0.51f), new(1.33f, 0.07f),
+                    new(1.65f, -1.29f), new(1.11f, -1.94f), new(0.88f, -1.40f), new(0.34f, -1.16f),
+                    new(0.18f, -1.41f), new(0.61f, -2.32f), new(0.32f, -2.39f), new(-0.12f, -1.91f),
+                    new(-0.36f, -0.68f), new(-1.10f, -0.42f), new(-1.88f, 0.90f), new(-1.02f, 1.97f),
+                    new(-0.16f, 1.21f), new(0.78f, 1.56f),
+                },
+                null
+            );
+
+        }
+
+        private static void Register(string territoryId, CartoPoint center, CartoPoint[] polygon, CartoPoint[][]? islands)
+        {
+            Registry[territoryId] = new TerritoryCartography(territoryId, center, polygon, islands);
+        }
+    }
+}
