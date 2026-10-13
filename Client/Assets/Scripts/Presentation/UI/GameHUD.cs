@@ -57,12 +57,33 @@ namespace War.Presentation.UI
         [SerializeField] private Text? legacyAdvancePhaseButtonText;
         [SerializeField] private Text? legacyStatusMessageText;
 
+        public static GameHUD? Instance { get; private set; }
+
         private Coroutine? _statusFadeRoutine;
 
         public DeployArmiesDialogUI? DeployDialog => deployDialog;
 
+        public bool IsAnyModalOpen =>
+            (territoriesOverviewModal != null && territoriesOverviewModal.IsOpen) ||
+            (objectiveModal != null && objectiveModal.IsOpen) ||
+            (combatPanel != null && combatPanel.IsOpen) ||
+            (deployDialog != null && deployDialog.IsOpen);
+
+        /// <summary>
+        /// Retorna true se qualquer janela modal/popup estiver aberta ou se o ponteiro do mouse
+        /// estiver sobre elementos de interface gráfica uGUI (bloqueando interação com o mapa 3D).
+        /// </summary>
+        public static bool IsModalOpen()
+        {
+            if (Instance != null && Instance.IsAnyModalOpen) return true;
+            if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return true;
+            return false;
+        }
+
         private void Awake()
         {
+            Instance = this;
+
             if (presenter == null)
             {
                 presenter = FindFirstObjectByType<GamePresenter>();
@@ -114,6 +135,8 @@ namespace War.Presentation.UI
 
         private void OnDestroy()
         {
+            if (Instance == this) Instance = null;
+
             UnbindPresenter();
 
             if (advancePhaseButton != null)

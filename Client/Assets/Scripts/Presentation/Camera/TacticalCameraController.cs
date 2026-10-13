@@ -1,5 +1,6 @@
 #nullable enable
 using UnityEngine;
+using War.Presentation.UI;
 
 namespace War.Presentation.CameraControl
 {
@@ -66,6 +67,8 @@ namespace War.Presentation.CameraControl
 
         private void Update()
         {
+            if (GameHUD.IsModalOpen()) return;
+
             HandleKeyboardInput();
             HandleMouseInput();
             HandleZoomInput();

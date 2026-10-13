@@ -40,6 +40,8 @@ namespace War.Presentation.UI
         [Header("Fallback Text (UnityEngine.UI)")]
         [SerializeField] private Text? legacyContentText;
 
+        public bool IsOpen => modalRoot != null && modalRoot.activeSelf;
+
         private void Awake()
         {
             if (modalRoot == null)

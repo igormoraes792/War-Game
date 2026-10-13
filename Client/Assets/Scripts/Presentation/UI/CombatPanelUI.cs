@@ -61,6 +61,8 @@ namespace War.Presentation.UI
         [SerializeField] private Text[] legacyAttackerDiceTexts = Array.Empty<Text>();
         [SerializeField] private Text[] legacyDefenderDiceTexts = Array.Empty<Text>();
 
+        public bool IsOpen => modalRoot != null && modalRoot.activeSelf;
+
         private void Awake()
         {
             if (modalRoot == null)

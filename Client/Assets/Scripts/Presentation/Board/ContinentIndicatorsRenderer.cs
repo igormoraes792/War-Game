@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using War.Core.Models;
+using War.Presentation.UI;
 
 namespace War.Presentation.Board
 {
@@ -52,17 +53,17 @@ namespace War.Presentation.Board
             new ContinentCallout("AMÉRICA DO SUL", ContinentType.SouthAmerica, 2, new Color(0.78f, 0.38f, 0.36f),
                 new Vector3(-19.5f, 0.05f, -8.0f), new Vector3(-13.5f, 0.15f, -6.5f)),
 
-            // Europa: no Atlântico Norte entre Groenlândia e Inglaterra
+            // Europa: no Oceano Ártico aberto entre Groenlândia e Escandinávia (espaço vazio sem sobreposição)
             new ContinentCallout("EUROPA", ContinentType.Europe, 5, new Color(0.32f, 0.55f, 0.65f),
-                new Vector3(-6.0f, 0.05f, 12.8f), new Vector3(-1.5f, 0.15f, 8.5f)),
+                new Vector3(-2.0f, 0.05f, 15.0f), new Vector3(-0.5f, 0.15f, 9.5f)),
 
             // África: no Atlântico Sul a sudoeste do Congo / África do Sul
             new ContinentCallout("ÁFRICA", ContinentType.Africa, 3, new Color(0.78f, 0.60f, 0.32f),
                 new Vector3(-4.5f, 0.05f, -12.5f), new Vector3(0.5f, 0.15f, -8.0f)),
 
-            // Ásia: no Oceano Ártico ao norte da Sibéria
+            // Ásia: no Pacífico Norte a leste do Japão e norte da Oceania (espaço aberto sem sobreposição)
             new ContinentCallout("ÁSIA", ContinentType.Asia, 7, new Color(0.85f, 0.68f, 0.28f),
-                new Vector3(18.0f, 0.05f, 13.2f), new Vector3(15.5f, 0.15f, 9.5f)),
+                new Vector3(25.0f, 0.05f, 6.0f), new Vector3(20.5f, 0.15f, 5.0f)),
 
             // Oceania: no Oceano Índico a sudoeste da Austrália (100% desobstruído da Austrália)
             new ContinentCallout("OCEANIA", ContinentType.Oceania, 2, new Color(0.42f, 0.60f, 0.45f),
@@ -311,6 +312,8 @@ namespace War.Presentation.Board
         private Color _themeColor;
         private Vector3 _initialCartouchePos;
 
+        private bool _isHovered;
+
         public void Init(
             ContinentType continent,
             BoardView? boardView,
@@ -334,8 +337,19 @@ namespace War.Presentation.Board
             }
         }
 
+        private void Update()
+        {
+            if (_isHovered && GameHUD.IsModalOpen())
+            {
+                OnMouseExit();
+            }
+        }
+
         private void OnMouseEnter()
         {
+            if (GameHUD.IsModalOpen()) return;
+
+            _isHovered = true;
             if (_boardView == null)
             {
                 _boardView = Object.FindAnyObjectByType<BoardView>();
@@ -375,6 +389,7 @@ namespace War.Presentation.Board
 
         private void OnMouseExit()
         {
+            _isHovered = false;
             if (_boardView == null)
             {
                 _boardView = Object.FindAnyObjectByType<BoardView>();

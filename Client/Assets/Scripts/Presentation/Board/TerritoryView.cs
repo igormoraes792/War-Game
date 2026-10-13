@@ -2,6 +2,7 @@
 using System;
 using UnityEngine;
 using TMPro;
+using War.Presentation.UI;
 
 namespace War.Presentation.Board
 {
@@ -168,6 +169,12 @@ namespace War.Presentation.Board
 
         private void Update()
         {
+            if (_isHighlighted && GameHUD.IsModalOpen())
+            {
+                SetHighlighted(false);
+                OnHoverExit?.Invoke(this);
+            }
+
             // Elevação física 3D suave da peça do país (estilo relevo em tela de galeria)
             float targetElevation = _isSelected ? 0.32f : (_isHighlighted && !_isDimmed ? 0.15f : 0f);
             if (Mathf.Abs(_currentElevation - targetElevation) > 0.001f)
@@ -373,18 +380,23 @@ namespace War.Presentation.Board
         #region Interação com o Mouse
         private void OnMouseEnter()
         {
+            if (GameHUD.IsModalOpen()) return;
             SetHighlighted(true);
             OnHoverEnter?.Invoke(this);
         }
 
         private void OnMouseExit()
         {
-            SetHighlighted(false);
-            OnHoverExit?.Invoke(this);
+            if (_isHighlighted)
+            {
+                SetHighlighted(false);
+                OnHoverExit?.Invoke(this);
+            }
         }
 
         private void OnMouseDown()
         {
+            if (GameHUD.IsModalOpen()) return;
             OnClicked?.Invoke(this);
         }
 

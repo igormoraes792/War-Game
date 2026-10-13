@@ -646,14 +646,27 @@ namespace War.Presentation.Editor
             var topImg = topPanel.AddComponent<Image>();
             topImg.color = new Color(0.09f, 0.11f, 0.15f, 0.95f);
 
+            // Contêiner de Controles à Esquerda (Jogador Ativo + Botão de Territórios)
+            var leftControlsGroup = CreateUiElement("LeftControlsGroup", topPanel.transform);
+            var lcRt = leftControlsGroup.GetComponent<RectTransform>();
+            lcRt.anchorMin = new Vector2(0f, 0.5f);
+            lcRt.anchorMax = new Vector2(0f, 0.5f);
+            lcRt.pivot = new Vector2(0f, 0.5f);
+            lcRt.anchoredPosition = new Vector2(25f, 0f);
+            lcRt.sizeDelta = new Vector2(400f, 55f);
+
+            var lhlg = leftControlsGroup.AddComponent<HorizontalLayoutGroup>();
+            lhlg.spacing = 10f;
+            lhlg.childAlignment = TextAnchor.MiddleLeft;
+            lhlg.childControlWidth = false;
+            lhlg.childControlHeight = false;
+            lhlg.childForceExpandWidth = false;
+            lhlg.childForceExpandHeight = false;
+
             // Jogador Ativo (Badge)
-            var playerBadge = CreateUiElement("PlayerBadge", topPanel.transform);
+            var playerBadge = CreateUiElement("PlayerBadge", leftControlsGroup.transform);
             var pbRt = playerBadge.GetComponent<RectTransform>();
-            pbRt.anchorMin = new Vector2(0f, 0.5f);
-            pbRt.anchorMax = new Vector2(0f, 0.5f);
-            pbRt.pivot = new Vector2(0f, 0.5f);
-            pbRt.anchoredPosition = new Vector2(25f, 0f);
-            pbRt.sizeDelta = new Vector2(240f, 55f);
+            pbRt.sizeDelta = new Vector2(240f, 52f);
             var pbImg = playerBadge.AddComponent<Image>();
             pbImg.color = new Color(0.15f, 0.18f, 0.24f, 0.9f);
 
@@ -674,6 +687,18 @@ namespace War.Presentation.Editor
             pnRt.offsetMin = new Vector2(45f, 0f);
             pnRt.offsetMax = new Vector2(-10f, 0f);
             var playerNameText = CreateTMP(playerNameObj, "Exército Vermelho", 17f, Color.white, TextAlignmentOptions.Left, FontStyles.Bold);
+
+            // Botão: Visão Geral de Territórios por Jogador (ao lado do indicador de exército)
+            var terrBtnObj = CreateUiElement("Btn_PlayerTerritories", leftControlsGroup.transform);
+            var tbRt = terrBtnObj.GetComponent<RectTransform>();
+            tbRt.sizeDelta = new Vector2(135f, 48f);
+            var tbBtnImg = terrBtnObj.AddComponent<Image>();
+            tbBtnImg.color = new Color(0.18f, 0.30f, 0.46f, 1f);
+            var territoriesOverviewBtn = terrBtnObj.AddComponent<Button>();
+
+            var tbTxtObj = CreateUiElement("Text_Label", terrBtnObj.transform);
+            StretchFull(tbTxtObj.GetComponent<RectTransform>());
+            CreateTMP(tbTxtObj, "Territórios", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
 
             // Fase Atual (Container central)
             var phaseContainer = CreateUiElement("PhaseContainer", topPanel.transform);
@@ -709,7 +734,7 @@ namespace War.Presentation.Editor
             rcRt.anchorMax = new Vector2(1f, 0.5f);
             rcRt.pivot = new Vector2(1f, 0.5f);
             rcRt.anchoredPosition = new Vector2(-20f, 0f);
-            rcRt.sizeDelta = new Vector2(760f, 52f);
+            rcRt.sizeDelta = new Vector2(580f, 52f);
 
             var hlg = rightControlsGroup.AddComponent<HorizontalLayoutGroup>();
             hlg.spacing = 10f;
@@ -731,19 +756,7 @@ namespace War.Presentation.Editor
             StretchFull(atRt);
             var armiesToDeployText = CreateTMP(armiesTextObj, "Tropas para posicionar: 5", 13.5f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
 
-            // Botão 1: Visão Geral de Territórios por Jogador
-            var terrBtnObj = CreateUiElement("Btn_PlayerTerritories", rightControlsGroup.transform);
-            var tbRt = terrBtnObj.GetComponent<RectTransform>();
-            tbRt.sizeDelta = new Vector2(135f, 48f);
-            var tbBtnImg = terrBtnObj.AddComponent<Image>();
-            tbBtnImg.color = new Color(0.18f, 0.30f, 0.46f, 1f);
-            var territoriesOverviewBtn = terrBtnObj.AddComponent<Button>();
-
-            var tbTxtObj = CreateUiElement("Text_Label", terrBtnObj.transform);
-            StretchFull(tbTxtObj.GetComponent<RectTransform>());
-            CreateTMP(tbTxtObj, "Territórios", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
-
-            // Botão 2: Minha Missão
+            // Botão Minha Missão
             var missionBtnObj = CreateUiElement("Btn_MyMission", rightControlsGroup.transform);
             var misRt = missionBtnObj.GetComponent<RectTransform>();
             misRt.sizeDelta = new Vector2(135f, 48f);
@@ -755,7 +768,7 @@ namespace War.Presentation.Editor
             StretchFull(misBtnTextObj.GetComponent<RectTransform>());
             CreateTMP(misBtnTextObj, "Minha Missão", 14f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
 
-            // Botão 3: Avançar Fase / Encerrar Turno
+            // Botão Avançar Fase / Encerrar Turno
             var advBtnObj = CreateUiElement("Btn_AdvancePhase", rightControlsGroup.transform);
             var advRt = advBtnObj.GetComponent<RectTransform>();
             advRt.sizeDelta = new Vector2(180f, 48f);
@@ -1107,22 +1120,6 @@ namespace War.Presentation.Editor
             var cardImg = cardObj.AddComponent<Image>();
             cardImg.color = new Color(0.1f, 0.13f, 0.18f, 1f);
 
-            // Botão Fechar [X] no topo direito
-            var closeXObj = CreateUiElement("Btn_CloseX", cardObj.transform);
-            var cxRt = closeXObj.GetComponent<RectTransform>();
-            cxRt.anchorMin = new Vector2(1f, 1f);
-            cxRt.anchorMax = new Vector2(1f, 1f);
-            cxRt.pivot = new Vector2(1f, 1f);
-            cxRt.anchoredPosition = new Vector2(-15f, -15f);
-            cxRt.sizeDelta = new Vector2(36f, 36f);
-            var cxImg = closeXObj.AddComponent<Image>();
-            cxImg.color = new Color(0.24f, 0.28f, 0.35f, 1f);
-            var closeXBtn = closeXObj.AddComponent<Button>();
-
-            var cxTxtObj = CreateUiElement("Text_X", closeXObj.transform);
-            StretchFull(cxTxtObj.GetComponent<RectTransform>());
-            CreateTMP(cxTxtObj, "✕", 18f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
-
             // Cabeçalho
             var headerObj = CreateUiElement("Text_HeaderTitle", cardObj.transform);
             var hRt = headerObj.GetComponent<RectTransform>();
@@ -1130,7 +1127,7 @@ namespace War.Presentation.Editor
             hRt.anchorMax = new Vector2(1f, 1f);
             hRt.pivot = new Vector2(0.5f, 1f);
             hRt.anchoredPosition = new Vector2(0f, -20f);
-            hRt.sizeDelta = new Vector2(-100f, 35f);
+            hRt.sizeDelta = new Vector2(0f, 35f);
             CreateTMP(headerObj, "ORDEM SECRETA DO ESTADO-MAIOR", 20f, new Color(0.96f, 0.62f, 0.12f, 1f), TextAlignmentOptions.Center, FontStyles.Bold);
 
             // Identificador do Jogador
@@ -1233,7 +1230,6 @@ namespace War.Presentation.Editor
             oSo.FindProperty("progressText").objectReferenceValue = progressText;
             oSo.FindProperty("playerColorBadge").objectReferenceValue = playerColorBadge;
             oSo.FindProperty("closeButton").objectReferenceValue = closeBtn;
-            oSo.FindProperty("closeTopButton").objectReferenceValue = closeXBtn;
             oSo.ApplyModifiedProperties();
 
             // Começa fechado
@@ -1277,7 +1273,7 @@ namespace War.Presentation.Editor
 
             var closeTxtObj = CreateUiElement("Text_X", closeBtnObj.transform);
             StretchFull(closeTxtObj.GetComponent<RectTransform>());
-            CreateTMP(closeTxtObj, "✕", 18f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
+            CreateTMP(closeTxtObj, "X", 18f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
 
             // Título
             var titleObj = CreateUiElement("Text_Title", cardObj.transform);
@@ -1486,22 +1482,6 @@ namespace War.Presentation.Editor
             var cardImg = cardObj.AddComponent<Image>();
             cardImg.color = new Color(0.10f, 0.12f, 0.16f, 0.98f);
 
-            // Botão Fechar [X] no topo direito
-            var closeXObj = CreateUiElement("Btn_CloseX", cardObj.transform);
-            var cxRt = closeXObj.GetComponent<RectTransform>();
-            cxRt.anchorMin = new Vector2(1f, 1f);
-            cxRt.anchorMax = new Vector2(1f, 1f);
-            cxRt.pivot = new Vector2(1f, 1f);
-            cxRt.anchoredPosition = new Vector2(-15f, -15f);
-            cxRt.sizeDelta = new Vector2(36f, 36f);
-            var cxImg = closeXObj.AddComponent<Image>();
-            cxImg.color = new Color(0.24f, 0.28f, 0.35f, 1f);
-            var closeXBtn = closeXObj.AddComponent<Button>();
-
-            var cxTxtObj = CreateUiElement("Text_X", closeXObj.transform);
-            StretchFull(cxTxtObj.GetComponent<RectTransform>());
-            CreateTMP(cxTxtObj, "✕", 18f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
-
             // Título
             var titleObj = CreateUiElement("Text_HeaderTitle", cardObj.transform);
             var tRt = titleObj.GetComponent<RectTransform>();
@@ -1509,7 +1489,7 @@ namespace War.Presentation.Editor
             tRt.anchorMax = new Vector2(1f, 1f);
             tRt.pivot = new Vector2(0.5f, 1f);
             tRt.anchoredPosition = new Vector2(0f, -20f);
-            tRt.sizeDelta = new Vector2(-100f, 36f);
+            tRt.sizeDelta = new Vector2(0f, 36f);
             var titleText = CreateTMP(titleObj, "TERRITÓRIOS POR JOGADOR", 21f, Color.white, TextAlignmentOptions.Center, FontStyles.Bold);
 
             // Subtítulo
@@ -1582,7 +1562,6 @@ namespace War.Presentation.Editor
             // Serializa no PlayerTerritoriesOverviewUI
             var oSo = new SerializedObject(overviewUI);
             oSo.FindProperty("modalRoot").objectReferenceValue = modalRoot;
-            oSo.FindProperty("closeButton").objectReferenceValue = closeXBtn;
             oSo.FindProperty("closeBottomButton").objectReferenceValue = closeBottomBtn;
             oSo.FindProperty("titleText").objectReferenceValue = titleText;
             oSo.FindProperty("subtitleText").objectReferenceValue = subtitleText;
