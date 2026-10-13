@@ -1536,7 +1536,7 @@ namespace War.Presentation.Editor
             ctRt.offsetMin = new Vector2(15f, 10f);
             ctRt.offsetMax = new Vector2(-15f, -10f);
             var contentText = CreateTMP(contentTextObj, "Carregando territórios...", 15f, Color.white, TextAlignmentOptions.TopLeft);
-            contentText.enableWordWrapping = true;
+            contentText.textWrappingMode = TextWrappingModes.Normal;
 
             var csFitter = contentObj.AddComponent<ContentSizeFitter>();
             csFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
