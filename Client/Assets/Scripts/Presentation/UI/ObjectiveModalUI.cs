@@ -28,7 +28,10 @@ namespace War.Presentation.UI
         [SerializeField] private TMP_Text? playerNameText;
         [SerializeField] private TMP_Text? progressText;
         [SerializeField] private Image? playerColorBadge;
+        [Tooltip("Botão [Fechar Missão] inferior")]
         [SerializeField] private Button? closeButton;
+        [Tooltip("Botão [X] superior")]
+        [SerializeField] private Button? closeTopButton;
 
         [Header("Fallback Text (UnityEngine.UI)")]
         [SerializeField] private Text? legacyTitleText;
@@ -47,6 +50,18 @@ namespace War.Presentation.UI
             {
                 closeButton.onClick.AddListener(Close);
             }
+            if (closeTopButton != null)
+            {
+                closeTopButton.onClick.AddListener(Close);
+            }
+        }
+
+        private void Update()
+        {
+            if (modalRoot != null && modalRoot.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            {
+                Close();
+            }
         }
 
         private void OnDestroy()
@@ -54,6 +69,10 @@ namespace War.Presentation.UI
             if (closeButton != null)
             {
                 closeButton.onClick.RemoveListener(Close);
+            }
+            if (closeTopButton != null)
+            {
+                closeTopButton.onClick.RemoveListener(Close);
             }
         }
 

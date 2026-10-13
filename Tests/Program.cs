@@ -739,6 +739,26 @@ namespace War.Tests
 
             var raTris = WorldCartographyData.TriangulatePolygon(rAsiatica.Polygon);
             Assert(raTris.Count > 0 && raTris.Count % 3 == 0, "Rússia Asiática deve triangular perfeitamente sem auto-interseção.");
+
+            // Chile e Argentina
+            var ch = WorldCartographyData.GetCartography(TerritoryIds.Chile);
+            var ar = WorldCartographyData.GetCartography(TerritoryIds.Argentina);
+            Assert(ch != null && ar != null, "Chile e Argentina devem existir no registro cartográfico.");
+
+            var chTris = WorldCartographyData.TriangulatePolygon(ch!.Polygon);
+            Assert(chTris.Count > 0 && chTris.Count % 3 == 0, "Chile deve triangular perfeitamente sem auto-interseção.");
+
+            var arTris = WorldCartographyData.TriangulatePolygon(ar!.Polygon);
+            Assert(arTris.Count > 0 && arTris.Count % 3 == 0, "Argentina deve triangular perfeitamente sem auto-interseção.");
+
+            // Uruguai: ampliado para visibilidade no tabuleiro (> 1.8 de área) e triangulação perfeita
+            var ur = WorldCartographyData.GetCartography(TerritoryIds.Uruguai);
+            Assert(ur != null, "Uruguai deve existir no registro cartográfico.");
+            float urArea = Math.Abs(WorldCartographyData.ComputeArea(ur!.Polygon));
+            Assert(urArea > 1.8f, $"Uruguai deve possuir área ampliada para visibilidade no tabuleiro (> 1.8), obtido: {urArea}");
+
+            var urTris = WorldCartographyData.TriangulatePolygon(ur.Polygon);
+            Assert(urTris.Count > 0 && urTris.Count % 3 == 0, "Uruguai deve triangular perfeitamente sem auto-interseção.");
         }
 
         static void TestPlayerTerritoryOverviewRankingSort()

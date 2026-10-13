@@ -284,17 +284,17 @@ namespace War.Core.Data
                 null
             );
 
-            // Argentina (66 pontos GIS)
+            // Argentina - sem sobreposicao com Chile e Uruguai (66 pontos GIS)
             Register(
                 TerritoryIds.Argentina,
                 new CartoPoint(-12.00f, -9.80f),
                 new CartoPoint[]
                 {
-                    new(-1.12f, 4.25f), new(-0.89f, 4.55f), new(-0.52f, 4.43f), new(-0.46f, 4.24f),
-                    new(-0.37f, 4.49f), new(-0.10f, 4.49f), new(0.31f, 3.96f), new(1.06f, 3.56f),
-                    new(0.87f, 2.94f), new(1.53f, 2.90f), new(1.75f, 3.13f), new(1.79f, 3.45f),
-                    new(2.01f, 3.25f), new(1.97f, 2.98f), new(1.52f, 2.67f), new(1.03f, 1.99f),
-                    new(0.87f, 0.90f), new(1.18f, 0.62f), new(1.15f, 0.40f), new(1.31f, 0.22f),
+                    new(-0.89f, 4.55f), new(-0.52f, 4.43f), new(-0.46f, 4.24f), new(-0.37f, 4.49f),
+                    new(-0.10f, 4.49f), new(0.31f, 3.96f), new(1.06f, 3.56f), new(0.87f, 2.94f),
+                    new(1.53f, 2.90f), new(1.75f, 3.13f), new(1.79f, 3.45f), new(2.01f, 3.25f),
+                    new(1.97f, 2.98f), new(1.52f, 2.67f), new(1.03f, 1.99f), new(0.87f, 0.90f),
+                    new(1.10f, 0.69f), new(0.99f, 0.40f), new(1.06f, 0.22f), new(1.25f, 0.10f),
                     new(1.11f, -0.22f), new(0.59f, -0.43f), new(-0.01f, -0.42f), new(0.04f, -0.96f),
                     new(-0.09f, -1.08f), new(-0.64f, -1.02f), new(-0.61f, -1.39f), new(-0.33f, -1.38f),
                     new(-0.29f, -1.58f), new(-0.60f, -1.55f), new(-0.45f, -1.65f), new(-0.69f, -1.84f),
@@ -330,31 +330,31 @@ namespace War.Core.Data
                 null
             );
 
-            // Brasil (75 pontos GIS)
+            // Brasil - alinhado ao Uruguai e Venezuela (74 pontos GIS)
             Register(
                 TerritoryIds.Brasil,
                 new CartoPoint(-10.09f, -4.75f),
                 new CartoPoint[]
                 {
-                    new(-1.12f, -3.59f), new(-0.33f, -3.05f), new(-0.30f, -2.89f), new(-0.49f, -2.77f),
-                    new(-0.42f, -2.50f), new(-0.66f, -2.48f), new(-0.76f, -2.18f), new(-1.20f, -2.15f),
-                    new(-1.23f, -1.73f), new(-1.09f, -1.46f), new(-1.29f, -1.28f), new(-1.27f, -1.11f),
-                    new(-1.66f, -1.11f), new(-1.72f, -0.67f), new(-2.67f, -0.35f), new(-2.75f, 0.07f),
-                    new(-3.42f, -0.19f), new(-3.85f, -0.17f), new(-3.82f, 0.11f), new(-4.17f, 0.01f),
-                    new(-4.39f, 0.12f), new(-4.55f, 0.45f), new(-4.32f, 0.88f), new(-3.71f, 1.03f),
-                    new(-3.59f, 1.58f), new(-3.72f, 1.90f), new(-3.53f, 1.91f), new(-3.68f, 2.10f),
-                    new(-3.17f, 2.18f), new(-3.10f, 2.00f), new(-2.77f, 1.91f), new(-2.33f, 2.20f),
-                    new(-2.47f, 2.24f), new(-2.62f, 2.56f), new(-2.23f, 2.43f), new(-1.67f, 2.73f),
-                    new(-1.52f, 2.50f), new(-1.57f, 2.13f), new(-1.38f, 2.01f), new(-1.06f, 2.15f),
-                    new(-0.78f, 2.12f), new(-0.78f, 2.25f), new(-0.15f, 2.18f), new(0.15f, 2.59f),
-                    new(0.49f, 2.00f), new(-0.10f, 1.51f), new(0.29f, 1.63f), new(0.29f, 1.45f),
-                    new(0.59f, 1.48f), new(0.54f, 1.32f), new(0.88f, 1.68f), new(1.14f, 1.67f),
-                    new(1.60f, 1.48f), new(1.56f, 1.21f), new(1.85f, 1.38f), new(2.57f, 1.29f),
-                    new(3.15f, 0.92f), new(3.50f, 0.88f), new(3.65f, 0.51f), new(3.54f, 0.15f),
-                    new(2.91f, -0.51f), new(2.79f, -0.48f), new(2.74f, -1.36f), new(2.35f, -2.13f),
-                    new(2.14f, -2.31f), new(1.64f, -2.30f), new(0.73f, -2.73f), new(0.73f, -3.30f),
-                    new(0.04f, -3.95f), new(0.35f, -3.64f), new(0.20f, -3.56f), new(-0.24f, -4.23f),
-                    new(-0.18f, -4.05f), new(-0.32f, -3.93f), new(-1.12f, -3.59f),
+                    new(-0.33f, -3.05f), new(-0.30f, -2.89f), new(-0.49f, -2.77f), new(-0.42f, -2.50f),
+                    new(-0.66f, -2.48f), new(-0.76f, -2.18f), new(-1.20f, -2.15f), new(-1.23f, -1.73f),
+                    new(-1.09f, -1.46f), new(-1.29f, -1.28f), new(-1.27f, -1.11f), new(-1.66f, -1.11f),
+                    new(-1.72f, -0.67f), new(-2.67f, -0.35f), new(-2.75f, 0.07f), new(-3.42f, -0.19f),
+                    new(-3.85f, -0.17f), new(-3.82f, 0.11f), new(-4.17f, 0.01f), new(-4.39f, 0.12f),
+                    new(-4.55f, 0.45f), new(-4.32f, 0.88f), new(-3.71f, 1.03f), new(-3.59f, 1.58f),
+                    new(-3.72f, 1.90f), new(-3.53f, 1.91f), new(-3.68f, 2.10f), new(-3.17f, 2.18f),
+                    new(-3.10f, 2.00f), new(-2.77f, 1.91f), new(-2.33f, 2.20f), new(-2.47f, 2.24f),
+                    new(-2.62f, 2.56f), new(-2.23f, 2.43f), new(-1.67f, 2.73f), new(-1.52f, 2.50f),
+                    new(-1.57f, 2.13f), new(-1.38f, 2.01f), new(-1.06f, 2.15f), new(-0.78f, 2.12f),
+                    new(-0.78f, 2.25f), new(-0.15f, 2.18f), new(0.15f, 2.59f), new(0.49f, 2.00f),
+                    new(-0.10f, 1.51f), new(0.29f, 1.63f), new(0.29f, 1.45f), new(0.59f, 1.48f),
+                    new(0.54f, 1.32f), new(0.88f, 1.68f), new(1.14f, 1.67f), new(1.60f, 1.48f),
+                    new(1.56f, 1.21f), new(1.85f, 1.38f), new(2.57f, 1.29f), new(3.15f, 0.92f),
+                    new(3.50f, 0.88f), new(3.65f, 0.51f), new(3.54f, 0.15f), new(2.91f, -0.51f),
+                    new(2.79f, -0.48f), new(2.74f, -1.36f), new(2.35f, -2.13f), new(2.14f, -2.31f),
+                    new(1.64f, -2.30f), new(0.73f, -2.73f), new(0.73f, -3.30f), new(0.23f, -3.77f),
+                    new(0.35f, -3.64f), new(0.20f, -3.56f), new(0.14f, -3.66f), new(-0.08f, -3.40f),
+                    new(-0.22f, -3.50f), new(-0.43f, -3.12f),
                 },
                 null
             );
@@ -388,34 +388,30 @@ namespace War.Core.Data
                 null
             );
 
-            // Chile (88 pontos GIS)
+            // Chile - sem sobreposicao com Argentina (71 pontos GIS)
             Register(
                 TerritoryIds.Chile,
                 new CartoPoint(-14.10f, -10.50f),
                 new CartoPoint[]
                 {
-                    new(0.65f, 3.70f), new(1.02f, 3.31f), new(0.91f, 3.11f), new(1.22f, 2.62f),
-                    new(1.52f, 2.58f), new(1.40f, 2.38f), new(0.98f, 2.23f), new(1.06f, 1.76f),
-                    new(0.60f, 1.49f), new(0.29f, 0.92f), new(0.54f, 0.31f), new(0.07f, -0.22f),
-                    new(0.19f, -0.57f), new(-0.11f, -0.78f), new(-0.26f, -1.39f), new(-0.16f, -1.75f),
-                    new(0.09f, -1.78f), new(-0.24f, -1.83f), new(0.02f, -1.93f), new(-0.10f, -2.22f),
-                    new(-0.42f, -2.64f), new(-0.76f, -2.79f), new(-0.62f, -3.04f), new(-0.32f, -3.02f),
-                    new(-0.20f, -3.29f), new(1.02f, -3.36f), new(0.18f, -3.44f), new(0.04f, -3.68f),
-                    new(-0.37f, -3.58f), new(-0.15f, -3.60f), new(-0.00f, -3.44f), new(-0.41f, -3.51f),
-                    new(-0.34f, -3.61f), new(-0.67f, -3.53f), new(-0.06f, -3.41f), new(-0.51f, -3.40f),
+                    new(-0.16f, -1.75f), new(0.00f, -1.77f), new(0.00f, -1.77f), new(-0.24f, -1.83f),
+                    new(-0.03f, -1.91f), new(-0.06f, -2.03f), new(-0.22f, -2.38f), new(-0.42f, -2.64f),
+                    new(-0.76f, -2.79f), new(-0.62f, -3.04f), new(-0.47f, -3.03f), new(-0.40f, -3.22f),
+                    new(-0.24f, -3.20f), new(-0.16f, -3.39f), new(-0.15f, -3.41f), new(-0.51f, -3.40f),
                     new(-0.63f, -3.52f), new(-0.76f, -3.46f), new(-0.53f, -3.40f), new(-0.80f, -3.44f),
-                    new(-0.82f, -3.30f), new(-0.39f, -3.39f), new(-0.38f, -3.25f), new(-0.65f, -3.19f),
-                    new(-0.40f, -3.24f), new(-0.66f, -3.21f), new(-0.64f, -3.31f), new(-0.70f, -3.22f),
-                    new(-0.67f, -3.33f), new(-0.87f, -3.22f), new(-0.80f, -3.12f), new(-1.00f, -3.08f),
-                    new(-0.76f, -2.97f), new(-0.92f, -3.06f), new(-1.15f, -2.93f), new(-0.86f, -2.95f),
-                    new(-1.04f, -2.88f), new(-0.87f, -2.90f), new(-1.03f, -2.85f), new(-0.81f, -2.84f),
-                    new(-0.85f, -2.69f), new(-0.99f, -2.79f), new(-1.07f, -2.69f), new(-0.87f, -2.57f),
-                    new(-1.13f, -2.49f), new(-0.64f, -2.48f), new(-1.16f, -2.43f), new(-0.92f, -2.40f),
-                    new(-1.09f, -2.37f), new(-0.95f, -2.25f), new(-1.50f, -2.21f), new(-1.03f, -2.04f),
-                    new(-0.82f, -2.19f), new(-0.74f, -1.97f), new(-0.50f, -1.96f), new(-0.70f, -1.87f),
-                    new(-0.42f, -1.78f), new(-0.66f, -1.70f), new(-0.32f, -1.14f), new(-0.74f, -1.23f),
-                    new(-0.89f, -1.07f), new(-0.64f, -0.74f), new(-0.80f, -0.32f), new(-0.08f, 0.45f),
-                    new(-0.05f, 1.38f), new(0.46f, 2.90f), new(0.35f, 3.53f), new(0.65f, 3.70f),
+                    new(-0.82f, -3.30f), new(-0.39f, -3.39f), new(-0.38f, -3.25f), new(-0.66f, -3.21f),
+                    new(-0.64f, -3.31f), new(-0.70f, -3.22f), new(-0.67f, -3.33f), new(-0.87f, -3.22f),
+                    new(-0.80f, -3.12f), new(-1.00f, -3.08f), new(-0.94f, -3.05f), new(-1.15f, -2.93f),
+                    new(-0.86f, -2.95f), new(-1.04f, -2.88f), new(-0.87f, -2.90f), new(-1.03f, -2.85f),
+                    new(-0.81f, -2.84f), new(-0.85f, -2.69f), new(-0.99f, -2.79f), new(-1.07f, -2.69f),
+                    new(-0.87f, -2.57f), new(-1.13f, -2.49f), new(-0.64f, -2.48f), new(-1.16f, -2.43f),
+                    new(-0.92f, -2.40f), new(-1.09f, -2.37f), new(-0.95f, -2.25f), new(-1.50f, -2.21f),
+                    new(-1.03f, -2.04f), new(-0.82f, -2.19f), new(-0.74f, -1.97f), new(-0.50f, -1.96f),
+                    new(-0.70f, -1.87f), new(-0.42f, -1.78f), new(-0.66f, -1.70f), new(-0.32f, -1.14f),
+                    new(-0.74f, -1.23f), new(-0.89f, -1.07f), new(-0.64f, -0.74f), new(-0.80f, -0.32f),
+                    new(-0.08f, 0.45f), new(-0.05f, 1.38f), new(0.24f, 2.25f), new(0.37f, 1.61f),
+                    new(0.06f, 0.85f), new(0.14f, 0.34f), new(-0.06f, 0.04f), new(-0.16f, -0.83f),
+                    new(-0.15f, -0.92f), new(-0.15f, -0.93f), new(-0.26f, -1.39f),
                 },
                 null
             );
@@ -850,16 +846,16 @@ namespace War.Core.Data
                 null
             );
 
-            // Uruguai (15 pontos GIS)
+            // Uruguai - ampliado para visibilidade destacada (14 pontos GIS)
             Register(
                 TerritoryIds.Uruguai,
                 new CartoPoint(-10.20f, -8.70f),
                 new CartoPoint[]
                 {
-                    new(-0.31f, 0.46f), new(-0.19f, 0.48f), new(-0.06f, 0.24f), new(0.01f, 0.30f),
-                    new(0.40f, -0.15f), new(0.33f, -0.24f), new(0.36f, -0.40f), new(0.29f, -0.55f),
-                    new(0.11f, -0.69f), new(-0.08f, -0.69f), new(-0.41f, -0.49f), new(-0.45f, -0.39f),
-                    new(-0.38f, -0.20f), new(-0.41f, 0.05f), new(-0.31f, 0.46f),
+                    new(-0.56f, 0.83f), new(-0.34f, 0.86f), new(-0.11f, 0.43f), new(0.02f, 0.54f),
+                    new(0.72f, -0.27f), new(0.59f, -0.43f), new(0.65f, -0.72f), new(0.52f, -0.99f),
+                    new(0.20f, -1.24f), new(-0.14f, -1.24f), new(-0.74f, -0.88f), new(-0.81f, -0.70f),
+                    new(-0.68f, -0.36f), new(-0.74f, 0.09f),
                 },
                 null
             );

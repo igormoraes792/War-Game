@@ -87,6 +87,14 @@ namespace War.Presentation.UI
             }
         }
 
+        private void Update()
+        {
+            if (modalRoot != null && modalRoot.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            {
+                Close();
+            }
+        }
+
         private void OnDestroy()
         {
             if (closeButton != null)

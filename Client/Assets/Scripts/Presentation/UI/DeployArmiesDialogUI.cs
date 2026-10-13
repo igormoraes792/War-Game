@@ -71,6 +71,14 @@ namespace War.Presentation.UI
             closeButton?.onClick.AddListener(OnCancelClicked);
         }
 
+        private void Update()
+        {
+            if (modalRoot != null && modalRoot.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            {
+                OnCancelClicked();
+            }
+        }
+
         private void OnDestroy()
         {
             decreaseButton?.onClick.RemoveListener(OnDecreaseClicked);

@@ -54,7 +54,7 @@ namespace War.Presentation.Board
 
             // Europa: no Atlântico Norte entre Groenlândia e Inglaterra
             new ContinentCallout("EUROPA", ContinentType.Europe, 5, new Color(0.32f, 0.55f, 0.65f),
-                new Vector3(-5.5f, 0.05f, 14.5f), new Vector3(-1.5f, 0.15f, 8.5f)),
+                new Vector3(-6.0f, 0.05f, 12.8f), new Vector3(-1.5f, 0.15f, 8.5f)),
 
             // África: no Atlântico Sul a sudoeste do Congo / África do Sul
             new ContinentCallout("ÁFRICA", ContinentType.Africa, 3, new Color(0.78f, 0.60f, 0.32f),
@@ -62,7 +62,7 @@ namespace War.Presentation.Board
 
             // Ásia: no Oceano Ártico ao norte da Sibéria
             new ContinentCallout("ÁSIA", ContinentType.Asia, 7, new Color(0.85f, 0.68f, 0.28f),
-                new Vector3(18.5f, 0.05f, 15.0f), new Vector3(15.5f, 0.15f, 9.5f)),
+                new Vector3(18.0f, 0.05f, 13.2f), new Vector3(15.5f, 0.15f, 9.5f)),
 
             // Oceania: no Oceano Índico a sudoeste da Austrália (100% desobstruído da Austrália)
             new ContinentCallout("OCEANIA", ContinentType.Oceania, 2, new Color(0.42f, 0.60f, 0.45f),
@@ -180,12 +180,11 @@ namespace War.Presentation.Board
 
                 var nameTmp = nameObj.AddComponent<TextMeshPro>();
                 nameTmp.text = continent.Name;
-                nameTmp.fontSize = 2.4f;
+                nameTmp.fontSize = 2.6f;
                 nameTmp.fontStyle = FontStyles.Bold;
                 nameTmp.alignment = TextAlignmentOptions.Center;
-                nameTmp.color = Color.Lerp(continent.ThemeColor, new Color(0.15f, 0.20f, 0.25f), 0.55f); // Grafite nobre com matiz da região
-                nameTmp.outlineWidth = 0.08f;
-                nameTmp.outlineColor = new Color(1f, 1f, 1f, 0.85f);
+                nameTmp.color = new Color(0.12f, 0.15f, 0.20f, 1f); // Grafite escuro nobre de alta nitidez
+                nameTmp.outlineWidth = 0.0f;
                 nameTmp.textWrappingMode = TextWrappingModes.NoWrap;
                 if (sdfFont != null) nameTmp.font = sdfFont;
                 var nameRt = nameObj.GetComponent<RectTransform>();
@@ -199,12 +198,11 @@ namespace War.Presentation.Board
 
                 var bonusTmp = bonusObj.AddComponent<TextMeshPro>();
                 bonusTmp.text = $"+{continent.ArmyBonus} EXÉRCITOS / RODADA";
-                bonusTmp.fontSize = 1.6f;
+                bonusTmp.fontSize = 1.7f;
                 bonusTmp.fontStyle = FontStyles.Bold;
                 bonusTmp.alignment = TextAlignmentOptions.Center;
-                bonusTmp.color = new Color(0.35f, 0.40f, 0.46f, 1.0f); // Slate suave
-                bonusTmp.outlineWidth = 0.05f;
-                bonusTmp.outlineColor = new Color(1f, 1f, 1f, 0.8f);
+                bonusTmp.color = Color.Lerp(continent.ThemeColor, new Color(0.15f, 0.20f, 0.28f), 0.40f);
+                bonusTmp.outlineWidth = 0.0f;
                 bonusTmp.textWrappingMode = TextWrappingModes.NoWrap;
                 if (sdfFont != null) bonusTmp.font = sdfFont;
                 var bonusRt = bonusObj.GetComponent<RectTransform>();
@@ -269,8 +267,8 @@ namespace War.Presentation.Board
 
                 // 5. Colisor para detecção de hover do mouse sobre a cartela (com altura e profundidade generosas)
                 var col = rootGo.AddComponent<BoxCollider>();
-                col.size = new Vector3(5.6f, 1.4f, 2.2f);
-                col.center = new Vector3(0f, 0.3f, 0f);
+                col.size = new Vector3(6.0f, 2.0f, 2.6f);
+                col.center = new Vector3(0f, 0.5f, 0f);
 
                 var trigger = rootGo.AddComponent<ContinentWatermarkHoverTrigger>();
                 trigger.Init(continent.Continent, boardView, nameTmp, bonusTmp, lr, cartoucheObj.transform, continent.ThemeColor);
@@ -384,11 +382,11 @@ namespace War.Presentation.Board
 
             if (_nameTmp != null)
             {
-                _nameTmp.color = Color.Lerp(_themeColor, new Color(0.15f, 0.20f, 0.25f), 0.55f);
+                _nameTmp.color = new Color(0.12f, 0.15f, 0.20f, 1f);
             }
             if (_bonusTmp != null)
             {
-                _bonusTmp.color = new Color(0.35f, 0.40f, 0.46f, 1.0f);
+                _bonusTmp.color = Color.Lerp(_themeColor, new Color(0.15f, 0.20f, 0.28f), 0.40f);
             }
 
             if (_lineRenderer != null)

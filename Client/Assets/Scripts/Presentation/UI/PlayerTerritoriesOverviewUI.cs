@@ -25,8 +25,11 @@ namespace War.Presentation.UI
         [Tooltip("Objeto raiz do modal ativado/desativado.")]
         [SerializeField] private GameObject? modalRoot;
 
-        [Header("Botão Fechar")]
+        [Header("Botões Fechar")]
+        [Tooltip("Botão [X] no topo direito do card.")]
         [SerializeField] private Button? closeButton;
+        [Tooltip("Botão [Fechar Painel] na barra inferior do card.")]
+        [SerializeField] private Button? closeBottomButton;
 
         [Header("Elementos de Texto")]
         [SerializeField] private TMP_Text? titleText;
@@ -48,6 +51,10 @@ namespace War.Presentation.UI
             {
                 closeButton.onClick.AddListener(Close);
             }
+            if (closeBottomButton != null)
+            {
+                closeBottomButton.onClick.AddListener(Close);
+            }
         }
 
         private void Start()
@@ -59,11 +66,24 @@ namespace War.Presentation.UI
             }
         }
 
+        private void Update()
+        {
+            // Atalho intuitivo: Pressionar ESC fecha o painel imediatamente
+            if (modalRoot != null && modalRoot.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            {
+                Close();
+            }
+        }
+
         private void OnDestroy()
         {
             if (closeButton != null)
             {
                 closeButton.onClick.RemoveListener(Close);
+            }
+            if (closeBottomButton != null)
+            {
+                closeBottomButton.onClick.RemoveListener(Close);
             }
         }
 

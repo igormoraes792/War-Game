@@ -286,22 +286,19 @@ namespace War.Presentation.Board
 
             if (_isSelected)
             {
-                // Mantém 100% da cor pura do jogador (sem ficar branco!)
-                targetColor = _ownerColor;
-                // Brilho de borda extremamente sutil na própria tonalidade do país
-                emissionColor = new Color(_ownerColor.r * 0.15f, _ownerColor.g * 0.15f, _ownerColor.b * 0.15f, 1f);
+                targetColor = Color.Lerp(_ownerColor, Color.white, 0.20f);
+                emissionColor = new Color(_ownerColor.r * 0.35f + 0.10f, _ownerColor.g * 0.35f + 0.10f, _ownerColor.b * 0.35f + 0.10f, 1f);
             }
             else if (_isHighlighted)
             {
-                // Hover: Mantém a cor rica autêntica do país (NÃO fica mais clara!)
-                // O destaque é puramente pelo relevo 3D físico e expansão do pin
-                targetColor = _ownerColor;
-                emissionColor = Color.black;
+                // Hover e Destaque de Continente: Iluminação tática rica e brilho na cor autêntica
+                targetColor = Color.Lerp(_ownerColor, Color.white, 0.28f);
+                emissionColor = new Color(_ownerColor.r * 0.45f + 0.12f, _ownerColor.g * 0.45f + 0.12f, _ownerColor.b * 0.45f + 0.12f, 1f);
             }
             else if (_isDimmed)
             {
-                // Escurece o restante do mapa em 60% para criar contraste de foco
-                targetColor = new Color(_ownerColor.r * 0.38f, _ownerColor.g * 0.38f, _ownerColor.b * 0.38f, 1f);
+                // Escurece o restante do mapa para criar contraste dramático de foco
+                targetColor = new Color(_ownerColor.r * 0.32f, _ownerColor.g * 0.32f, _ownerColor.b * 0.32f, 1f);
                 emissionColor = Color.black;
             }
             else
@@ -353,9 +350,13 @@ namespace War.Presentation.Board
                 }
 
                 Color rimColor = _isSelected 
-                    ? Color.Lerp(_ownerColor, Color.white, 0.35f) 
-                    : (_isDimmed ? _ownerColor * 0.45f : _ownerColor);
-                Color rimEmission = _isSelected ? rimColor * 0.4f : Color.black;
+                    ? Color.Lerp(_ownerColor, Color.white, 0.40f) 
+                    : (_isHighlighted 
+                        ? Color.Lerp(_ownerColor, Color.white, 0.60f) 
+                        : (_isDimmed ? _ownerColor * 0.45f : _ownerColor));
+                Color rimEmission = _isSelected 
+                    ? rimColor * 0.45f 
+                    : (_isHighlighted ? rimColor * 0.70f : Color.black);
 
                 _rimPropertyBlock.SetColor(BaseColorProp, rimColor);
                 _rimPropertyBlock.SetColor(LegacyColorProp, rimColor);
