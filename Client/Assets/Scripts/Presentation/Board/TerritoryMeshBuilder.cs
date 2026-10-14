@@ -14,7 +14,7 @@ namespace War.Presentation.Board
     public static class TerritoryMeshBuilder
     {
         public const float DefaultExtrusionHeight = 0.16f;
-        public const float PolygonInsetAmount = 0.045f;
+        public const float PolygonInsetAmount = 0.000f;
 
         private static readonly Dictionary<string, Vector2[]> TerritoryPolygons = new(StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, List<Vector2[]>> TerritoryIslands = new(StringComparer.OrdinalIgnoreCase);

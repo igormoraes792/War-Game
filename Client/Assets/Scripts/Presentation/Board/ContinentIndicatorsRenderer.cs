@@ -77,20 +77,28 @@ namespace War.Presentation.Board
                 boardView = GetComponentInParent<BoardView>() ?? Object.FindAnyObjectByType<BoardView>();
             }
 
-            if (_spawnedIndicators.Count == 0)
-            {
-                RebuildIndicators();
-            }
+            // Garante que todas as cartelas estejam limpas e reconstruídas sem duplicatas
+            RebuildIndicators();
         }
 
         /// <summary>
         /// Reconstrói as cartelas cartográficas náuticas dos continentes (estilo oficial WAR).
+        /// Remove quaisquer instâncias prévias da cena para impedir colisores fantasmas/duplicados.
         /// </summary>
         public void RebuildIndicators()
         {
-            foreach (var go in _spawnedIndicators)
+            // Remove todos os filhos existentes para garantir zero duplicatas na cena ou em runtime
+            for (int i = transform.childCount - 1; i >= 0; i--)
             {
-                if (go != null) DestroyImmediate(go);
+                var child = transform.GetChild(i).gameObject;
+                if (Application.isPlaying)
+                {
+                    Destroy(child);
+                }
+                else
+                {
+                    DestroyImmediate(child);
+                }
             }
             _spawnedIndicators.Clear();
 
@@ -266,10 +274,10 @@ namespace War.Presentation.Board
                 var anchorCol = anchorObj.GetComponent<Collider>();
                 if (anchorCol != null) DestroyImmediate(anchorCol);
 
-                // 5. Colisor para detecção de hover do mouse sobre a cartela (com altura e profundidade generosas)
+                // 5. Colisor preciso para detecção de hover do mouse sobre a cartela
                 var col = rootGo.AddComponent<BoxCollider>();
-                col.size = new Vector3(6.0f, 2.0f, 2.6f);
-                col.center = new Vector3(0f, 0.5f, 0f);
+                col.size = new Vector3(5.4f, 0.4f, 1.8f);
+                col.center = new Vector3(0f, 0.05f, 0f);
 
                 var trigger = rootGo.AddComponent<ContinentWatermarkHoverTrigger>();
                 trigger.Init(continent.Continent, boardView, nameTmp, bonusTmp, lr, cartoucheObj.transform, continent.ThemeColor);
@@ -303,16 +311,24 @@ namespace War.Presentation.Board
     /// </summary>
     public class ContinentWatermarkHoverTrigger : MonoBehaviour
     {
-        private ContinentType _continent;
-        private BoardView? _boardView;
-        private TMP_Text? _nameTmp;
-        private TMP_Text? _bonusTmp;
-        private LineRenderer? _lineRenderer;
-        private Transform? _cartoucheRoot;
-        private Color _themeColor;
-        private Vector3 _initialCartouchePos;
+        [SerializeField] private ContinentType _continent;
+        [SerializeField] private Color _themeColor;
+        [SerializeField] private BoardView? _boardView;
+        [SerializeField] private TMP_Text? _nameTmp;
+        [SerializeField] private TMP_Text? _bonusTmp;
+        [SerializeField] private LineRenderer? _lineRenderer;
+        [SerializeField] private Transform? _cartoucheRoot;
+        [SerializeField] private Vector3 _initialCartouchePos;
 
         private bool _isHovered;
+
+        private void Awake()
+        {
+            if (_cartoucheRoot != null && _initialCartouchePos == Vector3.zero)
+            {
+                _initialCartouchePos = _cartoucheRoot.localPosition;
+            }
+        }
 
         public void Init(
             ContinentType continent,
