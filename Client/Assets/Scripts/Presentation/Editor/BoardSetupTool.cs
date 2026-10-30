@@ -111,6 +111,18 @@ namespace War.Presentation.Editor
             }
             continentRenderer.RebuildIndicators();
 
+            // 4.2 Criação do Arco Balístico de Ataque 3D
+            var arcObj = new GameObject("Arco_Balistico_Ataque");
+            arcObj.transform.SetParent(boardObj.transform, false);
+            var arcRenderer = arcObj.AddComponent<AttackArcRenderer>();
+
+            var arcProp = boardViewSo.FindProperty("attackArcRenderer");
+            if (arcProp != null)
+            {
+                arcProp.objectReferenceValue = arcRenderer;
+                boardViewSo.ApplyModifiedProperties();
+            }
+
             // 5. Criação da Câmera Tática
             var cameraObj = SetupTacticalCamera(rootObj.transform);
 

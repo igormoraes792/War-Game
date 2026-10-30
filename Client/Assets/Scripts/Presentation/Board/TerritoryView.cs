@@ -69,6 +69,7 @@ namespace War.Presentation.Board
         private Vector3 _initialPinScale = Vector3.one;
         private float _currentElevation;
         private float _currentPinScale = 1f;
+        private Coroutine? _conquestRoutine;
 
         // Propriedade estática para shaders URP (_BaseColor) e Built-in (_Color)
         private static readonly int BaseColorProp = Shader.PropertyToID("_BaseColor");
@@ -210,13 +211,84 @@ namespace War.Presentation.Board
             }
         }
 
+        public bool IsConquestAnimating => _conquestRoutine != null;
+
         /// <summary>
         /// Define a cor do jogador proprietário do território.
         /// </summary>
-        public void SetOwnerColor(Color color)
+        public void SetOwnerColor(Color color, bool force = false)
         {
+            if (!force && _conquestRoutine != null)
+            {
+                return;
+            }
+
+            if (_conquestRoutine != null)
+            {
+                StopCoroutine(_conquestRoutine);
+                _conquestRoutine = null;
+            }
+
             _ownerColor = color;
             ApplyVisualState();
+        }
+
+        /// <summary>
+        /// Executa uma animação cinematográfica de conquista de território:
+        /// Flash emissivo de impacto, transição gradual de cor para o novo proprietário e pulso no estandarte.
+        /// </summary>
+        public void PlayConquestAnimation(Color newOwnerColor, Action? onComplete = null)
+        {
+            if (_conquestRoutine != null)
+            {
+                StopCoroutine(_conquestRoutine);
+            }
+            _conquestRoutine = StartCoroutine(ConquestRoutine(newOwnerColor, onComplete));
+        }
+
+        private System.Collections.IEnumerator ConquestRoutine(Color newOwnerColor, Action? onComplete)
+        {
+            Color oldColor = _ownerColor;
+            float duration = 0.55f;
+            float elapsed = 0f;
+
+            // Flash inicial e impulso no token/pin tático
+            if (tacticalPinRoot != null)
+            {
+                tacticalPinRoot.localScale = _initialPinScale * 1.35f;
+            }
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+
+                // Lerp suave de cor
+                _ownerColor = Color.Lerp(oldColor, newOwnerColor, Mathf.SmoothStep(0f, 1f, t));
+
+                // Pulso emissivo que esvanece
+                float flashIntensity = Mathf.Sin(t * Mathf.PI) * 0.45f;
+                Color flashColor = Color.Lerp(_ownerColor, Color.white, 0.4f) * flashIntensity;
+
+                if (_propertyBlock == null) _propertyBlock = new MaterialPropertyBlock();
+                _propertyBlock.SetColor(BaseColorProp, _ownerColor);
+                _propertyBlock.SetColor(LegacyColorProp, _ownerColor);
+                _propertyBlock.SetColor(EmissionColorProp, flashColor);
+                if (territoryRenderer != null) territoryRenderer.SetPropertyBlock(_propertyBlock);
+
+                // Normaliza suavemente a escala do pin
+                if (tacticalPinRoot != null)
+                {
+                    tacticalPinRoot.localScale = Vector3.Lerp(_initialPinScale * 1.35f, _initialPinScale, t);
+                }
+
+                yield return null;
+            }
+
+            _ownerColor = newOwnerColor;
+            ApplyVisualState();
+            _conquestRoutine = null;
+            onComplete?.Invoke();
         }
 
         /// <summary>

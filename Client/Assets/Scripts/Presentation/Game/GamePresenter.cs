@@ -36,6 +36,7 @@ namespace War.Presentation.Game
 
         // Contexto de seleção de território para ações multifásicas
         private string? _selectedSourceTerritoryId;
+        private bool _isAttackingInProgress;
 
         #region Eventos para UI / HUD
         public event Action<TurnPhase, Player>? OnPhaseChanged;
@@ -105,6 +106,8 @@ namespace War.Presentation.Game
             if (boardView != null)
             {
                 boardView.OnTerritoryClicked += HandleTerritoryClicked;
+                boardView.OnTerritoryHoverEnter += HandleTerritoryHoverEnter;
+                boardView.OnTerritoryHoverExit += HandleTerritoryHoverExit;
             }
 
             if (autoStartDemoMatch)
@@ -118,6 +121,8 @@ namespace War.Presentation.Game
             if (boardView != null)
             {
                 boardView.OnTerritoryClicked -= HandleTerritoryClicked;
+                boardView.OnTerritoryHoverEnter -= HandleTerritoryHoverEnter;
+                boardView.OnTerritoryHoverExit -= HandleTerritoryHoverExit;
             }
         }
 
@@ -162,6 +167,7 @@ namespace War.Presentation.Game
             _turnManager.StartGame(rng);
 
             _selectedSourceTerritoryId = null;
+            _isAttackingInProgress = false;
 
             RefreshVisuals();
             NotifyPhaseChanged();
@@ -213,6 +219,7 @@ namespace War.Presentation.Game
         private void HandleTerritoryClicked(string territoryId)
         {
             if (_turnManager == null || _turnManager.State.IsGameOver) return;
+            if (_isAttackingInProgress) return;
 
             var activePlayer = ActivePlayer;
             if (activePlayer == null) return;
@@ -373,6 +380,7 @@ namespace War.Presentation.Game
                     {
                         _selectedSourceTerritoryId = clickedTerritory.Id;
                         boardView?.SelectTerritory(clickedTerritory.Id);
+                        boardView?.HideAttackArc(force: true);
 
                         var enemyNeighbors = clickedTerritory.AdjacentTerritoryIds
                             .Where(id => state.Territories.TryGetValue(id, out var t) &&
@@ -399,13 +407,49 @@ namespace War.Presentation.Game
 
         private void ExecuteAttack(string attackerId, string defenderId)
         {
+            if (_isAttackingInProgress) return;
+
             var state = _turnManager!.State;
-            var attacker = state.Territories[attackerId];
-            var defender = state.Territories[defenderId];
+            if (!state.Territories.TryGetValue(attackerId, out var attacker) ||
+                !state.Territories.TryGetValue(defenderId, out var defender))
+            {
+                return;
+            }
 
             if (!attacker.IsAdjacentTo(defender.Id))
             {
                 NotifyStatusMessage($"Ataque inválido: {attacker.Name} não faz fronteira com {defender.Name}.");
+                return;
+            }
+
+            var attackerPlayer = state.Players.FirstOrDefault(p => p.Id == attacker.OwnerId);
+            Color attackerColor = attackerPlayer != null ? ResolvePlayerColor(attackerPlayer.Color) : Color.red;
+            int attackDice = Mathf.Clamp(attacker.Armies - 1, 1, 3);
+
+            _isAttackingInProgress = true;
+
+            if (boardView != null)
+            {
+                boardView.AnimateAttack(attackerId, defenderId, attackerColor, attackDice, onImpact: () =>
+                {
+                    _isAttackingInProgress = false;
+                    ProcessAttackResolution(attackerId, defenderId, attackerColor);
+                });
+            }
+            else
+            {
+                _isAttackingInProgress = false;
+                ProcessAttackResolution(attackerId, defenderId, attackerColor);
+            }
+        }
+
+        private void ProcessAttackResolution(string attackerId, string defenderId, Color attackerColor)
+        {
+            if (_turnManager == null) return;
+            var state = _turnManager.State;
+            if (!state.Territories.TryGetValue(attackerId, out var attacker) ||
+                !state.Territories.TryGetValue(defenderId, out var defender))
+            {
                 return;
             }
 
@@ -422,6 +466,9 @@ namespace War.Presentation.Game
                 {
                     NotifyStatusMessage($"Vitória! {defender.Name} foi CONQUISTADO! Dados: [{attackerDiceStr}] vs [{defenderDiceStr}]. Baixas: Atacante -{result.AttackerArmiesLost}, Defensor -{result.DefenderArmiesLost}.");
                     OnTerritoryConquered?.Invoke(attackerId, defenderId);
+
+                    // Executa transição cinematográfica de conquista no território defensor
+                    boardView?.PlayConquestAnimation(defenderId, attackerColor);
 
                     // Limpa seleção
                     _selectedSourceTerritoryId = null;
@@ -455,6 +502,39 @@ namespace War.Presentation.Game
                 Debug.LogWarning($"[GamePresenter] Erro no combate: {ex.Message}");
                 NotifyStatusMessage(ex.Message);
             }
+        }
+
+        private void HandleTerritoryHoverEnter(string territoryId)
+        {
+            if (_turnManager == null || boardView == null) return;
+            if (_isAttackingInProgress) return;
+            if (_turnManager.State.CurrentPhase != TurnPhase.Attack) return;
+            if (string.IsNullOrEmpty(_selectedSourceTerritoryId)) return;
+            if (string.Equals(_selectedSourceTerritoryId, territoryId, StringComparison.OrdinalIgnoreCase)) return;
+
+            var state = _turnManager.State;
+            if (!state.Territories.TryGetValue(_selectedSourceTerritoryId, out var attacker)) return;
+            if (!state.Territories.TryGetValue(territoryId, out var hoveredDefender)) return;
+
+            // Se o território sob o mouse for um vizinho inimigo válido:
+            if (!string.Equals(hoveredDefender.OwnerId, attacker.OwnerId, StringComparison.OrdinalIgnoreCase) &&
+                attacker.IsAdjacentTo(hoveredDefender.Id))
+            {
+                var attackerPlayer = state.Players.FirstOrDefault(p => p.Id == attacker.OwnerId);
+                Color playerCol = attackerPlayer != null ? ResolvePlayerColor(attackerPlayer.Color) : Color.red;
+                int attackDice = Mathf.Clamp(attacker.Armies - 1, 1, 3);
+                boardView.ShowAttackArc(attacker.Id, hoveredDefender.Id, playerCol, attackDice);
+            }
+        }
+
+        private void HandleTerritoryHoverExit(string territoryId)
+        {
+            if (_turnManager == null || boardView == null) return;
+            if (_isAttackingInProgress) return;
+            if (_turnManager.State.CurrentPhase != TurnPhase.Attack) return;
+
+            // Oculta a prévia se não houver um ataque animado em curso
+            boardView.HideAttackArc();
         }
 
         private void HandleFortificationClick(Territory clickedTerritory, bool isOwned)
@@ -515,6 +595,7 @@ namespace War.Presentation.Game
 
             var phase = _turnManager.State.CurrentPhase;
             _selectedSourceTerritoryId = null;
+            _isAttackingInProgress = false;
             deployDialog?.Close();
             boardView?.ClearSelection();
             boardView?.ClearAllHighlights();

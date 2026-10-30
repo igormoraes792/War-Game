@@ -23,6 +23,10 @@ namespace War.Presentation.Board
         [Tooltip("Gerenciador visual das conexões e rotas entre territórios.")]
         [SerializeField] private ConnectionLinesRenderer? connectionLinesRenderer;
 
+        [Header("Arco Balístico de Ataque")]
+        [Tooltip("Gerenciador visual do arco de mira balística e animações de ataque.")]
+        [SerializeField] private AttackArcRenderer? attackArcRenderer;
+
         private readonly Dictionary<string, TerritoryView> _viewsById = new(StringComparer.OrdinalIgnoreCase);
         private string? _selectedTerritoryId;
 
@@ -47,6 +51,7 @@ namespace War.Presentation.Board
         public IReadOnlyDictionary<string, TerritoryView> TerritoriesById => _viewsById;
         public string? SelectedTerritoryId => _selectedTerritoryId;
         public ConnectionLinesRenderer? ConnectionLines => connectionLinesRenderer;
+        public AttackArcRenderer? AttackArc => attackArcRenderer;
         #endregion
 
         private void Awake()
@@ -55,6 +60,18 @@ namespace War.Presentation.Board
             {
                 connectionLinesRenderer = GetComponentInChildren<ConnectionLinesRenderer>();
             }
+
+            if (attackArcRenderer == null)
+            {
+                attackArcRenderer = GetComponentInChildren<AttackArcRenderer>();
+                if (attackArcRenderer == null)
+                {
+                    var arcObj = new GameObject("Arco_Balistico_Ataque");
+                    arcObj.transform.SetParent(transform, false);
+                    attackArcRenderer = arcObj.AddComponent<AttackArcRenderer>();
+                }
+            }
+
             ScanAndIndexTerritories();
         }
 
@@ -185,6 +202,7 @@ namespace War.Presentation.Board
         {
             SelectTerritory(null);
             ClearConnectionHighlights();
+            HideAttackArc();
         }
 
         /// <summary>
@@ -308,7 +326,71 @@ namespace War.Presentation.Board
                 }
             }
             ClearConnectionHighlights();
+            HideAttackArc();
         }
+
+        #region Arco de Ataque e Animações Táticas
+        /// <summary>
+        /// Desenha o arco balístico 3D conectando o território atacante ao alvo com animação de avanço e badge de tropas.
+        /// </summary>
+        public void ShowAttackArc(string attackerId, string defenderId, Color arcColor, int troopsOrDice, string? customLabel = null)
+        {
+            if (attackArcRenderer == null) return;
+            if (!_viewsById.TryGetValue(attackerId, out var attacker) || !_viewsById.TryGetValue(defenderId, out var defender))
+            {
+                return;
+            }
+
+            Vector3 startPos = attacker.ArmySpawnPoint.position;
+            Vector3 endPos = defender.ArmySpawnPoint.position;
+            attackArcRenderer.ShowArc(startPos, endPos, arcColor, troopsOrDice, customLabel);
+        }
+
+        /// <summary>
+        /// Dispara o projétil rastreador animado pelo arco balístico até o impacto físico no defensor.
+        /// </summary>
+        public void AnimateAttack(string attackerId, string defenderId, Color arcColor, int troopsOrDice, Action? onImpact = null)
+        {
+            if (attackArcRenderer == null)
+            {
+                onImpact?.Invoke();
+                return;
+            }
+
+            if (!_viewsById.TryGetValue(attackerId, out var attacker) || !_viewsById.TryGetValue(defenderId, out var defender))
+            {
+                onImpact?.Invoke();
+                return;
+            }
+
+            Vector3 startPos = attacker.ArmySpawnPoint.position;
+            Vector3 endPos = defender.ArmySpawnPoint.position;
+            attackArcRenderer.AnimateAttack(startPos, endPos, arcColor, troopsOrDice, onImpact);
+        }
+
+        /// <summary>
+        /// Oculta o arco balístico e qualquer projétil em tela.
+        /// </summary>
+        public void HideAttackArc(bool force = false)
+        {
+            attackArcRenderer?.HideArc(force);
+        }
+
+        /// <summary>
+        /// Executa a transição cinematográfica de cor e pulso no estandarte do território recém-conquistado.
+        /// </summary>
+        public void PlayConquestAnimation(string territoryId, Color newOwnerColor, Action? onComplete = null)
+        {
+            if (_viewsById.TryGetValue(territoryId, out var view))
+            {
+                view.PlayConquestAnimation(newOwnerColor, onComplete);
+            }
+            else
+            {
+                onComplete?.Invoke();
+            }
+        }
+        #endregion
 
         #region Manipuladores de Eventos
         private void HandleTerritoryClicked(TerritoryView view)
